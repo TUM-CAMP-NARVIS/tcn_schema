@@ -1,11 +1,11 @@
-#ifndef PCPD_RPC_HL2SPATIALMAPPING
-#define PCPD_RPC_HL2SPATIALMAPPING
+#ifndef DEVICE_HL2_RPC_HL2SPATIALMAPPING
+#define DEVICE_HL2_RPC_HL2SPATIALMAPPING
 
-#include "pcpd_msgs/rpc/Types.idl"
+#include "device_hl2_msgs/rpc/Types.idl"
 #include "geometry_msgs/msg/Vector3.idl"
 #include "geometry_msgs/msg/Quaternion.idl"
 
-module pcpd_msgs {
+module device_hl2_msgs {
   module rpc {
 
     enum HL2SpatialMapping_VolumeType {

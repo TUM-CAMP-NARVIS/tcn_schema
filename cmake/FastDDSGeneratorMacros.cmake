@@ -53,7 +53,8 @@ function(FASTDDS_GENERATE_CPP MODPATH MODTYP SOURCES HEADERS DLLEXPORT GEN_DEPEN
 
     set(CMDARGS -jar ${FASTDDSGEN_JAR})
     list(APPEND CMDARGS -d ${MODOUTDIR})
-    list(APPEND CMDARGS -I ${FASTDDS_INCLUDE_DIRECTORY})
+    list(APPEND CMDARGS -I ${FASTDDS_INCLUDE_DIRECTORY}/ros2)
+    list(APPEND CMDARGS -I ${FASTDDS_INCLUDE_DIRECTORY}/custom)
     list(APPEND CMDARGS -typeros2)
     list(APPEND CMDARGS -cs)
     list(APPEND CMDARGS -replace)
@@ -95,6 +96,7 @@ function(FASTDDS_GENERATE_CPP MODPATH MODTYP SOURCES HEADERS DLLEXPORT GEN_DEPEN
         file(MAKE_DIRECTORY ${MODOUTDIR})
     endif()
 
+    #message(STATUS "Schedule custom command for ${SCHEMAS} to generate headers: ${${HEADERS}} and sources: ${${SOURCES}}")
 
     add_custom_command(
             OUTPUT ${${SOURCES}} ${${HEADERS}}

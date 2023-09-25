@@ -1,9 +1,9 @@
-#ifndef PCPD_RPC_HL2VOICEINPUT
-#define PCPD_RPC_HL2VOICEINPUT
+#ifndef DEVICE_HL2_RPC_HL2VOICEINPUT
+#define DEVICE_HL2_RPC_HL2VOICEINPUT
 
-#include "pcpd_msgs/rpc/Types.idl"
+#include "device_hl2_msgs/rpc/Types.idl"
 
-module pcpd_msgs {
+module device_hl2_msgs {
   module rpc {
 
     struct HL2VIVoiceInput_Result {

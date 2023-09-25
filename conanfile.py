@@ -30,18 +30,19 @@ class TcnSchemaConan(ConanFile):
     exports_sources = "3rdparty/*", "cmake/*", "src/*", "CMakeLists.txt"
 
     def build_requirements(self):
-        if self.with_dds:
-            self.tool_requires("fast-dds-gen/2.4.0@camposs/stable")
-            self.tool_requires("zulu-openjdk/11.0.15")
+        self.tool_requires("fast-dds-gen/2.4.0@camposs/stable")
+        self.tool_requires("zulu-openjdk/11.0.15")
 
     def requirements(self):
-        if self.with_dds:
-            self.requires("fast-cdr/1.0.27")
+        self.requires("fast-cdr/1.0.27")
+        if self.options.with_dds:
+            self.requires("fast-dds/2.11.1")
 
     def _configure_toolchain(self, tc):
-        if self.with_dds:
-            dep = self.dependencies.build["fast-dds-gen"]
-            tc.cache_variables["FASTDDS_GEN_JAR_PATH"] = os.path.join(dep.package_folder, "share", "fastddsgen", "java")
+        dep = self.dependencies.build["fast-dds-gen"]
+        fpath = os.path.join(dep.package_folder, "share", "fastddsgen", "java")
+        self.output.info("Using FASTDDS generator path: {0}".format(fpath))
+        tc.variables["FASTDDS_GEN_JAR_PATH"] = str(fpath)
 
     def build(self):
         # overwritten since generator needs to be able to find its shared lib if build with_shared
@@ -60,7 +61,7 @@ class TcnSchemaConan(ConanFile):
 
         def dds_dep():
             if self.options.with_dds:
-                return []
+                return ["fast-dds::fast-dds"]
             else:
                 return ["fast-cdr::fast-cdr"]
 

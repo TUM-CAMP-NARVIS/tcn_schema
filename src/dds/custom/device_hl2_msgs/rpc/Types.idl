@@ -1,7 +1,7 @@
-#ifndef PCPD_RPC_TYPES
-#define PCPD_RPC_TYPES
+#ifndef DEVICE_HL2_RPC_TYPES
+#define DEVICE_HL2_RPC_TYPES
 
-module pcpd_msgs {
+module device_hl2_msgs {
   module rpc {
 
     typedef uint16 uint16__4[4];

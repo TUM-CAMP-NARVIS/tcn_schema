@@ -1,10 +1,10 @@
 
-#include "pcpd_msgs/msg/Types.idl"
+#include "device_hl2_msgs/msg/Types.idl"
 #include "std_msgs/msg/Header.idl"
 #include "geometry_msgs/msg/Vector3.idl"
 #include "geometry_msgs/msg/Quaternion.idl"
 
-module pcpd_msgs {
+module device_hl2_msgs {
   module msg {
 
     struct Hololens2VideoStream {

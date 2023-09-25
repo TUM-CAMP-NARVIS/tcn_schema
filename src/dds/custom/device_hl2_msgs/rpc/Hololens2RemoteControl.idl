@@ -1,9 +1,9 @@
-#ifndef PCPD_RPC_HL2REMOTECONTROL
-#define PCPD_RPC_HL2REMOTECONTROL
+#ifndef DEVICE_HL2_RPC_HL2REMOTECONTROL
+#define DEVICE_HL2_RPC_HL2REMOTECONTROL
 
-#include "pcpd_msgs/rpc/Types.idl"
+#include "device_hl2_msgs/rpc/Types.idl"
 
-module pcpd_msgs {
+module device_hl2_msgs {
   module rpc {
 
     struct HL2RCResponse_GetApplicationVersion {

@@ -1,11 +1,11 @@
-#ifndef PCPD_RPC_HL2MANAGER
-#define PCPD_RPC_HL2MANAGER
+#ifndef DEVICE_HL2_RPC_HL2MANAGER
+#define DEVICE_HL2_RPC_HL2MANAGER
 
-#include "pcpd_msgs/rpc/Types.idl"
-#include "pcpd_msgs/msg/Types.idl"
+#include "device_hl2_msgs/rpc/Types.idl"
+#include "device_hl2_msgs/msg/Types.idl"
 #include "std_msgs/msg/Header.idl"
 
-module pcpd_msgs {
+module device_hl2_msgs {
   module rpc {
 
     enum Hololens2LogLevel {
@@ -36,14 +36,14 @@ module pcpd_msgs {
       uint16 width;
       uint16 height;
       uint8 frame_rate;
-      pcpd_msgs::msg::Hololens2H26xProfile profile;
+      device_hl2_msgs::msg::Hololens2H26xProfile profile;
       uint32 bitrate;
     };
 
     struct HL2MGR_AACFormat {
       uint32 channels;
       uint32 sample_rate;
-      pcpd_msgs::msg::Hololens2AACProfile profile;
+      device_hl2_msgs::msg::Hololens2AACProfile profile;
     };
 
     struct HL2MGRRequest_StartRM {

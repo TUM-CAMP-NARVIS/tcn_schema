@@ -1,7 +1,7 @@
-#include "pcpd_msgs/msg/Types.idl"
+#include "device_hl2_msgs/msg/Types.idl"
 #include "std_msgs/msg/Header.idl"
 
-module pcpd_msgs {
+module device_hl2_msgs {
   module msg {
 
     struct Hololens2AudioStream {
