@@ -7,6 +7,7 @@ module pcpd_msgs {
     enum RpcTypesEnum {
         RPC_TYPE_CAPNP,
         RPC_TYPE_DDS,
+        RPC_TYPE_ZENOH,
         RPC_TYPE_SHM
     };
 
