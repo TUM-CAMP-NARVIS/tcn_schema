@@ -41,7 +41,7 @@ add_library(${TCN_SCHEMA_LIB_NAME}
         ${TCN_MODULE_SRC}
         ${TCN_MODULE_HDRS}
         )
-target_link_libraries(${TCN_SCHEMA_LIB_NAME} tcn_schema_std_msgs tcn_schema_geometry_msgs ${DDS_LIBRARIES})
+target_link_libraries(${TCN_SCHEMA_LIB_NAME} tcn_schema_builtin_interfaces tcn_schema_std_msgs tcn_schema_geometry_msgs ${DDS_LIBRARIES})
 target_include_directories(${TCN_SCHEMA_LIB_NAME} PUBLIC
         $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}>/include
         $<INSTALL_INTERFACE:include>

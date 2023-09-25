@@ -38,6 +38,12 @@ class TcnSchemaConan(ConanFile):
         if self.options.with_dds:
             self.requires("fast-dds/2.11.1")
 
+    def configure(self):
+        if self.options.shared:
+            self.options["fast-cdr"].shared = True
+            if self.options.with_dds:
+                self.options["fast-dds"].shared=True
+
     def _configure_toolchain(self, tc):
         dep = self.dependencies.build["fast-dds-gen"]
         fpath = os.path.join(dep.package_folder, "share", "fastddsgen", "java")
@@ -67,53 +73,53 @@ class TcnSchemaConan(ConanFile):
 
         # ROS2 default messages
         self.cpp_info.components["std_msgs"].names["cmake_find_package"] = "std_msgs"
-        self.cpp_info.components["std_msgs"].libs = ["tcn_schema_dds_std"]
+        self.cpp_info.components["std_msgs"].libs = ["tcn_schema_std_msgs"]
         self.cpp_info.components["std_msgs"].requires = dds_dep() + []
 
         self.cpp_info.components["geometry_msgs"].names["cmake_find_package"] = "geometry_msgs"
-        self.cpp_info.components["geometry_msgs"].libs = ["tcn_schema_dds_geometry"]
+        self.cpp_info.components["geometry_msgs"].libs = ["tcn_schema_geometry_msgs"]
         self.cpp_info.components["geometry_msgs"].defines = []
         self.cpp_info.components["geometry_msgs"].requires = dds_dep() + ["std_msgs"]
 
         self.cpp_info.components["sensor_msgs"].names["cmake_find_package"] = "sensor_msgs"
-        self.cpp_info.components["sensor_msgs"].libs = ["tcn_schema_dds_sensor"]
+        self.cpp_info.components["sensor_msgs"].libs = ["tcn_schema_sensor_msgs"]
         self.cpp_info.components["sensor_msgs"].defines = []
         self.cpp_info.components["sensor_msgs"].requires = dds_dep() + ["std_msgs", "geometry_msgs"]
 
         self.cpp_info.components["shape_msgs"].names["cmake_find_package"] = "shape_msgs"
-        self.cpp_info.components["shape_msgs"].libs = ["tcn_schema_dds_shape"]
+        self.cpp_info.components["shape_msgs"].libs = ["tcn_schema_shape_msgs"]
         self.cpp_info.components["shape_msgs"].defines = []
         self.cpp_info.components["shape_msgs"].requires = dds_dep() + ["std_msgs", "geometry_msgs"]
 
         self.cpp_info.components["tf2_msgs"].names["cmake_find_package"] = "tf2_msgs"
-        self.cpp_info.components["tf2_msgs"].libs = ["tcn_schema_dds_tf2"]
+        self.cpp_info.components["tf2_msgs"].libs = ["tcn_schema_tf2_msgs"]
         self.cpp_info.components["tf2_msgs"].defines = []
         self.cpp_info.components["tf2_msgs"].requires = dds_dep() + ["std_msgs", "geometry_msgs"]
 
         self.cpp_info.components["rosgraph_msgs"].names["cmake_find_package"] = "rosgraph_msgs"
-        self.cpp_info.components["rosgraph_msgs"].libs = ["tcn_schema_dds_rosgraph"]
+        self.cpp_info.components["rosgraph_msgs"].libs = ["tcn_schema_rosgraph_msgs"]
         self.cpp_info.components["rosgraph_msgs"].defines = []
         self.cpp_info.components["rosgraph_msgs"].requires = dds_dep() + ["std_msgs"]
 
         self.cpp_info.components["statistics_msgs"].names["cmake_find_package"] = "statistics_msgs"
-        self.cpp_info.components["statistics_msgs"].libs = ["tcn_schema_dds_statistics"]
+        self.cpp_info.components["statistics_msgs"].libs = ["tcn_schema_statistics_msgs"]
         self.cpp_info.components["statistics_msgs"].defines = []
         self.cpp_info.components["statistics_msgs"].requires = dds_dep() + []
 
         self.cpp_info.components["unique_identifier_msgs"].names["cmake_find_package"] = "unique_identifier_msgs"
-        self.cpp_info.components["unique_identifier_msgs"].libs = ["tcn_schema_dds_unique_identifier"]
+        self.cpp_info.components["unique_identifier_msgs"].libs = ["tcn_schema_unique_identifier_msgs"]
         self.cpp_info.components["unique_identifier_msgs"].defines = []
         self.cpp_info.components["unique_identifier_msgs"].requires = dds_dep() + []
 
 
         # Custom messages
         self.cpp_info.components["pcpd_msgs"].names["cmake_find_package"] = "pcpd_msgs"
-        self.cpp_info.components["pcpd_msgs"].libs = ["tcn_schema_dds_pcpd"]
+        self.cpp_info.components["pcpd_msgs"].libs = ["tcn_schema_pcpd_msgs"]
         self.cpp_info.components["pcpd_msgs"].defines = []
         self.cpp_info.components["pcpd_msgs"].requires = dds_dep() + ["std_msgs", "geometry_msgs"]
 
         self.cpp_info.components["device_hl2_msgs"].names["cmake_find_package"] = "device_hl2_msgs"
-        self.cpp_info.components["device_hl2_msgs"].libs = ["tcn_schema_dds_device_hl2"]
+        self.cpp_info.components["device_hl2_msgs"].libs = ["tcn_schema_device_hl2_msgs"]
         self.cpp_info.components["device_hl2_msgs"].defines = []
         self.cpp_info.components["device_hl2_msgs"].requires = dds_dep() + ["std_msgs", "geometry_msgs"]
 
