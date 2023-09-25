@@ -1,11 +1,13 @@
 set(TCN_MODULE_NAME "tcnart_msgs")
 
 set(TCN_MODULE_IDL
+        "msg/Logging.idl"
+        "msg/Presence.idl"
         "msg/Types.idl"
         )
 
 set(TCN_MODULE_RPC_IDL
-        "rpc/Types.idl"
+        "rpc/Requests.idl"
         )
 
 

@@ -4,13 +4,6 @@
 module tcnart_msgs {
   module rpc {
 
-    typedef float float__2[2];
-    typedef float float__3[3];
-    typedef float float__4[4];
-    typedef float float__9[9];
-    typedef float float__12[12];
-    typedef float float__16[16];
-
     enum RPCResponseStatus {
       RPC_STATUS_SUCCESS,
       RPC_STATUS_ERROR

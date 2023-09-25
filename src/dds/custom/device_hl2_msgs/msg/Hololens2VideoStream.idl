@@ -1,4 +1,7 @@
+#ifndef DEVICE_HL2_MSG_HL2VIDEO
+#define DEVICE_HL2_MSG_HL2VIDEO
 
+#include "tcnart_msgs/msg/Types.idl"
 #include "device_hl2_msgs/msg/Types.idl"
 #include "std_msgs/msg/Header.idl"
 #include "geometry_msgs/msg/Vector3.idl"
@@ -14,11 +17,11 @@ module device_hl2_msgs {
       geometry_msgs::msg::Vector3 position;
       geometry_msgs::msg::Quaternion orientation;
 
-      float__2 camera_focal_length;
-      float__2 camera_principal_point;
+      tcnart_msgs::msg::float__2 camera_focal_length;
+      tcnart_msgs::msg::float__2 camera_principal_point;
       
-      float__3 camera_radial_distortion;
-      float__2 camera_tangential_distortion;
+      tcnart_msgs::msg::float__3 camera_radial_distortion;
+      tcnart_msgs::msg::float__2 camera_tangential_distortion;
 
       uint64 image_bytes;
       sequence<uint8> image;
@@ -26,3 +29,4 @@ module device_hl2_msgs {
     };
   };
 };
+#endif

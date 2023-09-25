@@ -1,3 +1,6 @@
+#ifndef DEVICE_HL2_MSG_HL2AUDIO
+#define DEVICE_HL2_MSG_HL2AUDIO
+
 #include "device_hl2_msgs/msg/Types.idl"
 #include "std_msgs/msg/Header.idl"
 
@@ -8,7 +11,7 @@ module device_hl2_msgs {
 
       std_msgs::msg::Header header;
 
-      Hololens2AACProfile profile;
+      enums::Hololens2AACProfile profile;
 
       uint64 data_size;
       sequence<uint8> data;
@@ -16,3 +19,4 @@ module device_hl2_msgs {
     };
   };
 };
+#endif

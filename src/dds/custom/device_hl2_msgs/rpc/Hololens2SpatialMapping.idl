@@ -1,7 +1,7 @@
 #ifndef DEVICE_HL2_RPC_HL2SPATIALMAPPING
 #define DEVICE_HL2_RPC_HL2SPATIALMAPPING
 
-#include "tcnart_msgs/rpc/Types.idl"
+#include "tcnart_msgs/rpc/Requests.idl"
 #include "device_hl2_msgs/rpc/Types.idl"
 #include "geometry_msgs/msg/Vector3.idl"
 #include "geometry_msgs/msg/Quaternion.idl"
@@ -22,7 +22,7 @@ module device_hl2_msgs {
     };
 
     struct HL2SpatialMapping_SurfaceInfo {
-      HL2Guid id;
+      device_hl2_msgs::rpc::HL2Guid id;
       int64 update_time;
     };
 
@@ -52,7 +52,7 @@ module device_hl2_msgs {
     };
 
     struct HL2SpatialMapping_MeshDescription {
-      HL2Guid id;
+      device_hl2_msgs::rpc::HL2Guid id;
       double maxtpcm;
       uint32 vertex_format;
       uint32 triangle_format;
@@ -93,7 +93,7 @@ module device_hl2_msgs {
 
     struct HL2SMResponse_GetObservedSurfaces {
       sequence<HL2SpatialMapping_SurfaceInfo> surfaces;
-      RPCResponseStatus status;
+      tcnart_msgs::rpc::RPCResponseStatus status;
     };
 
 

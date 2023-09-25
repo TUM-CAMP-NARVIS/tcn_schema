@@ -11,6 +11,11 @@ module pcpd_msgs {
     typedef float float__12[12];
     typedef float float__16[16];
 
+    struct ApiVersion {
+        uint32 major;
+        uint32 minor;
+        uint32 patch;
+    };
 
   };
 };

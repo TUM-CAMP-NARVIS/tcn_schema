@@ -1,16 +1,13 @@
 #ifndef DEVICE_HL2_RPC_HL2SCENEUNDERSTANDING
 #define DEVICE_HL2_RPC_HL2SCENEUNDERSTANDING
 
-#include "tcnart_msgs/rpc/Types.idl"
+#include "tcnart_msgs/rpc/Requests.idl"
 #include "device_hl2_msgs/rpc/Types.idl"
 #include "geometry_msgs/msg/Vector3.idl"
 #include "geometry_msgs/msg/Quaternion.idl"
 
 module device_hl2_msgs {
   module rpc {
-
-    typedef float float__16[16];
-    typedef float float__2[2];
 
     enum HL2SUSceneUnderstanding_SceneMeshLevelOfDetail {
       SMLOD_Coarse,
@@ -67,7 +64,7 @@ module device_hl2_msgs {
     struct HL2SUSceneUnderstanding_SceneUnderstandingResult {
       HL2SUSceneUnderstanding_Status status;
 
-      float__16 extrinsics;
+      tcnart_msgs::msg::float__16 extrinsics;
 
       geometry_msgs::msg::Vector3 position;
       geometry_msgs::msg::Quaternion orientation;
@@ -81,10 +78,10 @@ module device_hl2_msgs {
       geometry_msgs::msg::Vector3 position;
       geometry_msgs::msg::Quaternion orientation;
 
-      float__16 location_matrix;
+      tcnart_msgs::msg::float__16 location_matrix;
 
       HL2SUSceneUnderstanding_SceneQuadAlignment item_alignment;
-      float__2 item_extents;
+      tcnart_msgs::msg::float__2 item_extents;
 
       sequence<HL2SUSceneUnderstanding_Mesh> meshes;
       sequence<HL2SUSceneUnderstanding_Mesh> collider_meshes;

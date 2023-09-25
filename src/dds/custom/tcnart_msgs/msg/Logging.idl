@@ -1,0 +1,29 @@
+#ifndef TCNART_MSG_LOGGING
+#define TCNART_MSG_LOGGING
+
+#include "std_msgs/msg/Header.idl"
+
+module tcnart_msgs {
+  module msg {
+
+        enum TcnartLogLevel {
+          TCNART_LOG_ERROR,
+          TCNART_LOG_WARNING,
+          TCNART_LOG_INFO,
+          TCNART_LOG_DEBUG,
+          TCNART_LOG_TRACE
+        };
+
+        struct TcnartLogItem {
+            builtin_interfaces::msg::Time timestamp;
+            TcnartLogLevel severity;
+            string message;
+        };
+
+        struct TcnartLogMessage {
+            std_msgs::msg::Header header;
+            sequence<TcnartLogItem> items;
+        };
+    };
+};
+#endif

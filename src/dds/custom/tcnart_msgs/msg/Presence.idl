@@ -1,0 +1,17 @@
+#ifndef TCNART_MSG_PRESENCE
+#define TCNART_MSG_PRESENCE
+
+#include "std_msgs/msg/Header.idl"
+
+module tcnart_msgs {
+  module msg {
+
+    struct TcnartPresence {
+        std_msgs::msg::Header header;
+        uint64 heart_beat_counter;
+    };
+
+  };
+};
+
+#endif
