@@ -1,21 +1,11 @@
-set(TCN_MODULE_NAME "device_hl2_msgs")
+set(TCN_MODULE_NAME "tcnart_msgs")
 
 set(TCN_MODULE_IDL
         "msg/Types.idl"
-        "msg/Hololens2EyeTracking.idl"
-        "msg/Hololens2HandTracking.idl"
-        "msg/Hololens2VideoStream.idl"
-        "msg/Hololens2AudioStream.idl"
-        "msg/Hololens2Sensors.idl"
         )
 
 set(TCN_MODULE_RPC_IDL
         "rpc/Types.idl"
-        "rpc/Hololens2RemoteControl.idl"
-        "rpc/Hololens2SpatialMapping.idl"
-        "rpc/Hololens2SceneUnderstanding.idl"
-        "rpc/Hololens2VoiceInput.idl"
-        "rpc/Hololens2Manager.idl"
         )
 
 
@@ -33,7 +23,7 @@ add_library(${TCN_SCHEMA_LIB_NAME}
         ${TCN_MODULE_HDRS}
         ${TCN_MODULE_RPC_HDRS}
         )
-target_link_libraries(${TCN_SCHEMA_LIB_NAME} tcn_schema_builtin_interfaces tcn_schema_std_msgs tcn_schema_geometry_msgs tcn_schema_tcnart_msgs ${DDS_LIBRARIES})
+target_link_libraries(${TCN_SCHEMA_LIB_NAME} tcn_schema_builtin_interfaces tcn_schema_std_msgs tcn_schema_geometry_msgs ${DDS_LIBRARIES})
 target_include_directories(${TCN_SCHEMA_LIB_NAME} PUBLIC
         $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}>/include
         $<INSTALL_INTERFACE:include>

@@ -1,6 +1,7 @@
 #ifndef DEVICE_HL2_RPC_HL2SPATIALMAPPING
 #define DEVICE_HL2_RPC_HL2SPATIALMAPPING
 
+#include "tcnart_msgs/rpc/Types.idl"
 #include "device_hl2_msgs/rpc/Types.idl"
 #include "geometry_msgs/msg/Vector3.idl"
 #include "geometry_msgs/msg/Quaternion.idl"
@@ -103,7 +104,7 @@ module device_hl2_msgs {
 
     struct HL2SMResponse_GetMeshes {
       sequence<HL2SpatialMapping_MeshInfo> meshes;
-      RPCResponseStatus status;
+      tcnart_msgs::rpc::RPCResponseStatus status;
     };
 
 

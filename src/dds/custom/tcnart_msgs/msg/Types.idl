@@ -1,0 +1,30 @@
+#ifndef TCNART_MSG_TYPES
+#define TCNART_MSG_TYPES
+
+module tcnart_msgs {
+  module msg {
+
+    typedef float float__2[2];
+    typedef float float__3[3];
+    typedef float float__4[4];
+    typedef float float__9[9];
+    typedef float float__12[12];
+    typedef float float__16[16];
+
+    enum SensorType {
+        SENSOR_TYPE_VIDEO_COLOR,
+        SENSOR_TYPE_VIDEO_DEPTH,
+        SENSOR_TYPE_TRACKING_POSE,
+        SENSOR_TYPE_TRACKING_EYE,
+        SENSOR_TYPE_TRACKING_HAND,
+        SENSOR_TYPE_AUDIO,
+        SENSOR_TYPE_IMU_ACCEL,
+        SENSOR_TYPE_IMU_GYRO,
+        SENSOR_TYPE_IMU_MAG
+    };
+
+
+  };
+};
+
+#endif

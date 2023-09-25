@@ -1,6 +1,7 @@
 #ifndef DEVICE_HL2_RPC_HL2VOICEINPUT
 #define DEVICE_HL2_RPC_HL2VOICEINPUT
 
+#include "tcnart_msgs/rpc/Types.idl"
 #include "device_hl2_msgs/rpc/Types.idl"
 
 module device_hl2_msgs {
@@ -21,7 +22,7 @@ module device_hl2_msgs {
 
     struct HL2VIResponse_VoiceInput_Pop {
       sequence<HL2VIVoiceInput_Result> results;
-      RPCResponseStatus status;
+      tcnart_msgs::rpc::RPCResponseStatus status;
     };
 
 

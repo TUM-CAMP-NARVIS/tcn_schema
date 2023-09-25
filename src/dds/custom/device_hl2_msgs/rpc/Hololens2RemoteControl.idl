@@ -1,14 +1,16 @@
 #ifndef DEVICE_HL2_RPC_HL2REMOTECONTROL
 #define DEVICE_HL2_RPC_HL2REMOTECONTROL
 
+#include "tcnart_msgs/rpc/Types.idl"
 #include "device_hl2_msgs/rpc/Types.idl"
+
 
 module device_hl2_msgs {
   module rpc {
 
     struct HL2RCResponse_GetApplicationVersion {
       uint16__4 data;
-      RPCResponseStatus status;
+      tcnart_msgs::rpc::RPCResponseStatus status;
     };
 
     struct HL2RCRequest_SetPVFocus {

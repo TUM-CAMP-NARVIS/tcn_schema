@@ -1,6 +1,7 @@
 #ifndef DEVICE_HL2_RPC_HL2SCENEUNDERSTANDING
 #define DEVICE_HL2_RPC_HL2SCENEUNDERSTANDING
 
+#include "tcnart_msgs/rpc/Types.idl"
 #include "device_hl2_msgs/rpc/Types.idl"
 #include "geometry_msgs/msg/Vector3.idl"
 #include "geometry_msgs/msg/Quaternion.idl"
@@ -108,7 +109,7 @@ module device_hl2_msgs {
     struct HL2SUResponse_SpatialQuery {
       HL2SUSceneUnderstanding_SceneUnderstandingResult result;
       sequence<HL2SUSceneUnderstanding_SpatialQueryResult> items;
-      RPCResponseStatus status;
+      tcnart_msgs::rpc::RPCResponseStatus status;
     };
 
 
