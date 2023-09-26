@@ -79,6 +79,54 @@ module tcnart_msgs {
       double col2[3];
     };
 
+    struct RigidTransform {
+      Vector3 translation;
+      Quaternion rotation;
+    };
+
+    struct Ray {
+      Vector3 origin;
+      Vector3 direction;
+    };
+
+    struct ViewPose {
+      Vector3 eye;
+      Vector3 target;
+      Vector3 up;
+    };
+
+    struct Plane {
+      Vector3 normal;
+      float d;
+    };
+
+    struct BoundingBox {
+      Vector3 center;
+      Vector3 extents;
+    };
+
+    struct Frustum {
+      Plane plane_near;
+      Plane plane_far;
+      Plane plane_right;
+      Plane plane_left;
+      Plane plane_top;
+      Plane plane_bottom;
+    };
+
+    struct OrientedBox {
+      Vector3 center;
+      Vector3 extents;
+      Quaternion orientation;
+    };
+
+    struct Sphere {
+      Vector3 center;
+      float radius;
+    };
+
+
+
   };
 };
 

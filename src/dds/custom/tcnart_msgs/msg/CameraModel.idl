@@ -1,0 +1,49 @@
+#ifndef TCNART_MSG_CAMERA_CALIBRATION
+#define TCNART_MSG_CAMERA_CALIBRATION
+
+#include "std_msgs/msg/Header.idl"
+
+module tcnart_msgs {
+  module msg {
+
+      // CAMERA_MODEL_SIMPLE_PINHOLE,
+      // CAMERA_MODEL_SIMPLE_RADIAL,
+      // CAMERA_MODEL_SIMPLE_RADIAL_FISHEYE,
+      // CAMERA_MODEL_RADIAL,
+      // CAMERA_MODEL_RADIAL_FISHEYE,
+      // CAMERA_MODEL_OPEN_CV_FISHEYE,
+      // CAMERA_MODEL_FOV,
+      // CAMERA_MODEL_THIN_PRISM_FISHEYE,
+
+    enum CameraModelType {
+      CAMERA_MODEL_PINHOLE,
+      CAMERA_MODEL_OPEN_CV,
+      CAMERA_MODEL_FULL_OPEN_CV,
+      CAMERA_MODEL_SENSOR_AZURE_KINECT
+    };
+
+    struct CameraModel {
+
+      CameraModelType camera_model;
+      
+      uint16 image_width;
+      uint16 image_height;
+
+      float focal_length[2];
+      float principal_point[2];
+
+      float tangential_coefficients[2];
+      float radial_coefficients[8];
+
+      // probably there are some fields missing to support all camera modesl -- see colmap for more detailed camera model
+      
+      // column major
+      // float raw_matrix[16];
+
+    };
+
+
+  };
+};
+
+#endif

@@ -40,6 +40,7 @@ module tcnart_msgs {
         struct SRNode {
 
             SRNodeType node_type;
+            UUID node_uuid;
             uint32 node_id;
             string node_name;
 
@@ -47,48 +48,46 @@ module tcnart_msgs {
         
         };
 
+        union SREdgeData switch(SREdgeDataType) {
+
+          case SRG_EDGE_TYPE_POSE_6D:
+            RigidTransform transform_6d;
+
+          case SRG_EDGE_TYPE_POSITION_3D:
+            Vector3 translation_3d;
+
+          case SRG_EDGE_TYPE_ORIENTATION_3D:
+            Quaternion rotation_3d;
+
+          case SRG_EDGE_TYPE_POSITON_2D:
+            Vector2 translation_2d;
+
+          case SRG_EDGE_TYPE_ORIENTATION_2D:
+            // in radian
+            double rotation_2d;
+
+          case SRG_EDGE_TYPE_DISTANCE_1D:
+            double translation_1d;
+
+          //case SRG_EDGE_TYPE_NONE:
+          //case SRG_EDGE_TYPE_PROJECT_3D_TO_2D:
+          //case SRG_EDGE_TYPE_PROJECT_2D_TO_3D:
+
+
+        };
+
         struct SREdge {
 
-            SREdgeDataType data_type;
+            string edge_name;
 
             uint32 node_source_id;
             uint32 node_destination_id;
 
-            string custom_data;
+            SREdgeTemporalType temporal_type;
+
+            SREdgeDataType data_type;
+            SREdgeData transform;
         
-        };
-
-
-        struct SREdgePose6D : SREdge {
-
-            Vector3 translation;
-            Quaternion rotation;
-
-        };
-
-        struct SREdgePosition3D : SREdge {
-
-            Vector3 translation;
-
-        };
-
-        struct SREdgeOrientation3D : SREdge {
-
-            Quaternion rotation;
-
-        };
-
-        struct SREdgePosition2D : SREdge {
-
-            Vector2 translation;
-
-        };
-
-        struct SREdgeOrientation2D : SREdge {
-
-            // in radian
-            double rotation_angle;
-
         };
 
         // complete missing Types: 1D, 2d3d, 3d2d

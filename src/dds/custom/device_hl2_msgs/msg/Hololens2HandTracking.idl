@@ -14,8 +14,7 @@ module device_hl2_msgs {
     };
 
     struct Hololens2HandJointPose {
-      tcnart_msgs::msg::Quaternion orientation;
-      tcnart_msgs::msg::Vector3 position;
+      tcnart_msgs::msg::RigidTransform pose;
       float radius;
       Hololens2JointPoseAccuracy accuracy;
     };
@@ -24,12 +23,8 @@ module device_hl2_msgs {
 
       std_msgs::msg::Header header;
 
-      tcnart_msgs::msg::Vector3 head_position;
-      tcnart_msgs::msg::Vector3 head_forward;
-      tcnart_msgs::msg::Vector3 head_up;
-
-      tcnart_msgs::msg::Vector3 gaze_origin;
-      tcnart_msgs::msg::Vector3 gaze_direction;
+      tcnart_msgs::msg::ViewPose head_pose;
+      tcnart_msgs::msg::Ray gaze;
       
       sequence<Hololens2HandJointPose> left_poses;
       sequence<Hololens2HandJointPose> right_poses;

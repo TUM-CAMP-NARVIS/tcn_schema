@@ -1,0 +1,108 @@
+#ifndef TCNART_MSG_POSE_TRACKING
+#define TCNART_MSG_POSE_TRACKING
+
+#include "std_msgs/msg/Header.idl"
+#include "tcnart_msgs/msg/Types.idl"
+
+module tcnart_msgs {
+  module msg {
+
+    enum CameraModelType {
+      CAMERA_MODEL_NONE,
+      CAMERA_MODEL_SIMPLE_PINHOLE,
+      CAMERA_MODEL_PINHOLE,
+      CAMERA_MODEL_SIMPLE_RADIAL,
+      CAMERA_MODEL_SIMPLE_RADIAL_FISHEYE,
+      CAMERA_MODEL_RADIAL,
+      CAMERA_MODEL_RADIAL_FISHEYE,
+      CAMERA_MODEL_OPEN_CV,
+      CAMERA_MODEL_OPEN_CV_FISHEYE,
+      CAMERA_MODEL_FULL_OPEN_CV,
+      CAMERA_MODEL_FOV,
+      CAMERA_MODEL_THIN_PRISM_FISHEYE,
+      CAMERA_MODEL_SENSOR_AZURE_KINECT,
+    };
+
+    enum MarkerType {
+      MARKER_TYPE_NONE,
+      MARKER_TYPE_ARUCO,
+      MARKER_TYPE_IR_TARGET
+    };
+
+
+    union TrackerConfigDetail  switch(MarkerType) {
+      CASE MARKER_TYPE_NONE:
+
+      CASE MARKER_TYPE_ARUCO:
+        int dictionary_id;    
+
+      CASE MARKER_TYPE_IR_TARGET:
+
+    };
+
+
+    struct ArucoTargetConfig {
+      float marker_size;
+    };
+
+    struct IRTargetConfig {
+      sequence<Vector3> sphere_positions;
+      float sphere_radius;
+
+      uint8 min_visible_spheres;
+
+      float lowpass_position;
+      float lowpass_orientation;
+    };
+
+
+    union TrackingTargetConfig switch(MarkerType) {
+
+      CASE MARKER_TYPE_ARUCO:
+        ArucoTargetConfig aruco_config;
+
+      CASE MARKER_TYPE_IR_TARGET:
+        IRTargetConfig ir_config;
+
+    };
+
+
+    struct TrackerConfig {
+
+      uint32 tracker_id;
+      string tracker_name;
+
+      MarkerType marker_type;
+      TrackerConfigDetail config;
+
+      sequence<TrackingTargetConfig> known_targets;
+
+    };
+
+
+    struct DetectedMarker {
+
+      std_msgs::msg::Header header;
+
+      uint32 marker_id;
+
+      RigidTransform pose;
+
+      uint8 valid;
+
+    };
+
+
+    struct ViewpointPose {
+      std_msgs::msg::Header header;
+
+      uint32 marker_id;
+
+      RigidTransform pose;
+
+    }
+
+  };
+};
+
+#endif

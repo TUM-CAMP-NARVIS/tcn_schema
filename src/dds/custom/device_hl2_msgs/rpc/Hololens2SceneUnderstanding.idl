@@ -64,8 +64,7 @@ module device_hl2_msgs {
 
       float extrinsics[16];
 
-      tcnart_msgs::msg::Vector3 position;
-      tcnart_msgs::msg::Quaternion orientation;
+      tcnart_msgs::msg::RigidTransform pose;
     };
 
 
@@ -73,8 +72,7 @@ module device_hl2_msgs {
       tcnart_msgs::msg::MSGuid item_id;
       HL2SUSceneUnderstanding_SceneObjectKind item_kind;
 
-      tcnart_msgs::msg::Vector3 position;
-      tcnart_msgs::msg::Quaternion orientation;
+      tcnart_msgs::msg::RigidTransform pose;
 
       float location_matrix[16];
 

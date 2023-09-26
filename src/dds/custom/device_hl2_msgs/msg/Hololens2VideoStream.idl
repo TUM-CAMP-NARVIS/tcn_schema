@@ -11,8 +11,7 @@ module device_hl2_msgs {
 
       std_msgs::msg::Header header;
 
-      tcnart_msgs::msg::Vector3 position;
-      tcnart_msgs::msg::Quaternion orientation;
+      tcnart_msgs::msg::RigidTransform pose;
 
       float camera_focal_length[2];
       float camera_principal_point[2];
