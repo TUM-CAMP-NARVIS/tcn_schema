@@ -2,9 +2,7 @@
 #define DEVICE_HL2_RPC_HL2SCENEUNDERSTANDING
 
 #include "tcnart_msgs/rpc/Requests.idl"
-#include "device_hl2_msgs/rpc/Types.idl"
-#include "geometry_msgs/msg/Vector3.idl"
-#include "geometry_msgs/msg/Quaternion.idl"
+#include "tcnart_msgs/msg/Types.idl"
 
 module device_hl2_msgs {
   module rpc {
@@ -66,17 +64,17 @@ module device_hl2_msgs {
 
       float extrinsics[16];
 
-      geometry_msgs::msg::Vector3 position;
-      geometry_msgs::msg::Quaternion orientation;
+      tcnart_msgs::msg::Vector3 position;
+      tcnart_msgs::msg::Quaternion orientation;
     };
 
 
     struct HL2SUSceneUnderstanding_SpatialQueryResult {
-      HL2Guid item_id;
+      tcnart_msgs::msg::MSGuid item_id;
       HL2SUSceneUnderstanding_SceneObjectKind item_kind;
 
-      geometry_msgs::msg::Vector3 position;
-      geometry_msgs::msg::Quaternion orientation;
+      tcnart_msgs::msg::Vector3 position;
+      tcnart_msgs::msg::Quaternion orientation;
 
       float location_matrix[16];
 
@@ -100,7 +98,7 @@ module device_hl2_msgs {
       boolean get_quad;
       boolean get_meshes;
       boolean get_collider_meshes;
-      sequence<HL2Guid> guids;
+      sequence<tcnart_msgs::msg::MSGuid> guids;
     };
 
     struct HL2SUResponse_SpatialQuery {

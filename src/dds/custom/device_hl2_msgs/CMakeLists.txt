@@ -10,7 +10,6 @@ set(TCN_MODULE_IDL
         )
 
 set(TCN_MODULE_RPC_IDL
-        "rpc/Types.idl"
         "rpc/Hololens2RemoteControl.idl"
         "rpc/Hololens2SpatialMapping.idl"
         "rpc/Hololens2SceneUnderstanding.idl"

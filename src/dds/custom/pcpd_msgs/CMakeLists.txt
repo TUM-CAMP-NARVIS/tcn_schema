@@ -1,7 +1,6 @@
 set(TCN_MODULE_NAME "pcpd_msgs")
 
 set(TCN_MODULE_IDL
-        "msg/Types.idl"
         "msg/Instance.idl"
         "msg/DataflowBufferInfo.idl"
         "msg/CameraSensor.idl"

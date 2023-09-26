@@ -1,10 +1,9 @@
 #ifndef DEVICE_HL2_MSG_HL2EYETRACKING
 #define DEVICE_HL2_MSG_HL2EYETRACKING
 
+#include "tcnart_msgs/msg/Types.idl"
 #include "device_hl2_msgs/msg/Enums.idl"
 #include "std_msgs/msg/Header.idl"
-#include "geometry_msgs/msg/Vector3.idl"
-#include "geometry_msgs/msg/Quaternion.idl"
 
 module device_hl2_msgs {
   module msg {
@@ -13,17 +12,17 @@ module device_hl2_msgs {
 
       std_msgs::msg::Header header;
       
-      geometry_msgs::msg::Vector3 position;
-      geometry_msgs::msg::Quaternion orientation;
+      tcnart_msgs::msg::Vector3 position;
+      tcnart_msgs::msg::Quaternion orientation;
 
-      geometry_msgs::msg::Vector3 c_origin;
-      geometry_msgs::msg::Vector3 c_direction;
+      tcnart_msgs::msg::Vector3 c_origin;
+      tcnart_msgs::msg::Vector3 c_direction;
       
-      geometry_msgs::msg::Vector3 l_origin;
-      geometry_msgs::msg::Vector3 l_direction;
+      tcnart_msgs::msg::Vector3 l_origin;
+      tcnart_msgs::msg::Vector3 l_direction;
       
-      geometry_msgs::msg::Vector3 r_origin;
-      geometry_msgs::msg::Vector3 r_direction;
+      tcnart_msgs::msg::Vector3 r_origin;
+      tcnart_msgs::msg::Vector3 r_direction;
       
       float l_openness;
       float r_openness;

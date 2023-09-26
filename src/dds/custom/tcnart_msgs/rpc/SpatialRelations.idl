@@ -1,0 +1,59 @@
+#ifndef TCNART_RPC_SRG
+#define TCNART_RPC_SRG
+
+#include "tcnart_msgs/msg/Types.idl"
+#include "tcnart_msgs/msg/SpatialRelations.idl"
+#include "std_msgs/msg/Header.idl"
+#include "tcnart_msgs/rpc/Requests.idl"
+
+module tcnart_msgs {
+  module rpc {
+
+    struct SRNodeRef {
+      uint32 node_id;
+    }
+
+
+    struct SRGraphPublishRequest {
+
+        string srg_name;
+
+        tcnart_msgs::msg::SRGraph concrete_pattern;
+
+        map<UUID, SRNodeRef> concrete_context;
+
+    };
+
+    struct SRGraphPublishReply {
+
+        tcnart_msgs::msg::SRGraph processed_pattern;
+
+        map<UUID, SRNodeRef> context;
+
+        RPCResponseStatus status;
+    };
+   
+
+    struct SRGraphQueryRequest {
+
+        string query_name;
+
+        tcnart_msgs::msg::SRGraph query_pattern;
+
+        map<UUID, SRNodeRef> query_context;
+
+    };
+
+    struct SRGraphQueryReply {
+
+        tcnart_msgs::msg::SRGraph result_pattern;
+
+        map<UUID, SRNodeRef> context;
+
+        RPCResponseStatus status;
+    };
+
+  };
+};
+
+#endif

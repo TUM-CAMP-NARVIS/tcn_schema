@@ -1,0 +1,106 @@
+#ifndef TCNART_MSG_SRG
+#define TCNART_MSG_SRG
+
+#include "tcnart_msgs/msg/Types.idl"
+
+module tcnart_msgs {
+  module msg {
+
+        enum SRNodeType {
+          SRG_NODE_NONE,
+          SRG_NODE_GENERIC,
+          SRG_NODE_SENSOR,
+          SRG_NODE_DISPLAY,
+          SRG_NODE_TRACKABLE,
+          SRG_NODE_CONTENT
+        };
+
+        enum SREdgeDataType {
+          SRG_EDGE_TYPE_NONE,
+          SRG_EDGE_TYPE_POSE_6D,
+          SRG_EDGE_TYPE_POSITION_3D,
+          SRG_EDGE_TYPE_ORIENTATION_3D,
+          SRG_EDGE_TYPE_POSITON_2D,
+          SRG_EDGE_TYPE_ORIENTATION_2D,
+          SRG_EDGE_TYPE_DISTANCE_1D,
+          SRG_EDGE_TYPE_PROJECT_3D_TO_2D,
+          SRG_EDGE_TYPE_PROJECT_2D_TO_3D
+        };
+
+        enum SREdgeTemporalType {
+          SRG_EDGE_TEMPORAL_NONE,
+          SRG_EDGE_TEMPORAL_STATIC,
+          SRG_EDGE_TEMPORAL_STATIC_CALIBRATED,
+          SRG_EDGE_TEMPORAL_DYNAMIC,
+          SRG_EDGE_TEMPORAL_DYNAMIC_INFERRED
+        };
+
+
+
+        struct SRNode {
+
+            SRNodeType node_type;
+            uint32 node_id;
+            string node_name;
+
+            string custom_data;
+        
+        };
+
+        struct SREdge {
+
+            SREdgeDataType data_type;
+
+            uint32 node_source_id;
+            uint32 node_destination_id;
+
+            string custom_data;
+        
+        };
+
+
+        struct SREdgePose6D : SREdge {
+
+            Vector3 translation;
+            Quaternion rotation;
+
+        };
+
+        struct SREdgePosition3D : SREdge {
+
+            Vector3 translation;
+
+        };
+
+        struct SREdgeOrientation3D : SREdge {
+
+            Quaternion rotation;
+
+        };
+
+        struct SREdgePosition2D : SREdge {
+
+            Vector2 translation;
+
+        };
+
+        struct SREdgeOrientation2D : SREdge {
+
+            // in radian
+            double rotation_angle;
+
+        };
+
+        // complete missing Types: 1D, 2d3d, 3d2d
+
+        struct SRGraph {
+
+            string graph_name;
+
+            sequence<SRNode> nodes;
+            sequence<SREdge> edges;
+
+        };
+    };
+};
+#endif

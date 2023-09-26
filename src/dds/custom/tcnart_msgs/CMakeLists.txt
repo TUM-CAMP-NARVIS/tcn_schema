@@ -3,6 +3,7 @@ set(TCN_MODULE_NAME "tcnart_msgs")
 set(TCN_MODULE_IDL
         "msg/Logging.idl"
         "msg/Presence.idl"
+        "msg/SpatialRelations.idl"
         "msg/Types.idl"
         )
 

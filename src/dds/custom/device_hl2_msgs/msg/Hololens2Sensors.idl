@@ -1,10 +1,9 @@
 #ifndef DEVICE_HL2_MSG_HL2SENSORINFO
 #define DEVICE_HL2_MSG_HL2SENSORINFO
 
+#include "tcnart_msgs/msg/Types.idl"
 #include "device_hl2_msgs/msg/Enums.idl"
 #include "std_msgs/msg/Header.idl"
-#include "geometry_msgs/msg/Vector3.idl"
-#include "geometry_msgs/msg/Quaternion.idl"
 
 module device_hl2_msgs {
   module msg {
@@ -17,8 +16,8 @@ module device_hl2_msgs {
       uint32 frame_rate;
 
       // used if sensor has locality
-      geometry_msgs::msg::Vector3 position;
-      geometry_msgs::msg::Quaternion orientation;
+      tcnart_msgs::msg::Vector3 position;
+      tcnart_msgs::msg::Quaternion orientation;
 
       // used for image sensors
       uint32 image_height;
@@ -40,8 +39,8 @@ module device_hl2_msgs {
     struct Hololens2RigidTransform {
       std_msgs::msg::Header header;
 
-      geometry_msgs::msg::Vector3 position;
-      geometry_msgs::msg::Quaternion orientation;
+      tcnart_msgs::msg::Vector3 position;
+      tcnart_msgs::msg::Quaternion orientation;
     };
 
     struct Hololens2SensorInfoVLC {
@@ -56,8 +55,8 @@ module device_hl2_msgs {
 
       float K[4];
 
-      geometry_msgs::msg::Vector3 position;
-      geometry_msgs::msg::Quaternion orientation;
+      tcnart_msgs::msg::Vector3 position;
+      tcnart_msgs::msg::Quaternion orientation;
     };
 
 
@@ -93,8 +92,8 @@ module device_hl2_msgs {
 
       float K[4];
 
-      geometry_msgs::msg::Vector3 position;
-      geometry_msgs::msg::Quaternion orientation;
+      tcnart_msgs::msg::Vector3 position;
+      tcnart_msgs::msg::Quaternion orientation;
     };
 
 
@@ -112,8 +111,8 @@ module device_hl2_msgs {
 
       float K[4];
 
-      geometry_msgs::msg::Vector3 position;
-      geometry_msgs::msg::Quaternion orientation;
+      tcnart_msgs::msg::Vector3 position;
+      tcnart_msgs::msg::Quaternion orientation;
     };
 
 
@@ -126,8 +125,8 @@ module device_hl2_msgs {
       float values[3];
       float temperature;
 
-      geometry_msgs::msg::Vector3 position;
-      geometry_msgs::msg::Quaternion orientation;
+      tcnart_msgs::msg::Vector3 position;
+      tcnart_msgs::msg::Quaternion orientation;
     };
 
 
@@ -140,8 +139,8 @@ module device_hl2_msgs {
       float values[3];
       float temperature;
 
-      geometry_msgs::msg::Vector3 position;
-      geometry_msgs::msg::Quaternion orientation;
+      tcnart_msgs::msg::Vector3 position;
+      tcnart_msgs::msg::Quaternion orientation;
     };
 
 
@@ -153,8 +152,8 @@ module device_hl2_msgs {
       uint64 soc_ticks;
       float values[3];
 
-      geometry_msgs::msg::Vector3 position;
-      geometry_msgs::msg::Quaternion orientation;
+      tcnart_msgs::msg::Vector3 position;
+      tcnart_msgs::msg::Quaternion orientation;
     };
 
   };

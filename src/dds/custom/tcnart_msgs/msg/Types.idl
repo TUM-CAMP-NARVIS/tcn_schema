@@ -4,7 +4,9 @@
 module tcnart_msgs {
   module msg {
     
+
     enum SensorType {
+        SENSOR_TYPE_NONE,
         SENSOR_TYPE_VIDEO_COLOR,
         SENSOR_TYPE_VIDEO_DEPTH,
         SENSOR_TYPE_TRACKING_POSE,
@@ -16,10 +18,65 @@ module tcnart_msgs {
         SENSOR_TYPE_IMU_MAG
     };
 
-    struct ApiVersion {
-        uint32 major;
-        uint32 minor;
-        uint32 patch;
+
+
+    struct MSGuid {
+      uint32 Data1;
+      uint16 Data2;
+      uint16 Data3;
+      uint8 Data4[8];
+    };
+
+    struct UUID {
+      uint8 uuid[16];
+    };
+
+
+
+    struct Vector4 {
+      double x;
+      double y;
+      double z;
+      double w;
+    };
+
+    struct Quaternion {
+      double x;
+      double y;
+      double z;
+      double w;
+    };
+
+    struct Vector3 {
+      double x;
+      double y;
+      double z;
+    };
+
+    struct Vector2 {
+      double x;
+      double y;
+    };
+
+    // column major Matrix 4x4
+    struct Matrix4x4 {
+      double col0[4];
+      double col1[4];
+      double col2[4];
+      double col3[4];
+    };
+
+    struct Matrix4x3 {
+      double col0[3];
+      double col1[3];
+      double col2[3];
+      double col3[3];
+    };
+
+    struct Matrix3x3 {
+      double col0[3];
+      double col1[3];
+      double col2[3];
     };
 
   };
