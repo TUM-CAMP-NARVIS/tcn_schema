@@ -64,7 +64,7 @@ module device_hl2_msgs {
     struct HL2SUSceneUnderstanding_SceneUnderstandingResult {
       HL2SUSceneUnderstanding_Status status;
 
-      tcnart_msgs::msg::float__16 extrinsics;
+      float extrinsics[16];
 
       geometry_msgs::msg::Vector3 position;
       geometry_msgs::msg::Quaternion orientation;
@@ -78,10 +78,10 @@ module device_hl2_msgs {
       geometry_msgs::msg::Vector3 position;
       geometry_msgs::msg::Quaternion orientation;
 
-      tcnart_msgs::msg::float__16 location_matrix;
+      float location_matrix[16];
 
       HL2SUSceneUnderstanding_SceneQuadAlignment item_alignment;
-      tcnart_msgs::msg::float__2 item_extents;
+      float item_extents[2];
 
       sequence<HL2SUSceneUnderstanding_Mesh> meshes;
       sequence<HL2SUSceneUnderstanding_Mesh> collider_meshes;

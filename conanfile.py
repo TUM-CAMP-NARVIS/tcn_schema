@@ -30,11 +30,11 @@ class TcnSchemaConan(ConanFile):
     exports_sources = "3rdparty/*", "cmake/*", "src/*", "CMakeLists.txt"
 
     def build_requirements(self):
-        self.tool_requires("fast-dds-gen/2.4.0@camposs/stable")
+        self.tool_requires("fast-dds-gen/3.0.0@camposs/stable")
         self.tool_requires("zulu-openjdk/11.0.15")
 
     def requirements(self):
-        self.requires("fast-cdr/1.0.27")
+        self.requires("fast-cdr/2.0.0@camposs/stable")
         if self.options.with_dds:
             self.requires("fast-dds/2.11.1")
 

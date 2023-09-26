@@ -3,17 +3,6 @@
 
 module tcnart_msgs {
   module msg {
-
-    typedef float float__2[2];
-    typedef float float__3[3];
-    typedef float float__4[4];
-    typedef float float__9[9];
-    typedef float float__12[12];
-    typedef float float__16[16];
-
-    typedef uint16 uint16__4[4];
-
-    typedef uint8 uint8__8[8];
     
     enum SensorType {
         SENSOR_TYPE_VIDEO_COLOR,

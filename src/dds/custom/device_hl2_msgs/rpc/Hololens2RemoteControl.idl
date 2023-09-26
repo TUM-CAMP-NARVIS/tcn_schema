@@ -3,14 +3,14 @@
 
 #include "tcnart_msgs/msg/Types.idl"
 #include "tcnart_msgs/rpc/Requests.idl"
-#include "device_hl2_msgs/rpc/Types.idl"
+#include "device_hl2_msgs/msg/Enums.idl"
 
 
 module device_hl2_msgs {
   module rpc {
 
     struct HL2RCResponse_GetApplicationVersion {
-      tcnart_msgs::msg::uint16__4 data;
+      uint16 data[4];
       tcnart_msgs::rpc::RPCResponseStatus status;
     };
 

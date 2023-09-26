@@ -1,5 +1,5 @@
-#ifndef DEVICE_HL2_MSG_TYPES1
-#define DEVICE_HL2_MSG_TYPES1
+#ifndef DEVICE_HL2_MSG_ENUMS
+#define DEVICE_HL2_MSG_ENUMS
 
 module device_hl2_msgs {
   module msg {
@@ -51,13 +51,12 @@ module device_hl2_msgs {
           RM_IMU_MAG
       };
 
+      struct Dummy {
+        uint8 value;
+      };
+
     };
 
-    struct ApiVersion {
-        uint32 major;
-        uint32 minor;
-        uint32 patch;
-    };
 
   };
 };

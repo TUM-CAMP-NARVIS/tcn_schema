@@ -85,6 +85,8 @@ function(FASTDDS_GENERATE_CPP MODPATH MODTYP SOURCES HEADERS DLLEXPORT GEN_DEPEN
         list(APPEND CMDARGS "${CMAKE_CURRENT_SOURCE_DIR}/${schema_file}")
         list(APPEND ${SOURCES} "${output_base}.cxx")
         list(APPEND ${HEADERS} "${output_base}.h")
+        list(APPEND ${SOURCES} "${output_base}CdrAux.ipp")
+        list(APPEND ${HEADERS} "${output_base}CdrAux.hpp")
         list(APPEND ${DLLEXPORT} "${output_path}_SOURCE")
         if (WITH_DDS)
           list(APPEND ${SOURCES} "${output_base}PubSubTypes.cxx")

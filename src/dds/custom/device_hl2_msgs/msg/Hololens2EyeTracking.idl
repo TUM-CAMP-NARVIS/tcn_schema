@@ -1,6 +1,7 @@
 #ifndef DEVICE_HL2_MSG_HL2EYETRACKING
 #define DEVICE_HL2_MSG_HL2EYETRACKING
 
+#include "device_hl2_msgs/msg/Enums.idl"
 #include "std_msgs/msg/Header.idl"
 #include "geometry_msgs/msg/Vector3.idl"
 #include "geometry_msgs/msg/Quaternion.idl"

@@ -1,8 +1,7 @@
 #ifndef DEVICE_HL2_MSG_HL2SENSORINFO
 #define DEVICE_HL2_MSG_HL2SENSORINFO
 
-#include "tcnart_msgs/msg/Types.idl"
-#include "device_hl2_msgs/msg/Types.idl"
+#include "device_hl2_msgs/msg/Enums.idl"
 #include "std_msgs/msg/Header.idl"
 #include "geometry_msgs/msg/Vector3.idl"
 #include "geometry_msgs/msg/Quaternion.idl"
@@ -55,7 +54,7 @@ module device_hl2_msgs {
       sequence<float> mapx;
       sequence<float> mapy;
 
-      tcnart_msgs::msg::float__4 K;
+      float K[4];
 
       geometry_msgs::msg::Vector3 position;
       geometry_msgs::msg::Quaternion orientation;
@@ -69,13 +68,13 @@ module device_hl2_msgs {
       uint16 width;
       uint16 height;
 
-      tcnart_msgs::msg::float__2 focal_length;
-      tcnart_msgs::msg::float__2 principal_point;
+      float focal_length[2];
+      float principal_point[2];
       
-      tcnart_msgs::msg::float__3 radial_distortion;
-      tcnart_msgs::msg::float__2 tangential_distortion;
+      float radial_distortion[3];
+      float tangential_distortion[2];
 
-      tcnart_msgs::msg::float__16 undistorted_projection_transform;
+      float undistorted_projection_transform[16];
     };
 
 
@@ -92,7 +91,7 @@ module device_hl2_msgs {
       sequence<float> mapx;
       sequence<float> mapy;
 
-      tcnart_msgs::msg::float__4 K;
+      float K[4];
 
       geometry_msgs::msg::Vector3 position;
       geometry_msgs::msg::Quaternion orientation;
@@ -111,7 +110,7 @@ module device_hl2_msgs {
       sequence<float> mapx;
       sequence<float> mapy;
 
-      tcnart_msgs::msg::float__4 K;
+      float K[4];
 
       geometry_msgs::msg::Vector3 position;
       geometry_msgs::msg::Quaternion orientation;
@@ -124,7 +123,7 @@ module device_hl2_msgs {
 
       uint64 vinyl_hup_ticks;
       uint64 soc_ticks;
-      tcnart_msgs::msg::float__3 values;
+      float values[3];
       float temperature;
 
       geometry_msgs::msg::Vector3 position;
@@ -138,7 +137,7 @@ module device_hl2_msgs {
       
       uint64 vinyl_hup_ticks;
       uint64 soc_ticks;
-      tcnart_msgs::msg::float__3 values;
+      float values[3];
       float temperature;
 
       geometry_msgs::msg::Vector3 position;
@@ -152,7 +151,7 @@ module device_hl2_msgs {
 
       uint64 vinyl_hup_ticks;
       uint64 soc_ticks;
-      tcnart_msgs::msg::float__3 values;
+      float values[3];
 
       geometry_msgs::msg::Vector3 position;
       geometry_msgs::msg::Quaternion orientation;

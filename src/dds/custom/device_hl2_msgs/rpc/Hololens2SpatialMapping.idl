@@ -2,6 +2,7 @@
 #define DEVICE_HL2_RPC_HL2SPATIALMAPPING
 
 #include "tcnart_msgs/rpc/Requests.idl"
+#include "device_hl2_msgs/msg/Enums.idl"
 #include "device_hl2_msgs/rpc/Types.idl"
 #include "geometry_msgs/msg/Vector3.idl"
 #include "geometry_msgs/msg/Quaternion.idl"

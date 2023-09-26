@@ -1,8 +1,6 @@
 #ifndef DEVICE_HL2_RPC_TYPES
 #define DEVICE_HL2_RPC_TYPES
 
-#include "tcnart_msgs/msg/Types.idl"
-
 module device_hl2_msgs {
   module rpc {
 
@@ -10,7 +8,7 @@ module device_hl2_msgs {
       uint32 Data1;
       uint16 Data2;
       uint16 Data3;
-      tcnart_msgs::msg::uint8__8 Data4;
+      uint8 Data4[8];
     };
 
   };
