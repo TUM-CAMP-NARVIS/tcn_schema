@@ -16,8 +16,7 @@ module device_hl2_msgs {
       uint32 frame_rate;
 
       // used if sensor has locality
-      tcnart_msgs::msg::Vector3 position;
-      tcnart_msgs::msg::Quaternion orientation;
+      tcnart_msgs::msg::RigidTransform pose;
 
       // used for image sensors
       uint32 image_height;
@@ -36,13 +35,6 @@ module device_hl2_msgs {
 
     };
 
-    struct Hololens2RigidTransform {
-      std_msgs::msg::Header header;
-
-      tcnart_msgs::msg::Vector3 position;
-      tcnart_msgs::msg::Quaternion orientation;
-    };
-
     struct Hololens2SensorInfoVLC {
 
       std_msgs::msg::Header header;
@@ -55,25 +47,7 @@ module device_hl2_msgs {
 
       float K[4];
 
-      tcnart_msgs::msg::Vector3 position;
-      tcnart_msgs::msg::Quaternion orientation;
-    };
-
-
-    struct Hololens2SensorIntrinsicsPV {
-
-      std_msgs::msg::Header header;
-
-      uint16 width;
-      uint16 height;
-
-      float focal_length[2];
-      float principal_point[2];
-      
-      float radial_distortion[3];
-      float tangential_distortion[2];
-
-      float undistorted_projection_transform[16];
+      tcnart_msgs::msg::RigidTransform pose;
     };
 
 
@@ -92,8 +66,7 @@ module device_hl2_msgs {
 
       float K[4];
 
-      tcnart_msgs::msg::Vector3 position;
-      tcnart_msgs::msg::Quaternion orientation;
+      tcnart_msgs::msg::RigidTransform pose;
     };
 
 
@@ -111,8 +84,7 @@ module device_hl2_msgs {
 
       float K[4];
 
-      tcnart_msgs::msg::Vector3 position;
-      tcnart_msgs::msg::Quaternion orientation;
+      tcnart_msgs::msg::RigidTransform pose;
     };
 
 
@@ -125,8 +97,7 @@ module device_hl2_msgs {
       float values[3];
       float temperature;
 
-      tcnart_msgs::msg::Vector3 position;
-      tcnart_msgs::msg::Quaternion orientation;
+      tcnart_msgs::msg::RigidTransform pose;
     };
 
 
@@ -139,8 +110,7 @@ module device_hl2_msgs {
       float values[3];
       float temperature;
 
-      tcnart_msgs::msg::Vector3 position;
-      tcnart_msgs::msg::Quaternion orientation;
+      tcnart_msgs::msg::RigidTransform pose;
     };
 
 
