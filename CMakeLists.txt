@@ -37,6 +37,7 @@ add_subdirectory(src/dds/ros2/rosgraph_msgs)
 add_subdirectory(src/dds/ros2/sensor_msgs)
 add_subdirectory(src/dds/ros2/statistics_msgs)
 add_subdirectory(src/dds/ros2/tf2_msgs)
+add_subdirectory(src/dds/ros2/shape_msgs)
 add_subdirectory(src/dds/ros2/unique_identifier_msgs)
 
 add_subdirectory(src/dds/custom/tcnart_msgs)
