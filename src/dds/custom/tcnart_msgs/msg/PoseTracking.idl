@@ -25,7 +25,9 @@ module tcnart_msgs {
 
     enum MarkerType {
       MARKER_TYPE_NONE,
-      MARKER_TYPE_ARUCO,
+      MARKER_TYPE_ARUCO_MARKER,
+      MARKER_TYPE_ARUCO_BOARD,
+      MARKER_TYPE_ARUCO_FRACTAL,
       MARKER_TYPE_IR_TARGET
     };
 
@@ -33,15 +35,29 @@ module tcnart_msgs {
     union TrackerConfigDetail  switch(MarkerType) {
       CASE MARKER_TYPE_NONE:
 
-      CASE MARKER_TYPE_ARUCO:
-        int dictionary_id;    
+      CASE MARKER_TYPE_ARUCO_MARKER:
+        string dictionary_id;    
+
+      CASE MARKER_TYPE_ARUCO_BOARD:
+        string dictionary_id;    
+
+      CASE MARKER_TYPE_ARUCO_FRACTAL:
+        string dictionary_id;    
 
       CASE MARKER_TYPE_IR_TARGET:
 
     };
 
 
-    struct ArucoTargetConfig {
+    struct ArucoMarkerTargetConfig {
+      float marker_size;
+    };
+
+    struct ArucoBoardTargetConfig {
+      float marker_size;
+    };
+
+    struct ArucoFractalTargetConfig {
       float marker_size;
     };
 
@@ -58,8 +74,14 @@ module tcnart_msgs {
 
     union TrackingTargetConfig switch(MarkerType) {
 
-      CASE MARKER_TYPE_ARUCO:
-        ArucoTargetConfig aruco_config;
+      CASE MARKER_TYPE_ARUCO_MARKER:
+        ArucoMarkerTargetConfig aruco_marker_config;
+
+      CASE MARKER_TYPE_ARUCO_BOARD:
+        ArucoBoardTargetConfig aruco_board_config;
+
+      CASE MARKER_TYPE_ARUCO_FRACTAL:
+        ArucoFractalTargetConfig aruco_fractal_config;
 
       CASE MARKER_TYPE_IR_TARGET:
         IRTargetConfig ir_config;
@@ -82,21 +104,24 @@ module tcnart_msgs {
 
     struct DetectedMarker {
 
-      std_msgs::msg::Header header;
-
       uint32 marker_id;
 
       RigidTransform pose;
 
-      uint8 valid;
-
     };
 
 
-    struct ViewpointPose {
+    struct DetectedMarkers {
+
       std_msgs::msg::Header header;
 
-      uint32 marker_id;
+      sequence<DetectedMarker> poses;
+
+    };
+
+    struct ViewpointPose {
+
+      std_msgs::msg::Header header;
 
       RigidTransform pose;
 
