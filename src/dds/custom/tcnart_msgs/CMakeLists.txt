@@ -3,6 +3,7 @@ set(TCN_MODULE_NAME "tcnart_msgs")
 set(TCN_MODULE_IDL
         "msg/CameraModel.idl"
         "msg/Logging.idl"
+        "msg/PoseTracking.idl"
         "msg/Presence.idl"
         "msg/SpatialRelations.idl"
         "msg/Types.idl"
