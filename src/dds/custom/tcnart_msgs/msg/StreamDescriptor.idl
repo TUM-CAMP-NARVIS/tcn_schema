@@ -7,7 +7,7 @@
 module tcnart_msgs {
   module msg {
 
-    struct Hololens2StreamDescriptor {
+    struct StreamDescriptor {
 
       string stream_topic;
       string calib_topic;
