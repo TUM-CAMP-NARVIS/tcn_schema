@@ -72,9 +72,14 @@ class TcnSchemaConan(ConanFile):
                 return ["fast-cdr::fast-cdr"]
 
         # ROS2 default messages
+
+        self.cpp_info.components["builtin_interfaces"].names["cmake_find_package"] = "builtin_interfaces"
+        self.cpp_info.components["builtin_interfaces"].libs = ["tcn_schema_builtin_interfaces"]
+        self.cpp_info.components["builtin_interfaces"].requires = dds_dep() + []
+
         self.cpp_info.components["std_msgs"].names["cmake_find_package"] = "std_msgs"
         self.cpp_info.components["std_msgs"].libs = ["tcn_schema_std_msgs"]
-        self.cpp_info.components["std_msgs"].requires = dds_dep() + []
+        self.cpp_info.components["std_msgs"].requires = dds_dep() + ["builtin_interfaces", ]
 
         self.cpp_info.components["geometry_msgs"].names["cmake_find_package"] = "geometry_msgs"
         self.cpp_info.components["geometry_msgs"].libs = ["tcn_schema_geometry_msgs"]
