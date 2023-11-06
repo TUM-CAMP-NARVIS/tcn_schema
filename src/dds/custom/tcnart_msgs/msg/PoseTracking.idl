@@ -90,24 +90,17 @@ module tcnart_msgs {
 
       std_msgs::msg::Header header;
 
-      RigidTransform pose;
+      RigidTransform value;
 
     };
 
-    struct Pose6DMapItem {
 
-      uint32 item_id;
-
-      RigidTransform pose;
-
-    };
-  
 
     struct Pose6DMapMessage {
 
       std_msgs::msg::Header header;
 
-      sequence<Pose6DMapItem> poses;
+      RigidTransformMap value;
 
     };
 

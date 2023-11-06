@@ -6,8 +6,9 @@
 module tcnart_msgs {
   module msg {
 
-    struct TcnartPresence {
+    struct TcnartPresenceMessage {
         std_msgs::msg::Header header;
+
         uint64 heart_beat_counter;
     };
 

@@ -7,7 +7,7 @@
 module tcnart_msgs {
   module msg {
 
-    struct AudioStream {
+    struct AudioStreamMessage {
 
       std_msgs::msg::Header header;
 

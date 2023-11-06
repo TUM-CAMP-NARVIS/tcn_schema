@@ -7,7 +7,9 @@
 module tcnart_msgs {
   module msg {
 
-    struct StreamDescriptor {
+    struct StreamDescriptorMessage {
+
+      std_msgs::msg::Header header;
 
       string stream_topic;
       string calib_topic;

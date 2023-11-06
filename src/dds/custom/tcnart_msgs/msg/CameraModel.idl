@@ -42,6 +42,14 @@ module tcnart_msgs {
 
     };
 
+    struct CameraInfoMessage {
+
+      std_msgs::msg::Header header;
+
+      CameraModel value;
+
+    };
+
 
   };
 };

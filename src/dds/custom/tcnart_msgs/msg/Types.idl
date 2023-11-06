@@ -118,6 +118,23 @@ module tcnart_msgs {
       Quaternion rotation;
     };
 
+    struct RigidTransformMapItem {
+
+      uint32 item_id;
+
+      RigidTransform pose;
+
+    };
+
+
+    struct RigidTransformMap {
+
+      RigidTransform pose;
+
+      sequence<RigidTransformMapItem> poses;
+
+    };
+
     struct Ray {
       Vector3 origin;
       Vector3 direction;
