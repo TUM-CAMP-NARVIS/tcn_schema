@@ -2,6 +2,7 @@
 #define DEVICE_HL2_RPC_HL2MANAGER
 
 #include "device_hl2_msgs/msg/Enums.idl"
+#include "tcnart_msgs/msg/Types.idl"
 
 module device_hl2_msgs {
   module rpc {
@@ -10,14 +11,14 @@ module device_hl2_msgs {
       uint16 width;
       uint16 height;
       uint8 frame_rate;
-      device_hl2_msgs::msg::enums::Hololens2H26xProfile profile;
+      tcnart_msgs::msg::VideoH26xProfile profile;
       uint32 bitrate;
     };
 
     struct HL2MGR_AACFormat {
       uint32 channels;
       uint32 sample_rate;
-      device_hl2_msgs::msg::enums::Hololens2AACProfile profile;
+      tcnart_msgs::msg::AudioAACProfile profile;
     };
 
     struct HL2MGRRequest_StartRM {

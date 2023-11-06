@@ -5,6 +5,7 @@ set(TCN_MODULE_IDL
         "msg/Logging.idl"
         "msg/PoseTracking.idl"
         "msg/Presence.idl"
+        "msg/StreamDescriptor.idl"
         "msg/SpatialRelations.idl"
         "msg/Types.idl"
         )

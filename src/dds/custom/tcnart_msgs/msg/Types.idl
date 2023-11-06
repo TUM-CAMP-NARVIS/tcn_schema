@@ -9,15 +9,47 @@ module tcnart_msgs {
         SENSOR_TYPE_NONE,
         SENSOR_TYPE_VIDEO_COLOR,
         SENSOR_TYPE_VIDEO_DEPTH,
+        SENSOR_TYPE_VIDEO_IR,
         SENSOR_TYPE_TRACKING_POSE,
         SENSOR_TYPE_TRACKING_EYE,
         SENSOR_TYPE_TRACKING_HAND,
+        SENSOR_TYPE_TRACKING_BODY,
         SENSOR_TYPE_AUDIO,
         SENSOR_TYPE_IMU_ACCEL,
         SENSOR_TYPE_IMU_GYRO,
         SENSOR_TYPE_IMU_MAG
     };
 
+
+      enum VideoPixelFormat {
+        PixelFormat_NV12,
+        PixelFormat_ARGB,
+        PixelFormat_L8,
+        PixelFormat_L16
+      };
+
+      enum VideoImageCompression {
+          CompressionType_Raw,
+          CompressionType_Png,
+          CompressionType_H26x,
+          CompressionType_Zdepth
+      };
+
+      enum VideoH26xProfile {
+          H264Profile_Base,
+          H264Profile_Main,
+          H264Profile_High,
+          H265Profile_Main,
+          H26xProfile_None
+      };
+
+      enum AudioAACProfile {
+          AACProfile_12000,
+          AACProfile_16000,
+          AACProfile_20000,
+          AACProfile_24000,
+          AACProfile_None
+      };
 
 
     struct MSGuid {

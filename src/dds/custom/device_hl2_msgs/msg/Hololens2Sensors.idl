@@ -8,33 +8,6 @@
 module device_hl2_msgs {
   module msg {
 
-    struct Hololens2StreamDescriptor {
-
-      string stream_topic;
-      string calib_topic;
-      enums::Hololens2SensorType sensor_type;
-      uint32 frame_rate;
-
-      // used if sensor has locality
-      tcnart_msgs::msg::RigidTransform pose;
-
-      // used for image sensors
-      uint32 image_height;
-      uint32 image_width;
-      uint32 image_step;
-      enums::Hololens2PixelFormat image_format;
-      enums::Hololens2ImageCompression image_compression;
-
-      // used for h26x compression
-      enums::Hololens2H26xProfile h26x_profile;
-      uint32 h26x_bitrate;
-
-      // used for microphone
-      uint8 audio_channels;
-      enums::Hololens2AACProfile aac_profile;
-
-    };
-
     struct Hololens2SensorInfoVLC {
 
       std_msgs::msg::Header header;

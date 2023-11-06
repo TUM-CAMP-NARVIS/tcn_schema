@@ -5,36 +5,6 @@ module device_hl2_msgs {
   module msg {
     module enums {
 
-      enum Hololens2PixelFormat {
-        PixelFormat_NV12,
-        PixelFormat_ARGB,
-        PixelFormat_L8,
-        PixelFormat_L16
-      };
-
-      enum Hololens2ImageCompression {
-          CompressionType_Raw,
-          CompressionType_Png,
-          CompressionType_H26x,
-          CompressionType_Zdepth
-      };
-
-      enum Hololens2H26xProfile {
-          H264Profile_Base,
-          H264Profile_Main,
-          H264Profile_High,
-          H265Profile_Main,
-          H26xProfile_None
-      };
-
-      enum Hololens2AACProfile {
-          AACProfile_12000,
-          AACProfile_16000,
-          AACProfile_20000,
-          AACProfile_24000,
-          AACProfile_None
-      };
-
       enum Hololens2SensorType {
           PERSONAL_VIDEO,
           EYE_TRACKING,

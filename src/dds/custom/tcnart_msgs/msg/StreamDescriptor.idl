@@ -1,0 +1,39 @@
+#ifndef TCNART_MSG_STREAM_DESC
+#define TCNART_MSG_STREAM_DESC
+
+#include "std_msgs/msg/Header.idl"
+#include "tcnart_msgs/msg/Types.idl"
+
+module tcnart_msgs {
+  module msg {
+
+    struct Hololens2StreamDescriptor {
+
+      string stream_topic;
+      string calib_topic;
+      SensorType sensor_type;
+      uint32 frame_rate;
+
+      // used if sensor has locality
+      RigidTransform pose;
+
+      // used for image sensors
+      uint32 image_height;
+      uint32 image_width;
+      uint32 image_step;
+      VideoPixelFormat image_format;
+      VideoImageCompression image_compression;
+
+      // used for h26x compression
+      VideoH26xProfile h26x_profile;
+      uint32 h26x_bitrate;
+
+      // used for microphone
+      uint8 audio_channels;
+      AudioAACProfile aac_profile;
+
+    };
+  };
+};
+
+#endif

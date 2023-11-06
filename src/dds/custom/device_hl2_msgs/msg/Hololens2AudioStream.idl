@@ -3,6 +3,7 @@
 
 #include "device_hl2_msgs/msg/Enums.idl"
 #include "std_msgs/msg/Header.idl"
+#include "tcnart_msgs/msg/Types.idl"
 
 module device_hl2_msgs {
   module msg {
@@ -11,7 +12,7 @@ module device_hl2_msgs {
 
       std_msgs::msg::Header header;
 
-      enums::Hololens2AACProfile profile;
+      tcnart_msgs::msg::AudioAACProfile profile;
 
       uint64 data_size;
       sequence<uint8> data;
