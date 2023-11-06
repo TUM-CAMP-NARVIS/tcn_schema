@@ -2,10 +2,6 @@ set(TCN_MODULE_NAME "device_hl2_msgs")
 
 set(TCN_MODULE_IDL
         "msg/Enums.idl"
-        "msg/Hololens2EyeTracking.idl"
-        "msg/Hololens2HandTracking.idl"
-        "msg/Hololens2VideoStream.idl"
-        "msg/Hololens2AudioStream.idl"
         "msg/Hololens2Sensors.idl"
         )
 

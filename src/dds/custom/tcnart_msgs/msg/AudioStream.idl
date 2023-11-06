@@ -1,0 +1,22 @@
+#ifndef TCNART_MSG_AUDIOSTREAM
+#define TCNART_MSG_AUDIOSTREAM
+
+#include "std_msgs/msg/Header.idl"
+#include "tcnart_msgs/msg/Types.idl"
+
+module tcnart_msgs {
+  module msg {
+
+    struct AudioStream {
+
+      std_msgs::msg::Header header;
+
+      AudioAACProfile profile;
+
+      uint64 data_size;
+      sequence<uint8> data;
+
+    };
+  };
+};
+#endif

@@ -1,17 +1,17 @@
-#ifndef DEVICE_HL2_MSG_HL2VIDEO
-#define DEVICE_HL2_MSG_HL2VIDEO
+#ifndef TCNART_MSGS_VIDEOSTREAM
+#define TCNART_MSGS_VIDEOSTREAM
 
 #include "tcnart_msgs/msg/Types.idl"
 #include "std_msgs/msg/Header.idl"
 
-module device_hl2_msgs {
+module tcnart_msgs {
   module msg {
 
-    struct Hololens2VideoStream {
+    struct VideoStream {
 
       std_msgs::msg::Header header;
 
-      tcnart_msgs::msg::RigidTransform pose;
+      RigidTransform pose;
 
       float camera_focal_length[2];
       float camera_principal_point[2];

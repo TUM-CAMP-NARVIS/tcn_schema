@@ -1,0 +1,29 @@
+#ifndef TCNART_MSG_EYETRACKING
+#define TCNART_MSG_EYETRACKING
+
+#include "tcnart_msgs/msg/Types.idl"
+#include "std_msgs/msg/Header.idl"
+
+module tcnart_msgs {
+  module msg {
+
+    struct Hololens2EyeTracking {
+
+      std_msgs::msg::Header header;
+      
+      RigidTransform viewpoint;
+
+      Ray center;
+      Ray left_eye;
+      Ray right_eye;
+      
+      float left_openness;
+      float right_openness;
+      
+      float vergence_distance;
+      uint32 valid;
+    };
+  };
+};
+
+#endif
