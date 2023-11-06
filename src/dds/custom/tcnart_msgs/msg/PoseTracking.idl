@@ -86,30 +86,31 @@ module tcnart_msgs {
 //    };
 
 
-    struct DetectedMarker {
-
-      uint32 marker_id;
-
-      RigidTransform pose;
-
-    };
-
-
-    struct DetectedMarkers {
-
-      std_msgs::msg::Header header;
-
-      sequence<DetectedMarker> poses;
-
-    };
-
-    struct ViewpointPose {
+    struct Pose6DMessage {
 
       std_msgs::msg::Header header;
 
       RigidTransform pose;
 
     };
+
+    struct Pose6DMapItem {
+
+      uint32 item_id;
+
+      RigidTransform pose;
+
+    };
+  
+
+    struct Pose6DMapMessage {
+
+      std_msgs::msg::Header header;
+
+      sequence<Pose6DMapItem> poses;
+
+    };
+
 
   };
 };

@@ -29,11 +29,11 @@ module tcnart_msgs {
       uint16 image_width;
       uint16 image_height;
 
-      float focal_length[2];
-      float principal_point[2];
+      double focal_length[2];
+      double principal_point[2];
 
-      float tangential_coefficients[2];
-      float radial_coefficients[8];
+      double tangential_coefficients[2];
+      double radial_coefficients[8];
 
       // probably there are some fields missing to support all camera modesl -- see colmap for more detailed camera model
       
