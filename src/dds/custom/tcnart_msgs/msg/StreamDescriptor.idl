@@ -12,8 +12,13 @@ module tcnart_msgs {
       std_msgs::msg::Header header;
 
       string stream_topic;
+      string stream_topic_schema;
+
       string calib_topic;
+      string calib_topic_schema;
+
       SensorType sensor_type;
+
       uint32 frame_rate;
 
       // used if sensor has locality
