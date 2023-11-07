@@ -19,6 +19,9 @@ module tcnart_msgs {
       // used if sensor has locality
       RigidTransform pose;
 
+      // used for pose trackers
+      MarkerType marker_type;
+
       // used for image sensors
       uint32 image_height;
       uint32 image_width;

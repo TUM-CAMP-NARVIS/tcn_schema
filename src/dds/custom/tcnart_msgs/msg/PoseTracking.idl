@@ -7,14 +7,6 @@
 module tcnart_msgs {
   module msg {
 
-    enum MarkerType {
-      MARKER_TYPE_NONE,
-      MARKER_TYPE_ARUCO_MARKER,
-      MARKER_TYPE_ARUCO_BOARD,
-      MARKER_TYPE_ARUCO_FRACTAL,
-      MARKER_TYPE_IR_TARGET
-    };
-
 
 //    union TrackerConfigDetail  switch(MarkerType) {
 //      CASE MARKER_TYPE_NONE:
