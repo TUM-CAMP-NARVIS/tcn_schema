@@ -48,7 +48,10 @@ class TcnSchemaConan(ConanFile):
         dep = self.dependencies.build["fast-dds-gen"]
         fpath = os.path.join(dep.package_folder, "share", "fastddsgen", "java")
         self.output.info("Using FASTDDS generator path: {0}".format(fpath))
-        tc.variables["FASTDDS_GEN_JAR_PATH"] = str(fpath)
+        gen_path = str(fpath)
+        if self.settings.os == "Windows" or self.settings.os == "WindowsStore":
+            gen_path = gen_path.replace("\\", "\\\\")
+        tc.variables["FASTDDS_GEN_JAR_PATH"] = gen_path
 
     def build(self):
         # overwritten since generator needs to be able to find its shared lib if build with_shared
