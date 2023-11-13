@@ -1,0 +1,88 @@
+#ifndef DEVICE_GENERIC_RPC_MANAGER
+#define DEVICE_GENERIC_RPC_MANAGER
+
+#include "tcnart_msgs/msg/Types.idl"
+
+module tcnart_msgs {
+  module rpc {
+
+
+    struct ArucoMarkerTargetConfig {
+      string dictionary_id;    
+      float marker_size;
+    };
+
+    struct ArucoBoardTargetConfig {
+      string dictionary_id;
+      int32 num_squares;    
+      float marker_length;
+      float square_length;
+    };
+
+    struct ArucoFractalTargetConfig {
+      string dictionary_id;    
+      float marker_size;
+    };
+
+    struct IRTargetConfig {
+      sequence<tcnart_msgs::msg::Vector3> sphere_positions;
+      float sphere_radius;
+
+      uint8 min_visible_spheres;
+
+      float lowpass_position;
+      float lowpass_orientation;
+    };
+
+
+    union TrackingTargetConfig switch(tcnart_msgs::msg::MarkerType) {
+
+      case MARKER_TYPE_NONE:
+        boolean dummy;
+
+      case MARKER_TYPE_ARUCO_MARKER:
+        ArucoMarkerTargetConfig aruco_marker_config;
+
+      case MARKER_TYPE_ARUCO_BOARD:
+        ArucoBoardTargetConfig aruco_board_config;
+
+      case MARKER_TYPE_ARUCO_FRACTAL:
+        ArucoFractalTargetConfig aruco_fractal_config;
+
+      case MARKER_TYPE_IR_TARGET:
+        sequence<IRTargetConfig> sttar_config;
+
+    };
+
+
+    struct RPCMGR_TrackerConfig {
+      string tracker_name;
+
+      tcnart_msgs::msg::MarkerType marker_type;
+      TrackingTargetConfig config;
+
+    };
+
+    struct RPCMGR_H26xFormat {
+      uint16 width;
+      uint16 height;
+      uint8 frame_rate;
+      tcnart_msgs::msg::VideoH26xProfile profile;
+      uint32 bitrate;
+    };
+
+    struct RPCMGRRequest_StartCVCamera {
+      boolean enable_location;
+      boolean enable_streaming;
+      boolean enable_encoding;
+      boolean enable_tracking;
+
+      RPCMGR_H26xFormat video_format;
+      RPCMGR_TrackerConfig tracker_config;
+    };
+
+
+  };
+};
+
+#endif
