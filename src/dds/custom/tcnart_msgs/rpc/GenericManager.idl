@@ -77,6 +77,8 @@ module tcnart_msgs {
       boolean enable_encoding;
       boolean enable_tracking;
 
+      int32 device_id;
+      
       RPCMGR_H26xFormat video_format;
       RPCMGR_TrackerConfig tracker_config;
     };

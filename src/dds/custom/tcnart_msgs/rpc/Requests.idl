@@ -40,25 +40,6 @@ module tcnart_msgs {
         RPCResponseStatus status;
     };
 
-    // uint8
-    struct UInt8Request {
-        uint8 value;
-    };
-
-    struct UInt8Reply {
-        uint8 value;
-        RPCResponseStatus status;
-    };
-
-    // uint16
-    struct UInt16Request {
-        uint16 value;
-    };
-
-    struct UInt16Reply {
-        uint16 value;
-        RPCResponseStatus status;
-    };
     // uint32
     struct UInt32Request {
         uint32 value;
@@ -68,6 +49,7 @@ module tcnart_msgs {
         uint32 value;
         RPCResponseStatus status;
     };
+
     // uint64
     struct UInt64Request {
         uint64 value;
@@ -78,26 +60,8 @@ module tcnart_msgs {
         RPCResponseStatus status;
     };
 
-    // int8
-    struct Int8Request {
-        int8 value;
-    };
 
-    struct Int8Reply {
-        int8 value;
-        RPCResponseStatus status;
-    };
-
-    // int16
-    struct Int16Request {
-        int16 value;
-    };
-
-    struct Int16Reply {
-        int16 value;
-        RPCResponseStatus status;
-    };
-    // uint32
+    // int32
     struct Int32Request {
         int32 value;
     };
@@ -106,6 +70,7 @@ module tcnart_msgs {
         int32 value;
         RPCResponseStatus status;
     };
+
     // int64
     struct Int64Request {
         int64 value;
@@ -126,6 +91,7 @@ module tcnart_msgs {
         float value;
         RPCResponseStatus status;
     };
+    
     // float64
     struct Float64Request {
         double value;
