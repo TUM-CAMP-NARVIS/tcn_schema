@@ -3,23 +3,10 @@
 
 #include "device_hl2_msgs/msg/Enums.idl"
 #include "tcnart_msgs/msg/Types.idl"
+#include "tcnart_msgs/rpc/GenericManager.idl"
 
 module device_hl2_msgs {
   module rpc {
-
-    struct HL2MGR_H26xFormat {
-      uint16 width;
-      uint16 height;
-      uint8 frame_rate;
-      tcnart_msgs::msg::VideoH26xProfile profile;
-      uint32 bitrate;
-    };
-
-    struct HL2MGR_AACFormat {
-      uint32 channels;
-      uint32 sample_rate;
-      tcnart_msgs::msg::AudioAACProfile profile;
-    };
 
     struct HL2MGRRequest_StartRM {
       boolean enable_location;
@@ -27,11 +14,13 @@ module device_hl2_msgs {
       boolean enable_left_left;
       boolean enable_right_front;
       boolean enable_right_right;
-      HL2MGR_H26xFormat vlc_format;
+      tcnart_msgs::rpc::RPCMGR_H26xFormat vlc_format;
+      tcnart_msgs::rpc::RPCMGR_TrackerConfig vlc_tracker_config;
 
       boolean enable_depth_ahat;
       boolean enable_depth_long_throw;
-      HL2MGR_H26xFormat depth_format;
+      tcnart_msgs::rpc::RPCMGR_H26xFormat depth_format;
+      tcnart_msgs::rpc::RPCMGR_TrackerConfig depth_tracker_config;
 
       boolean enable_imu_accel;
       boolean enable_imu_gyro;
@@ -40,11 +29,18 @@ module device_hl2_msgs {
 
     struct HL2MGRRequest_StartPV {
       boolean enable_location;
-      HL2MGR_H26xFormat pv_format;
+      boolean enable_streaming;
+      boolean enable_encoding;
+      boolean enable_tracking;
+
+      int32 device_id;
+      
+      tcnart_msgs::rpc::RPCMGR_H26xFormat video_format;
+      tcnart_msgs::rpc::RPCMGR_TrackerConfig tracker_config;
     };
 
     struct HL2MGRRequest_StartMC {
-      HL2MGR_AACFormat aac_format;
+      tcnart_msgs::rpc::RPCMGR_AACFormat aac_format;
     };
 
 

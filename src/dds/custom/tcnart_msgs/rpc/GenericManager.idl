@@ -71,8 +71,13 @@ module tcnart_msgs {
       uint32 bitrate;
     };
 
+    struct RPCMGR_AACFormat {
+      uint32 channels;
+      uint32 sample_rate;
+      tcnart_msgs::msg::AudioAACProfile profile;
+    };    
+
     struct RPCMGRRequest_StartCVCamera {
-      boolean enable_location;
       boolean enable_streaming;
       boolean enable_encoding;
       boolean enable_tracking;
