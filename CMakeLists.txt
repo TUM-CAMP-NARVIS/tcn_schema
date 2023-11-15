@@ -24,9 +24,7 @@ find_file(FASTDDSGEN_JAR
         PATHS "${FASTDDS_GEN_JAR_PATH}" REQUIRED)
 
 if (BUILD_SHARED_LIBS)
-  add_definitions("-DEPROSIMA_USER_DLL_EXPORT" "-DFASTCDR_DYN_LINK")
-else()
-  add_definitions("-DFASTCDR_STATIC_LINK")
+  add_definitions("-DEPROSIMA_USER_DLL_EXPORT")
 endif()
 
 
