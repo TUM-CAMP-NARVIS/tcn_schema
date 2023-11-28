@@ -11,7 +11,7 @@ module tcnart_msgs {
 
     struct SRNodeRef {
       uint32 node_id;
-    }
+    };
 
 
     struct SRGraphPublishRequest {
@@ -20,7 +20,7 @@ module tcnart_msgs {
 
         tcnart_msgs::msg::SRGraph concrete_pattern;
 
-        map<UUID, SRNodeRef> concrete_context;
+        map<tcnart_msgs::msg::UUID, SRNodeRef> concrete_context;
 
     };
 
@@ -28,7 +28,7 @@ module tcnart_msgs {
 
         tcnart_msgs::msg::SRGraph processed_pattern;
 
-        map<UUID, SRNodeRef> context;
+        map<tcnart_msgs::msg::UUID, SRNodeRef> publish_context;
 
         RPCResponseStatus status;
     };
@@ -40,7 +40,7 @@ module tcnart_msgs {
 
         tcnart_msgs::msg::SRGraph query_pattern;
 
-        map<UUID, SRNodeRef> query_context;
+        map<tcnart_msgs::msg::UUID, SRNodeRef> query_context;
 
     };
 
@@ -48,7 +48,7 @@ module tcnart_msgs {
 
         tcnart_msgs::msg::SRGraph result_pattern;
 
-        map<UUID, SRNodeRef> context;
+        map<tcnart_msgs::msg::UUID, SRNodeRef> reply_context;
 
         RPCResponseStatus status;
     };

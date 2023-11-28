@@ -6,10 +6,18 @@
 module tcnart_msgs {
   module msg {
 
+    struct ServiceInfo {
+        string service_name;
+        string topic_prefix;
+        string service_info;
+    };
+
     struct TcnartPresenceMessage {
         std_msgs::msg::Header header;
 
         uint64 heart_beat_counter;
+
+        sequence<ServiceInfo> services;
     };
 
   };

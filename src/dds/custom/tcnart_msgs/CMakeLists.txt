@@ -17,6 +17,7 @@ set(TCN_MODULE_IDL
 set(TCN_MODULE_RPC_IDL
         "rpc/GenericManager.idl"
         "rpc/Requests.idl"
+        "rpc/SpatialRelations.idl"
         )
 
 
