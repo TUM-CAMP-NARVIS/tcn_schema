@@ -1,0 +1,86 @@
+#ifndef DEVICE_ORBBEC_MSG_SENSORINFO
+#define DEVICE_ORBBEC_MSG_SENSORINFO
+
+#include "tcnart_msgs/msg/Types.idl"
+#include "device_orbbec_msgs/msg/Enums.idl"
+#include "std_msgs/msg/Header.idl"
+
+module device_orbbec_msgs {
+  module msg {
+
+    struct OrbbecSensorInfoDepthSensor {
+
+      std_msgs::msg::Header header;
+
+      sequence<float> uv2x;
+      sequence<float> uv2y;
+
+      sequence<float> mapx;
+      sequence<float> mapy;
+
+      float K[4];
+
+      tcnart_msgs::msg::RigidTransform pose;
+    };
+
+
+    struct OrbbecSensorInfoColorSensor {
+
+      std_msgs::msg::Header header;
+
+      sequence<float> uv2x;
+      sequence<float> uv2y;
+
+      sequence<float> mapx;
+      sequence<float> mapy;
+
+      float K[4];
+
+      tcnart_msgs::msg::RigidTransform pose;
+    };
+
+
+
+
+    struct OrbbecImuAccel {
+
+      std_msgs::msg::Header header;
+
+      uint64 vinyl_hup_ticks;
+      uint64 soc_ticks;
+      float values[3];
+      float temperature;
+
+      tcnart_msgs::msg::RigidTransform pose;
+    };
+
+
+    struct OrbbecImuGyro {
+
+      std_msgs::msg::Header header;
+      
+      uint64 vinyl_hup_ticks;
+      uint64 soc_ticks;
+      float values[3];
+      float temperature;
+
+      tcnart_msgs::msg::RigidTransform pose;
+    };
+
+
+    struct OrbbecImuMag {
+
+      std_msgs::msg::Header header;
+
+      uint64 vinyl_hup_ticks;
+      uint64 soc_ticks;
+      float values[3];
+
+      tcnart_msgs::msg::Vector3 position;
+      tcnart_msgs::msg::Quaternion orientation;
+    };
+
+  };
+};
+
+#endif

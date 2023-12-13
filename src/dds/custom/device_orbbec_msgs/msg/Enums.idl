@@ -1,0 +1,155 @@
+#ifndef DEVICE_ORBBEC_MSG_ENUMS
+#define DEVICE_ORBBEC_MSG_ENUMS
+
+module device_orbbec_msgs {
+  module msg {
+    module enums {
+
+      enum MultiDeviceSyncMode {
+          MULTI_DEVICE_SYNC_MODE_FREE_RUN,
+          MULTI_DEVICE_SYNC_MODE_STANDALONE,
+          MULTI_DEVICE_SYNC_MODE_PRIMARY,
+          MULTI_DEVICE_SYNC_MODE_SECONDARY,
+          MULTI_DEVICE_SYNC_MODE_SECONDARY_SYNCED,
+          MULTI_DEVICE_SYNC_MODE_SOFTWARE_TRIGGERING,
+          MULTI_DEVICE_SYNC_MODE_HARDWARE_TRIGGERING
+          };
+
+      enum SensorType {
+          SENSOR_UNKNOWN,
+          SENSOR_IR,
+          SENSOR_COLOR,
+          SENSOR_DEPTH,
+          SENSOR_ACCEL,
+          SENSOR_GYRO,
+          SENSOR_IR_LEFT,
+          SENSOR_IR_RIGHT,
+          SENSOR_RAW_PHASE
+          };
+
+      enum StreamType {
+          STREAM_UNKNOWN,
+          STREAM_VIDEO,
+          STREAM_IR,
+          STREAM_COLOR,
+          STREAM_DEPTH,
+          STREAM_ACCEL,
+          STREAM_GYRO,
+          STREAM_IR_LEFT,
+          STREAM_IR_RIGHT,
+          STREAM_RAW_PHASE
+      };
+
+      enum Format {
+          FORMAT_YUYV,
+          FORMAT_YUY2,
+          FORMAT_UYVY,
+          FORMAT_NV12,
+          FORMAT_NV21,
+          FORMAT_MJPG,
+          FORMAT_H264,
+          FORMAT_H265,
+          FORMAT_Y16,
+          FORMAT_Y8,
+          FORMAT_Y10,
+          FORMAT_Y11,
+          FORMAT_Y12,
+          FORMAT_GRAY,
+          FORMAT_HEVC,
+          FORMAT_I420,
+          FORMAT_ACCEL,
+          FORMAT_GYRO,
+          FORMAT_POINT,
+          FORMAT_RGB_POINT,
+          FORMAT_RLE,
+          FORMAT_RGB,
+          FORMAT_BGR,
+          FORMAT_Y14,
+          FORMAT_BGRA,
+          FORMAT_COMPRESSED,
+          FORMAT_RVL,
+          FORMAT_UNKNOWN
+      };
+
+      enum ImuSampleRate {
+          SAMPLE_RATE_1_5625_HZ,
+          SAMPLE_RATE_3_125_HZ,
+          SAMPLE_RATE_6_25_HZ,
+          SAMPLE_RATE_12_5_HZ,
+          SAMPLE_RATE_25_HZ,
+          SAMPLE_RATE_50_HZ,
+          SAMPLE_RATE_100_HZ,
+          SAMPLE_RATE_200_HZ,
+          SAMPLE_RATE_500_HZ,
+          SAMPLE_RATE_1_KHZ,
+          SAMPLE_RATE_2_KHZ,
+          SAMPLE_RATE_4_KHZ,
+          SAMPLE_RATE_8_KHZ,
+          SAMPLE_RATE_16_KHZ,
+          SAMPLE_RATE_32_KHZ
+      };
+
+      enum AccelFullScaleRange {
+          ACCEL_FS_2g,
+          ACCEL_FS_4g,
+          ACCEL_FS_8g,
+          ACCEL_FS_16g
+      };
+
+      enum GyroFullScaleRange {
+          GYRO_FS_16dps,
+          GYRO_FS_31dps,
+          GYRO_FS_62dps,
+          GYRO_FS_125dps,
+          GYRO_FS_250dps,
+          GYRO_FS_500dps,
+          GYRO_FS_1000dps,
+          GYRO_FS_2000dps
+      };
+
+      enum AlignMode {
+          ALIGN_DISABLE,
+          ALIGN_D2C_HW_MODE,
+          ALIGN_D2C_SW_MODE
+      };
+
+      struct VideoStreamProfile {
+          Format format;
+          StreamType type;
+          uint32 fps;
+          uint32 width;
+          uint32 height;
+      };
+
+      struct AccelStreamProfile {
+          Format format;
+          StreamType type;
+          AccelFullScaleRange fullScaleRange;
+          ImuSampleRate sampleRate;
+      };
+
+      struct GyroStreamProfile {
+          Format format;
+          StreamType type;
+          GyroFullScaleRange fullScaleRange;
+          ImuSampleRate sampleRate;
+      };
+
+      struct MultiDeviceSyncConfig {
+          uint8 value;
+          MultiDeviceSyncMode syncMode;
+          int32 depthDelayUs;
+          int32 colorDelayUs;
+          int32 trigger2ImageDelayUs;
+          boolean triggerOutEnable;
+          int32 triggerOutDelayUs;
+          int32 framesPerTrigger;
+      };
+
+    };
+
+
+  };
+};
+
+#endif

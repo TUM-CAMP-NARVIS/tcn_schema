@@ -1,0 +1,47 @@
+#ifndef DEVICE_ORBBEC_RPC_HL2MANAGER
+#define DEVICE_ORBBEC_RPC_HL2MANAGER
+
+#include "device_orbbec_msgs/msg/Enums.idl"
+#include "tcnart_msgs/msg/Types.idl"
+#include "tcnart_msgs/rpc/GenericManager.idl"
+
+module device_orbbec_msgs {
+  module rpc {
+
+      enum DeviceConnectionType {
+          USBC,
+          NETWORK
+      };
+
+
+    struct RPCMGRRequest_StartOrbbecCamera {
+        boolean enable_streaming;
+        boolean enable_encoding;
+        boolean enable_tracking;
+
+        boolean enable_color;
+        boolean enable_depth;
+        boolean enable_ir;
+        boolean enable_accel;
+        boolean enable_gyro;
+
+        AlignMode align_mode;
+
+        DeviceConnectionType connection_type;
+        string device_identifier;
+
+        VideoStreamProfile color_stream;
+        VideoStreamProfile depth_stream;
+        VideoStreamProfile ir_stream;
+        AccelStreamProfile accel_stream;
+        GyroStreamProfile gyro_stream;
+
+        MultiDeviceSyncConfig device_sync;
+
+    };
+
+
+        };
+};
+
+#endif

@@ -41,6 +41,7 @@ add_subdirectory(src/dds/ros2/unique_identifier_msgs)
 add_subdirectory(src/dds/custom/tcnart_msgs)
 add_subdirectory(src/dds/custom/pcpd_msgs)
 add_subdirectory(src/dds/custom/device_hl2_msgs)
+add_subdirectory(src/dds/custom/device_orbbec_msgs)
 
 
 # generated cpp/h files need one import from fastrtps, which we provide to avoid pulling the dependency, if it should be build without
