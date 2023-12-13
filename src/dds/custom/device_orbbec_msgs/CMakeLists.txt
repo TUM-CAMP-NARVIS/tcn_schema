@@ -1,7 +1,7 @@
 set(TCN_MODULE_NAME "device_orbbec_msgs")
 
 set(TCN_MODULE_IDL
-        "msg/Enums.idl"
+        "msg/OrbbecTypes.idl"
         "msg/OrbbecSensors.idl"
         )
 

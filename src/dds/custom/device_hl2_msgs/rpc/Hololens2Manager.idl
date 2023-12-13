@@ -1,7 +1,7 @@
 #ifndef DEVICE_HL2_RPC_HL2MANAGER
 #define DEVICE_HL2_RPC_HL2MANAGER
 
-#include "device_hl2_msgs/msg/Enums.idl"
+#include "device_hl2_msgs/msg/Hololens2Enums.idl"
 #include "tcnart_msgs/msg/Types.idl"
 #include "tcnart_msgs/rpc/GenericManager.idl"
 

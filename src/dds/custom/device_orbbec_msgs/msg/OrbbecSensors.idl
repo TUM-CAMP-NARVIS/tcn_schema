@@ -2,7 +2,7 @@
 #define DEVICE_ORBBEC_MSG_SENSORINFO
 
 #include "tcnart_msgs/msg/Types.idl"
-#include "device_orbbec_msgs/msg/Enums.idl"
+#include "device_orbbec_msgs/msg/OrbbecTypes.idl"
 #include "std_msgs/msg/Header.idl"
 
 module device_orbbec_msgs {
@@ -38,9 +38,6 @@ module device_orbbec_msgs {
 
       tcnart_msgs::msg::RigidTransform pose;
     };
-
-
-
 
     struct OrbbecImuAccel {
 

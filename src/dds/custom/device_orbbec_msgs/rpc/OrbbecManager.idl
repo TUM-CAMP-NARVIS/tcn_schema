@@ -1,18 +1,10 @@
-#ifndef DEVICE_ORBBEC_RPC_HL2MANAGER
-#define DEVICE_ORBBEC_RPC_HL2MANAGER
+#ifndef DEVICE_ORBBEC_RPC_MANAGER
+#define DEVICE_ORBBEC_RPC_MANAGER
 
-#include "device_orbbec_msgs/msg/Enums.idl"
-#include "tcnart_msgs/msg/Types.idl"
-#include "tcnart_msgs/rpc/GenericManager.idl"
+#include "device_orbbec_msgs/msg/OrbbecTypes.idl"
 
 module device_orbbec_msgs {
   module rpc {
-
-      enum DeviceConnectionType {
-          USBC,
-          NETWORK
-      };
-
 
     struct RPCMGRRequest_StartOrbbecCamera {
         boolean enable_streaming;
@@ -25,18 +17,18 @@ module device_orbbec_msgs {
         boolean enable_accel;
         boolean enable_gyro;
 
-        AlignMode align_mode;
+        device_orbbec_msgs::msg::enums::AlignMode align_mode;
 
-        DeviceConnectionType connection_type;
+        device_orbbec_msgs::msg::enums::DeviceConnectionType connection_type;
         string device_identifier;
 
-        VideoStreamProfile color_stream;
-        VideoStreamProfile depth_stream;
-        VideoStreamProfile ir_stream;
-        AccelStreamProfile accel_stream;
-        GyroStreamProfile gyro_stream;
+        device_orbbec_msgs::msg::VideoStreamProfile color_stream;
+        device_orbbec_msgs::msg::VideoStreamProfile depth_stream;
+        device_orbbec_msgs::msg::VideoStreamProfile ir_stream;
+        device_orbbec_msgs::msg::AccelStreamProfile accel_stream;
+        device_orbbec_msgs::msg::GyroStreamProfile gyro_stream;
 
-        MultiDeviceSyncConfig device_sync;
+        device_orbbec_msgs::msg::MultiDeviceSyncConfig device_sync;
 
     };
 

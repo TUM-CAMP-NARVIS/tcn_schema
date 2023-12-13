@@ -5,6 +5,12 @@ module device_orbbec_msgs {
   module msg {
     module enums {
 
+
+      enum DeviceConnectionType {
+          USBC,
+          NETWORK
+      };
+
       enum MultiDeviceSyncMode {
           MULTI_DEVICE_SYNC_MODE_FREE_RUN,
           MULTI_DEVICE_SYNC_MODE_STANDALONE,
@@ -113,41 +119,40 @@ module device_orbbec_msgs {
           ALIGN_D2C_SW_MODE
       };
 
-      struct VideoStreamProfile {
-          Format format;
-          StreamType type;
-          uint32 fps;
-          uint32 width;
-          uint32 height;
-      };
+    }; // enums
 
-      struct AccelStreamProfile {
-          Format format;
-          StreamType type;
-          AccelFullScaleRange fullScaleRange;
-          ImuSampleRate sampleRate;
-      };
-
-      struct GyroStreamProfile {
-          Format format;
-          StreamType type;
-          GyroFullScaleRange fullScaleRange;
-          ImuSampleRate sampleRate;
-      };
-
-      struct MultiDeviceSyncConfig {
-          uint8 value;
-          MultiDeviceSyncMode syncMode;
-          int32 depthDelayUs;
-          int32 colorDelayUs;
-          int32 trigger2ImageDelayUs;
-          boolean triggerOutEnable;
-          int32 triggerOutDelayUs;
-          int32 framesPerTrigger;
-      };
-
+    struct VideoStreamProfile {
+        enums::Format format;
+        enums::StreamType type;
+        uint32 fps;
+        uint32 width;
+        uint32 height;
     };
 
+    struct AccelStreamProfile {
+        enums::Format format;
+        enums::StreamType type;
+        enums::AccelFullScaleRange fullScaleRange;
+        enums::ImuSampleRate sampleRate;
+    };
+
+    struct GyroStreamProfile {
+        enums::Format format;
+        enums::StreamType type;
+        enums::GyroFullScaleRange fullScaleRange;
+        enums::ImuSampleRate sampleRate;
+    };
+
+    struct MultiDeviceSyncConfig {
+        uint8 value;
+        enums::MultiDeviceSyncMode syncMode;
+        int32 depthDelayUs;
+        int32 colorDelayUs;
+        int32 trigger2ImageDelayUs;
+        boolean triggerOutEnable;
+        int32 triggerOutDelayUs;
+        int32 framesPerTrigger;
+    };
 
   };
 };

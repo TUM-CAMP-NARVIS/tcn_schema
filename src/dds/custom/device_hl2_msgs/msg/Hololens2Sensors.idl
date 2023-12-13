@@ -2,7 +2,7 @@
 #define DEVICE_HL2_MSG_HL2SENSORINFO
 
 #include "tcnart_msgs/msg/Types.idl"
-#include "device_hl2_msgs/msg/Enums.idl"
+#include "device_hl2_msgs/msg/Hololens2Enums.idl"
 #include "std_msgs/msg/Header.idl"
 
 module device_hl2_msgs {

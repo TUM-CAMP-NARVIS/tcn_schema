@@ -2,7 +2,7 @@
 #define DEVICE_HL2_RPC_HL2VOICEINPUT
 
 #include "tcnart_msgs/rpc/Requests.idl"
-#include "device_hl2_msgs/msg/Enums.idl"
+#include "device_hl2_msgs/msg/Hololens2Enums.idl"
 
 module device_hl2_msgs {
   module rpc {

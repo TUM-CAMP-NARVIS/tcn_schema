@@ -1,7 +1,7 @@
 set(TCN_MODULE_NAME "device_hl2_msgs")
 
 set(TCN_MODULE_IDL
-        "msg/Enums.idl"
+        "msg/Hololens2Enums.idl"
         "msg/Hololens2Sensors.idl"
         )
 

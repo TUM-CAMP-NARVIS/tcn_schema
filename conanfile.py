@@ -136,3 +136,7 @@ class TcnSchemaConan(ConanFile):
         self.cpp_info.components["device_hl2_msgs"].defines = []
         self.cpp_info.components["device_hl2_msgs"].requires = dds_dep() + ["std_msgs", "geometry_msgs", "tcnart_msgs"]
 
+        self.cpp_info.components["device_orbbec_msgs"].names["cmake_find_package"] = "device_orbbec_msgs"
+        self.cpp_info.components["device_orbbec_msgs"].libs = ["tcn_schema_device_orbbec_msgs"]
+        self.cpp_info.components["device_orbbec_msgs"].defines = []
+        self.cpp_info.components["device_orbbec_msgs"].requires = dds_dep() + ["std_msgs", "geometry_msgs", "tcnart_msgs"]
