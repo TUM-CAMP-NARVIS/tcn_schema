@@ -34,7 +34,8 @@ module tcnart_msgs {
         CompressionType_Raw,
         CompressionType_Png,
         CompressionType_H26x,
-        CompressionType_Zdepth
+        CompressionType_Zdepth,
+        CompressionType_Jpeg
     };
 
     enum VideoH26xProfile {
