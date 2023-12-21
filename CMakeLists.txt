@@ -7,6 +7,8 @@ option(WITH_DDS "Compile with DDS Implementation" OFF)
 # Find requirements
 find_package(fastcdr REQUIRED)
 
+set(CMAKE_BUILD_PARALLEL_LEVEL 1)
+
 set (DDS_LIBRARIES)
 if (WITH_DDS)
   find_package(fastdds REQUIRED)
