@@ -1,32 +1,16 @@
 #ifndef PCPD_MSG_SENSOR
 #define PCPD_MSG_SENSOR
 
+#include "tcnart_msgs/msg/Types.idl"
+#include "tcnart_msgs/msg/CameraModel.idl"
+
 module pcpd_msgs {
   module msg {
 
     enum CameraSensorTypesEnum {
-        GENERIC_RGB,
         GENERIC_RGBD,
-        KINECT_AZURE
-    };
-
-    enum CameraDepthModesEnum {
-        CAMERA_K4A_DEPTH_MODE_OFF,
-        CAMERA_K4A_DEPTH_MODE_NFOV_2X2BINNED,
-        CAMERA_K4A_DEPTH_MODE_NFOV_UNBINNED,
-        CAMERA_K4A_DEPTH_MODE_WFOV_2X2BINNED,
-        CAMERA_K4A_DEPTH_MODE_WFOV_UNBINNED,
-        CAMERA_K4A_DEPTH_MODE_PASSIVE_IR
-    };
-
-    enum CameraColorResolutionsEnum {
-        CAMERA_COLOR_RESOLUTION_OFF,
-        CAMERA_COLOR_RESOLUTION_720P,
-        CAMERA_COLOR_RESOLUTION_1080P,
-        CAMERA_COLOR_RESOLUTION_1440P,
-        CAMERA_COLOR_RESOLUTION_1536P,
-        CAMERA_COLOR_RESOLUTION_2160P,
-        CAMERA_COLOR_RESOLUTION_3072P
+        KINECT_AZURE,
+        FEMTO_MEGA
     };
 
     @verbatim (language="comment", text=
@@ -41,9 +25,22 @@ module pcpd_msgs {
 
       CameraSensorTypesEnum camera_type;
 
-      CameraDepthModesEnum depth_mode;
+      boolean depth_enabled;
+      boolean color_enabled;
+      boolean infrared_enabled;
 
-      CameraColorResolutionsEnum color_resolution;
+      string depth_descriptor_topic;
+      string infrared_descriptor_topic;
+      tcnart_msgs::msg::CameraModel depth_parameters;
+
+      string color_descriptor_topic;
+      tcnart_msgs::msg::CameraModel color_parameters;
+
+      tcnart_msgs::msg::RigidTransform camera_pose;
+      // maybe not named correctly
+      tcnart_msgs::msg::RigidTransform color2depth_transform; 
+
+      uint32 frame_rate;
 
       sequence<octet> raw_calibration;
 
