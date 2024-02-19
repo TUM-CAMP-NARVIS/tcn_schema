@@ -1,0 +1,47 @@
+#ifndef PCPD_RPC_SRG
+#define PCPD_RPC_SRG
+
+#include "tcnart_msgs/msg/Types.idl"
+#include "std_msgs/msg/Header.idl"
+#include "tcnart_msgs/rpc/Requests.idl"
+
+#include "pcpd_msgs/msg/CameraSensor.idl"
+#include "pcpd_msgs/msg/DataflowBufferInfo.idl"
+
+
+module pcpd_msgs {
+  module rpc {
+
+    enum ServiceType {
+        ST_CORE,
+        ST_PRODUCER,
+        ST_CONSUMER
+    };
+  
+    enum RecorderStatus {
+        RS_INVALID,
+        RS_IDLE,
+        RS_RECORDING,
+        RS_PAUSED,
+        RS_ERROR
+    };
+  
+  
+    struct DeviceContextReply {
+        pcpd_msgs::msg::CameraSensor value;
+        tcnart_msgs::rpc::RPCResponseStatus status;
+    };
+  
+    struct BufferInfoReply {
+        pcpd_msgs::msg::BufferInfo value;
+        tcnart_msgs::rpc::RPCResponseStatus status;
+    };
+  
+  };
+};
+
+
+
+
+
+#endif

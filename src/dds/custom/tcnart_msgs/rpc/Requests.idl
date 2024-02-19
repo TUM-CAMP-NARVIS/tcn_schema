@@ -102,6 +102,16 @@ module tcnart_msgs {
         RPCResponseStatus status;
     };
 
+    struct StringListRequest {
+      sequence<string> values;
+    };
+
+    struct StringListReply {
+      sequence<string> values;
+      RPCResponseStatus status;
+    };
+
+
 
     // Generic Parameter Interface
     enum ParameterValueType {
