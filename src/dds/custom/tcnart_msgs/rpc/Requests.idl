@@ -103,6 +103,58 @@ module tcnart_msgs {
     };
 
 
+    // Generic Parameter Interface
+    enum ParameterValueType {
+      PVT_STRING,
+      PVT_INT32,
+      PVT_INT64,
+      PVT_FLOAT,
+      PVT_DOUBLE,
+      PVT_BOOL,
+      PVT_STRUCT
+    };
+
+    struct Parameter;
+    union ParameterValue;
+    struct ParameterList;
+
+
+    struct ParameterList {
+        sequence<Parameter> parameters;
+    };
+
+    struct Parameter {
+        string key;
+        ParameterValue value;
+    };
+
+    union ParameterValue switch(ParameterValueType) {
+    case PVT_STRING:
+        string string_value;
+    case PVT_INT32:
+        int32 int32_value;
+    case PVT_INT64:
+        int64 int64_value;
+    case PVT_FLOAT:
+        float float_value;
+    case PVT_DOUBLE:
+        double double_value;
+    case PVT_BOOL:
+        boolean bool_value;
+    case PVT_STRUCT:
+        ParameterList struct_value;
+    };
+
+    struct ParameterSchema {
+        string key;
+        ParameterValueType value_type;
+        sequence<ParameterValue> valid_entries;
+    };
+
+    struct ParameterListSchema {
+        sequence<ParameterSchema> parameters;
+    }
+
   };
 };
 
