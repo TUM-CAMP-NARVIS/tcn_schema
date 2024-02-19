@@ -155,6 +155,22 @@ module tcnart_msgs {
         sequence<ParameterSchema> parameters;
     };
 
+
+    // generic
+    struct GenericParameterRequest {
+        ParameterList value;
+    };
+
+    struct GenericParameterReply {
+        ParameterList value;
+        RPCResponseStatus status;
+    };
+
+    struct ParameterSchemaReply {
+        ParameterListSchema schema;
+        RPCResponseStatus status;
+    };
+
   };
 };
 
