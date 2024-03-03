@@ -36,6 +36,15 @@ module pcpd_msgs {
         pcpd_msgs::msg::BufferInfo value;
         tcnart_msgs::rpc::RPCResponseStatus status;
     };
+
+    struct ServiceInfoReply {
+        string name;
+        string service_type;
+        
+        tcnart_msgs::rpc::ParameterListSchema schema;
+        tcnart_msgs::rpc::RPCResponseStatus status;
+
+    };
   
   };
 };
