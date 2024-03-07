@@ -83,6 +83,7 @@ module tcnart_msgs {
       boolean enable_tracking;
 
       int32 device_id;
+      int32 api_preference;
       
       RPCMGR_H26xFormat video_format;
       RPCMGR_TrackerConfig tracker_config;
