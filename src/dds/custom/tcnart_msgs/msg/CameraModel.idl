@@ -16,6 +16,7 @@ module tcnart_msgs {
       // CAMERA_MODEL_THIN_PRISM_FISHEYE,
 
     enum CameraModelType {
+      CAMERA_MODEL_NONE,
       CAMERA_MODEL_PINHOLE,
       CAMERA_MODEL_OPEN_CV,
       CAMERA_MODEL_FULL_OPEN_CV,
