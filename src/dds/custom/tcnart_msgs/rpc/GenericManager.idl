@@ -2,6 +2,7 @@
 #define DEVICE_GENERIC_RPC_MANAGER
 
 #include "tcnart_msgs/msg/Types.idl"
+#include "tcnart_msgs/msg/CameraModel.idl"
 
 module tcnart_msgs {
   module rpc {
@@ -60,6 +61,7 @@ module tcnart_msgs {
 
       tcnart_msgs::msg::MarkerType marker_type;
       TrackingTargetConfig config;
+      tcnart_msgs::msg::CameraModel camera_model;
 
     };
 
