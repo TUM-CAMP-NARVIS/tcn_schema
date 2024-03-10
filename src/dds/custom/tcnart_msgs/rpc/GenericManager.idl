@@ -61,7 +61,7 @@ module tcnart_msgs {
 
       tcnart_msgs::msg::MarkerType marker_type;
       TrackingTargetConfig config;
-      tcnart_msgs::msg::CameraModel camera_model;
+      tcnart_msgs::msg::CameraModel calibration;
 
     };
 
