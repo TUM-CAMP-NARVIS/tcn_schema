@@ -30,7 +30,7 @@ module pcpd_msgs {
     struct DeviceContextReply {
         string name;
         boolean is_valid;
-        int32 depth_units_per_meter;
+        float depth_units_per_meter;
         int32 frame_rate;
         string sensor_type;
         string serial_number;
