@@ -28,6 +28,14 @@ module pcpd_msgs {
   
   
     struct DeviceContextReply {
+        string name;
+        boolean is_valid;
+        int32 depth_units_per_meter;
+        int32 frame_rate;
+        string sensor_type;
+        string serial_number;
+        uint64 timestamp_offset;
+
         pcpd_msgs::msg::CameraSensor value;
         tcnart_msgs::rpc::RPCResponseStatus status;
     };
@@ -40,6 +48,15 @@ module pcpd_msgs {
     struct ServiceInfoReply {
         string name;
         string service_type;
+        
+        tcnart_msgs::rpc::ParameterListSchema schema;
+        tcnart_msgs::rpc::RPCResponseStatus status;
+
+    };
+
+    struct ComponentInfoReply {
+        string name;
+        string component_type;
         
         tcnart_msgs::rpc::ParameterListSchema schema;
         tcnart_msgs::rpc::RPCResponseStatus status;
