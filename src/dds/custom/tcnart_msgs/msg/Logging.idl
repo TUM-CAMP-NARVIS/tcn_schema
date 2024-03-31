@@ -24,6 +24,55 @@ module tcnart_msgs {
             std_msgs::msg::Header header;
             sequence<TcnartLogItem> items;
         };
+
+
+        struct PerformanceMonitorItem {
+            string port_name;
+            uint32 num_events;
+            uint64 total_events;
+            float fps;
+            float realtime_ms;
+            float duration_mean_ms;
+            float duration_stddev_ms;
+        };
+
+        struct PerformanceMonitorMessage {
+            std_msgs::msg::Header header;
+            uint64 dataflow_timestamp;
+            uint32 report_duration_ms;
+            sequence<PerformanceMonitorItem> items;
+        };
+
+
+        enum ApplicationLiveCycleEventDomain {
+            APPLICATION,
+            CORE_SERVICE,
+            CONSUMER_SERVICE,
+            PRODUCER_SERVICE,
+            RUNTIME,
+            DATAFLOW,
+            COMPONENT
+        };
+
+        enum ApplicationHealthStatusUpdate {
+            WATCHDOG_EVENT,
+            CAPTURE_DEVICE_TIMEOUT,
+            DISK_SPACE_WARNING,
+            LOW_LIGHT_WARNING,
+            LOW_FRAMERATE_WARNING,
+            WRITE_QUEUE_WARNING,
+            FRAMERATE_INFO,
+            IMU_MOVEMENT_WARNING
+        };
+
+        struct ApplicationHealthStatusMessage {
+            std_msgs::msg::Header header;
+            ApplicationLiveCycleEventDomain domain;
+            string name;
+            ApplicationHealthStatusUpdate health_status;
+            sequence<uint8> payload;
+        };
+
     };
 };
 #endif
