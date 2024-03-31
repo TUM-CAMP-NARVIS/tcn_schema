@@ -44,7 +44,14 @@ module tcnart_msgs {
         };
 
 
-        enum ApplicationLiveCycleEventDomain {
+        enum ApplicationLifeCycleStatus {
+            INITIALIZED,
+            STARTED,
+            STOPPED,
+            UNINITIALIZED
+        };
+
+        enum ApplicationLifeCycleEventDomain {
             APPLICATION,
             CORE_SERVICE,
             CONSUMER_SERVICE,
@@ -71,6 +78,13 @@ module tcnart_msgs {
             string name;
             ApplicationHealthStatusUpdate health_status;
             sequence<uint8> payload;
+        };
+
+        struct ApplicationEventMessage {
+            std_msgs::msg::Header header;
+            ApplicationLifeCycleEventDomain domain;
+            string name;
+            ApplicationLifeCycleStatus event;
         };
 
     };
