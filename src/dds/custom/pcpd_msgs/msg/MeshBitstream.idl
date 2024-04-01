@@ -1,0 +1,34 @@
+#ifndef PCPD_MSGS_MESHBITSTREAM
+#define PCPD_MSGS_MESHBITSTREAM
+
+#include "tcnart_msgs/msg/Types.idl"
+#include "std_msgs/msg/Header.idl"
+
+module pcpd_msgs {
+  module msg {
+
+    struct MeshBitstreamMessage {
+
+      std_msgs::msg::Header header;
+
+      tcnart_msgs::msg::RigidTransform origin_offset;
+
+      boolean enable_mesh_indices;
+      boolean is_compressed;
+      uint32 num_camera_ids;
+
+      uint64 vertices_capacity;
+      uint64 faces_capacity;
+
+      uint64 vertex_size_bytes;
+
+      uint64 num_vertices;
+      uint64 num_faces;
+
+      uint64 data_bytes;
+      sequence<uint8> data;
+
+    };
+  };
+};
+#endif
