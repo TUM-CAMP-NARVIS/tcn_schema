@@ -34,6 +34,7 @@ module tcnart_msgs {
 
       boolean is_valid;
       boolean is_fixed_size;
+      uint64 semantic_type;
       uint64 frame_size;
 
       uint32 width;
