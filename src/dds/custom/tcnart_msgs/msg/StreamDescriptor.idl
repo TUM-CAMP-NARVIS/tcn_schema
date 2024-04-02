@@ -3,6 +3,7 @@
 
 #include "std_msgs/msg/Header.idl"
 #include "tcnart_msgs/msg/Types.idl"
+#include "tcnart_msgs/msg/DataflowBufferInfo.idl"
 
 module tcnart_msgs {
   module msg {
@@ -20,6 +21,8 @@ module tcnart_msgs {
       SensorType sensor_type;
 
       uint32 frame_rate;
+
+      BufferInfo buffer_info;
 
       // used if sensor has locality
       RigidTransform pose;

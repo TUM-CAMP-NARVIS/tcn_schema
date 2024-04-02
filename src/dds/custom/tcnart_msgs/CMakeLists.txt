@@ -2,6 +2,7 @@ set(TCN_MODULE_NAME "tcnart_msgs")
 
 set(TCN_MODULE_IDL
         "msg/CameraModel.idl"
+        "msg/DataflowBufferInfo.idl"
         "msg/Logging.idl"
         "msg/PoseTracking.idl"
         "msg/EyeTracking.idl"

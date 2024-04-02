@@ -6,7 +6,7 @@
 #include "tcnart_msgs/rpc/Requests.idl"
 
 #include "pcpd_msgs/msg/CameraSensor.idl"
-#include "pcpd_msgs/msg/DataflowBufferInfo.idl"
+#include "tcnart_msgs/msg/DataflowBufferInfo.idl"
 
 
 module pcpd_msgs {
@@ -41,7 +41,7 @@ module pcpd_msgs {
     };
   
     struct BufferInfoReply {
-        pcpd_msgs::msg::BufferInfo value;
+        tcnart_msgs::msg::BufferInfo value;
         tcnart_msgs::rpc::RPCResponseStatus status;
     };
 

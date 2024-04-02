@@ -1,7 +1,7 @@
-#ifndef PCPD_MSG_BUFFERINFO
-#define PCPD_MSG_BUFFERINFO
+#ifndef TCNART_MSG_BUFFERINFO
+#define TCNART_MSG_BUFFERINFO
 
-module pcpd_msgs {
+module tcnart_msgs {
   module msg {
 
     struct BufferInfoPropertyUserData {
@@ -32,10 +32,11 @@ module pcpd_msgs {
       @verbatim (language="comment", text=
         "Provides information about buffer allocation.")
 
+      boolean is_valid;
+      boolean is_fixed_size;
       uint64 frame_size;
 
       uint32 width;
-
       uint32 height;
       uint32 bits_per_element;
       uint32 stride;
