@@ -1,0 +1,69 @@
+#ifndef TCNART_RPC_SIS
+#define TCNART_RPC_SIS
+
+#include "tcnart_msgs/msg/Types.idl"
+#include "tcnart_msgs/msg/SpatialRelations.idl"
+#include "tcnart_msgs/rpc/Requests.idl"
+
+module tcnart_msgs {
+  module rpc {
+
+    enum SISScope {
+        SIS_SCOPE_LOCAL,
+        SIS_SCOPE_GLOBAL
+    };
+
+    struct SISComponentRef {
+        string name;
+    };
+
+    struct SISRelationRef {
+        SISComponentRef from;
+        SISComponentRef to;
+    };
+
+    struct SISComponentMessage {
+        SISComponentRef node;
+        tcnart_msgs::msg::CoordinateSystem coord;
+        boolean active;
+        SISScope scope;
+    };
+
+    struct SISRelationMessage {
+        SISRelationRef edge;
+        tcnart_msgs::msg::RigidTransform transform;
+        double weight;
+    };
+
+    struct SISJoinMessage {
+        SISComponentRef origin;
+        sequence<SISComponentMessage> components;
+        sequence<SISRelationMessage> relations;
+    };
+
+    struct SISTopicTranslationStartRequest {
+        string src_topic;
+        string dst_topic;
+        string client_a;
+        string client_b;
+        SISComponentRef node_a;
+        SISComponentRef node_b;
+    };
+
+    struct SISTopicTranslationStartReply {
+        RPCResponseStatus status;
+    };
+
+    struct SISTopicTranslationStopRequest {
+        string src_topic;
+        string dst_topic;
+    };
+
+    struct SISTopicTranslationStopReply {
+        RPCResponseStatus status;
+    };
+
+  };
+};
+
+#endif
