@@ -44,10 +44,10 @@ module tcnart_msgs {
     struct SISTopicTranslationStartRequest {
         string src_topic;
         string dst_topic;
-        string client_a;
-        string client_b;
-        SISComponentRef node_a;
-        SISComponentRef node_b;
+        string src_client;
+        string dst_client;
+        SISComponentRef src_node;
+        SISComponentRef dst_node;
     };
 
     struct SISTopicTranslationStartReply {
