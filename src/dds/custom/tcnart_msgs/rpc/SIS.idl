@@ -44,8 +44,8 @@ module tcnart_msgs {
     struct SISTopicTranslationStartRequest {
         string src_topic;
         string dst_topic;
-        string src_client;
-        string dst_client;
+        string src_client;		// Leaving src_client and src_node empty causes translation from world coordinate system
+        string dst_client;		// Leaving dst_client and dst_node empty causes translation to world coordinate system
         SISComponentRef src_node;
         SISComponentRef dst_node;
     };
