@@ -50,17 +50,15 @@ module tcnart_msgs {
         SISComponentRef dst_node;
     };
 
-    struct SISTopicTranslationStartReply {
-        RPCResponseStatus status;
-    };
-
     struct SISTopicTranslationStopRequest {
         string src_topic;
         string dst_topic;
     };
 
-    struct SISTopicTranslationStopReply {
-        RPCResponseStatus status;
+    enum SISTopicTranslationStatusReply {
+        SIS_TTSTATUS_ACTIVE,		// Topic translation is running
+        SIS_TTSTATUS_INACTIVE,		// Topic translation is not running
+        SIS_TTSTATUS_UNAVAILABLE	// Topic translation is not running because data is missing
     };
 
   };
