@@ -13,6 +13,18 @@ module tcnart_msgs {
         SIS_SCOPE_GLOBAL
     };
 
+    enum SISTransformationType {
+        SIS_TRANSFORM_POSE6D,
+        SIS_TRANSFORM_TRANSLATION3D
+    };
+
+    union SISTransformation switch(SISTransformationType) {
+    case SIS_TRANSFORM_POSE6D:
+        tcnart_msgs::msg::RigidTransform value_pose6D;
+    case SIS_TRANSFORM_TRANSLATION3D:
+        tcnart_msgs::msg::Vector3 value_translation3D;
+    };
+
     struct SISComponentRef {
         string name;
     };
@@ -31,7 +43,7 @@ module tcnart_msgs {
 
     struct SISRelationMessage {
         SISRelationRef edge;
-        tcnart_msgs::msg::RigidTransform transform;
+        SISTransformation transform;
         double weight;
     };
 
