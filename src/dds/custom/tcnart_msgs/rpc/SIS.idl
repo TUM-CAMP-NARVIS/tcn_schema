@@ -20,9 +20,9 @@ module tcnart_msgs {
 
     union SISTransformation switch(SISTransformationType) {
     case SIS_TRANSFORM_POSE6D:
-        tcnart_msgs::msg::RigidTransform value_pose6D;
+        tcnart_msgs::msg::RigidTransform pose6D;
     case SIS_TRANSFORM_TRANSLATION3D:
-        tcnart_msgs::msg::Vector3 value_translation3D;
+        tcnart_msgs::msg::Vector3 translation3D;
     };
 
     struct SISComponentRef {
@@ -39,6 +39,7 @@ module tcnart_msgs {
         tcnart_msgs::msg::CoordinateSystem coord;
         boolean active;
         SISScope scope;
+        string tracker_stream_descriptor_topic;
     };
 
     struct SISRelationMessage {
