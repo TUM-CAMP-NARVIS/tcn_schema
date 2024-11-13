@@ -135,13 +135,27 @@ module tcnart_msgs {
 
     };
 
-
     struct RigidTransformMap {
 
       RigidTransform pose;
 
       sequence<RigidTransformMapItem> poses;
 
+    };
+
+    struct Marker {
+      uint32 marker_id;
+      Vector3 position;
+      float quality; // Normalized 0.0 to 1.0
+      bool visible;
+    };
+
+    struct Tool {
+      uint32 tool_id;
+      RigidTransform pose;
+      float quality; // Normalized 0.0 to 1.0
+      sequence<Markers> markers;
+      bool is_tracked; // if enough markers on the tool are visible to track it
     };
 
     struct Ray {
