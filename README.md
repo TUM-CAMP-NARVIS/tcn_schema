@@ -8,5 +8,5 @@ The interface is then augmented with pcpd specific topic types.
 ```
 conan install . -s build_type=Debug --build missing --build outdated
 cmake --preset conan-debug
-cmake --build ./build --config Debug
+cmake --build ./build/Debug --config Debug
 ```
