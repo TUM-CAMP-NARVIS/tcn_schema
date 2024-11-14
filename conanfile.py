@@ -12,7 +12,7 @@ class TcnSchemaConan(ConanFile):
     version = "0.0.1"
 
     description = "HL2Comm via Zenoh with Ros2 Serialization Compatible Schemata"
-    url = "https://github.com/TUM-CAMP-NARVIS/tcn_schema"
+    url = "https://github.com/TUM-CAMP-NARVIS/tcn_schema/tree/tracking"
     license = "internal"
 
     settings = "os", "compiler", "build_type", "arch"

@@ -27,6 +27,15 @@ module tcnart_msgs {
     };
 
 
+     struct PoseTrackingMessage {
+
+      std_msgs::msg::Header header;
+      RigidTransform world_pose;
+      sequence<Tool> tools;
+      sequence<Marker> unassigned_markers; // Individual markers (which do not belong to a tool).
+      uint32 system_status; // Basic status flags (bit0: system running, bit1: tracking valid, bit2: system error)
+    };
+
   };
 };
 
