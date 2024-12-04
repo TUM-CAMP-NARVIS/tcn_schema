@@ -18,7 +18,8 @@ module tcnart_msgs {
         SENSOR_TYPE_IMU_ACCEL,
         SENSOR_TYPE_IMU_GYRO,
         SENSOR_TYPE_IMU_MAG,
-        SENSOR_TYPE_MESH_BITSTREAM
+        SENSOR_TYPE_MESH_BITSTREAM,
+        SENSOR_TYPE_SURFEL
     };
 
 
