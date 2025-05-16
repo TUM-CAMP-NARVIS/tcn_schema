@@ -1,0 +1,80 @@
+#ifndef TCNART_RPC_SIS
+#define TCNART_RPC_SIS
+
+#include "tcnart_msgs/msg/Types.idl"
+#include "tcnart_msgs/msg/SpatialRelations.idl"
+#include "tcnart_msgs/rpc/Requests.idl"
+
+module tcnart_msgs {
+  module rpc {
+
+    enum SISScope {
+        SIS_SCOPE_LOCAL,
+        SIS_SCOPE_GLOBAL
+    };
+
+    enum SISTransformationType {
+        SIS_TRANSFORM_POSE6D,
+        SIS_TRANSFORM_TRANSLATION3D
+    };
+
+    union SISTransformation switch(SISTransformationType) {
+    case SIS_TRANSFORM_POSE6D:
+        tcnart_msgs::msg::RigidTransform pose6D;
+    case SIS_TRANSFORM_TRANSLATION3D:
+        tcnart_msgs::msg::Vector3 translation3D;
+    };
+
+    struct SISComponentRef {
+        string name;
+    };
+
+    struct SISRelationRef {
+        SISComponentRef from;
+        SISComponentRef to;
+    };
+
+    struct SISComponentMessage {
+        SISComponentRef node;
+        tcnart_msgs::msg::CoordinateSystem coord;
+        boolean active;
+        SISScope scope;
+        string tracker_stream_descriptor_topic;
+    };
+
+    struct SISRelationMessage {
+        SISRelationRef edge;
+        SISTransformation transform;
+        double weight;
+    };
+
+    struct SISJoinMessage {
+        SISComponentRef origin;
+        sequence<SISComponentMessage> components;
+        sequence<SISRelationMessage> relations;
+    };
+
+    struct SISTopicTranslationStartRequest {
+        string src_topic;
+        string dst_topic;
+        string src_client;		// Leaving src_client and src_node empty causes translation from world coordinate system
+        string dst_client;		// Leaving dst_client and dst_node empty causes translation to world coordinate system
+        SISComponentRef src_node;
+        SISComponentRef dst_node;
+    };
+
+    struct SISTopicTranslationStopRequest {
+        string src_topic;
+        string dst_topic;
+    };
+
+    enum SISTopicTranslationStatusReply {
+        SIS_TTSTATUS_ACTIVE,		// Topic translation is running
+        SIS_TTSTATUS_INACTIVE,		// Topic translation is not running
+        SIS_TTSTATUS_UNAVAILABLE	// Topic translation is not running because data is missing
+    };
+
+  };
+};
+
+#endif
