@@ -150,8 +150,8 @@ module tcnart_msgs {
       boolean visible;
     };
 
-    struct Tool {
-      uint32 tool_id;
+    struct Target {
+      uint32 target_id;
       RigidTransform pose;
       float quality; // Normalized 0.0 to 1.0
       sequence<Marker> markers;
