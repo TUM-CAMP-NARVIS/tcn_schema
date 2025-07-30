@@ -6,7 +6,7 @@ The interface is then augmented with pcpd specific topic types.
 ### Build:
 
 ```
-conan install .. -s build_type=Debug --build missing --build outdated
-cmake --preset conan-default
-cmake --build ./build --config Debug
+conan install . -s build_type=Debug --build missing --build outdated
+cmake --preset conan-debug
+cmake --build ./build/Debug --config Debug
 ```

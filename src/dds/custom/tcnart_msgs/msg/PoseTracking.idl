@@ -27,6 +27,15 @@ module tcnart_msgs {
     };
 
 
+     struct TargetTrackingMessage {
+
+      std_msgs::msg::Header header;
+      RigidTransform target_origin;
+      uint32 target_count;
+      sequence<Target> targets;
+      uint32 system_status; // Basic status flags (bit0: system running, bit1: tracking valid, bit2: system error)
+    };
+
   };
 };
 
