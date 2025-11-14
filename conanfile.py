@@ -27,7 +27,13 @@ class TcnSchemaConan(ConanFile):
     }
 
     # all sources are deployed with the package
-    exports_sources = "3rdparty/*", "cmake/*", "src/*", "CMakeLists.txt"
+    #exports_sources = "3rdparty/*", "cmake/*", "src/*", "CMakeLists.txt"
+
+    def export_sources(self):
+        copy(self, "3rdparty/*", src=self.recipe_folder, dst=self.export_sources_folder, keep_path=True)
+        copy(self, "cmake/*", src=self.recipe_folder, dst=self.export_sources_folder, keep_path=True)
+        copy(self, "src/*", src=self.recipe_folder, dst=self.export_sources_folder, keep_path=True)
+        copy(self, "CMakeLists.txt", src=self.recipe_folder, dst=self.export_sources_folder, keep_path=True)
 
     def build_requirements(self):
         self.tool_requires("fast-dds-gen/3.0.0@camposs/stable")
