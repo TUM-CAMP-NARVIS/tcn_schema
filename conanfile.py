@@ -5,7 +5,7 @@ from conan.tools.cmake import CMake, CMakeToolchain, cmake_layout, CMakeDeps
 import os
 
 class TcnSchemaConan(ConanFile):
-    python_requires = "camp_common/0.5@camposs/stable"
+    python_requires = "camp_common/[>=0.5 <1.0]@camposs/stable"
     python_requires_extend = "camp_common.CampCMakeBase"
 
     name = "tcn_schema"
