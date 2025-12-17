@@ -29,8 +29,8 @@ module tcnart_msgs {
       PixelFormat_BGR24,
       PixelFormat_BGRA32,
       PixelFormat_L8,
-      PixelFormat_L16
-      PixelFormat_RGBA32,
+      PixelFormat_L16,
+      PixelFormat_RGBA32
     };
 
     enum VideoImageCompression {
