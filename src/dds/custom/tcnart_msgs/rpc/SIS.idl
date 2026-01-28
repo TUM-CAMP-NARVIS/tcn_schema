@@ -46,6 +46,8 @@ module tcnart_msgs {
         SISRelationRef edge;
         SISTransformation transform;
         double weight;
+        string tracker_stream_descriptor_topic;
+
     };
 
     struct SISJoinMessage {
