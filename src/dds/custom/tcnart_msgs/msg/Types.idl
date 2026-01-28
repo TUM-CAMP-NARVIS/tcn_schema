@@ -62,7 +62,8 @@ module tcnart_msgs {
       MARKER_TYPE_ARUCO_MARKER,
       MARKER_TYPE_ARUCO_BOARD,
       MARKER_TYPE_ARUCO_FRACTAL,
-      MARKER_TYPE_IR_TARGET
+      MARKER_TYPE_IR_TARGET,
+      MARKER_TYPE_HMD_POSE
     };
 
     struct MSGuid {
