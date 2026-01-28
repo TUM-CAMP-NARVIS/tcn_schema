@@ -47,7 +47,7 @@ module tcnart_msgs {
         SISTransformation transform;
         double weight;
         string tracker_stream_descriptor_topic;
-
+        tcnart_msgs::msg::CoordinateSystem coord;
     };
 
     struct SISJoinMessage {
