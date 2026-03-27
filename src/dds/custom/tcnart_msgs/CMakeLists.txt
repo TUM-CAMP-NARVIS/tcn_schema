@@ -7,6 +7,8 @@ set(TCN_MODULE_IDL
         "msg/PoseTracking.idl"
         "msg/EyeTracking.idl"
         "msg/HandTracking.idl"
+        "msg/XRInput.idl"
+        "msg/XRRuntime.idl"
         "msg/AudioStream.idl"
         "msg/VideoStream.idl"
         "msg/Presence.idl"

@@ -11,7 +11,18 @@ module tcnart_msgs {
 
       std_msgs::msg::Header header;
 
-      AudioAACProfile profile;
+      uint32 sequence_id;
+      string source_id;
+
+      AudioEncoding encoding;
+      AudioChannelLayout channel_layout;
+
+      uint32 sample_rate_hz;
+      uint32 channel_count;
+      uint32 frames_per_chunk;
+
+      float rms;
+      float peak;
 
       uint64 data_size;
       sequence<uint8> data;
