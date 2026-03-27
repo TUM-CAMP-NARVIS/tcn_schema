@@ -57,6 +57,21 @@ module tcnart_msgs {
         AACProfile_None
     };
 
+    enum AudioEncoding {
+        AUDIO_ENCODING_UNKNOWN,
+        AUDIO_ENCODING_PCM_S16LE,
+        AUDIO_ENCODING_PCM_F32LE,
+        AUDIO_ENCODING_AAC_LC,
+        AUDIO_ENCODING_AAC_HE,
+        AUDIO_ENCODING_OPUS
+    };
+
+    enum AudioChannelLayout {
+        AUDIO_CHANNEL_LAYOUT_UNKNOWN,
+        AUDIO_CHANNEL_LAYOUT_MONO,
+        AUDIO_CHANNEL_LAYOUT_STEREO
+    };
+
     enum MarkerType {
       MARKER_TYPE_NONE,
       MARKER_TYPE_ARUCO_MARKER,
@@ -64,6 +79,40 @@ module tcnart_msgs {
       MARKER_TYPE_ARUCO_FRACTAL,
       MARKER_TYPE_IR_TARGET,
       MARKER_TYPE_HMD_POSE
+    };
+
+    enum Handedness {
+      HANDEDNESS_UNKNOWN,
+      HANDEDNESS_LEFT,
+      HANDEDNESS_RIGHT
+    };
+
+    enum XRControllerRole {
+      XR_CONTROLLER_ROLE_UNKNOWN,
+      XR_CONTROLLER_ROLE_LEFT,
+      XR_CONTROLLER_ROLE_RIGHT,
+      XR_CONTROLLER_ROLE_GAMEPAD
+    };
+
+    enum XREnvironmentBlendMode {
+      XR_ENV_BLEND_MODE_UNKNOWN,
+      XR_ENV_BLEND_MODE_OPAQUE,
+      XR_ENV_BLEND_MODE_ADDITIVE,
+      XR_ENV_BLEND_MODE_ALPHA_BLEND
+    };
+
+    enum XRReferenceSpaceType {
+      XR_REFERENCE_SPACE_UNKNOWN,
+      XR_REFERENCE_SPACE_VIEW,
+      XR_REFERENCE_SPACE_LOCAL,
+      XR_REFERENCE_SPACE_STAGE,
+      XR_REFERENCE_SPACE_UNBOUNDED
+    };
+
+    enum XRGazeSpaceType {
+      XR_GAZE_SPACE_UNKNOWN,
+      XR_GAZE_SPACE_VIEW,
+      XR_GAZE_SPACE_LOCAL
     };
 
     struct MSGuid {

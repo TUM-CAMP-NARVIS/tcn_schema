@@ -8,8 +8,8 @@ module tcnart_msgs {
   module msg {
 
     enum JointPoseAccuracy {
-      High,
-      Approximate
+      JointPoseAccuracy_High,
+      JointPoseAccuracy_Approximate
     };
 
     struct HandJointPose {
@@ -18,17 +18,22 @@ module tcnart_msgs {
       JointPoseAccuracy accuracy;
     };
 
+    struct HandState {
+      Handedness hand;
+      boolean tracked;
+      boolean aim_valid;
+      Ray aim;
+      sequence<HandJointPose> joints;
+    };
+
     struct HandTrackingMessage {
 
       std_msgs::msg::Header header;
 
       ViewPose head_pose;
+      boolean gaze_valid;
       Ray gaze;
-      
-      sequence<HandJointPose> left_poses;
-      sequence<HandJointPose> right_poses;
-
-      uint8 valid;
+      sequence<HandState> hands;
 
     };
   };

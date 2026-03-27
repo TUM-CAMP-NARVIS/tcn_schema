@@ -1,0 +1,47 @@
+#ifndef TCNART_MSG_XRINPUT
+#define TCNART_MSG_XRINPUT
+
+#include "std_msgs/msg/Header.idl"
+#include "tcnart_msgs/msg/Types.idl"
+
+module tcnart_msgs {
+  module msg {
+
+    struct XRControllerButtons {
+      boolean primary_button;
+      boolean secondary_button;
+      boolean menu_button;
+      boolean thumbstick_click;
+      boolean thumbstick_touch;
+      boolean trigger_touch;
+      boolean grip_touch;
+    };
+
+    struct XRControllerPoseSet {
+      boolean grip_pose_valid;
+      RigidTransform grip_pose;
+      boolean aim_pose_valid;
+      RigidTransform aim_pose;
+    };
+
+    struct XRControllerState {
+      XRControllerRole role;
+      boolean tracked;
+
+      float trigger_value;
+      float grip_value;
+      Vector2 thumbstick;
+
+      XRControllerButtons buttons;
+      XRControllerPoseSet poses;
+    };
+
+    struct XRControllerStateMessage {
+      std_msgs::msg::Header header;
+      sequence<XRControllerState> controllers;
+    };
+
+  };
+};
+
+#endif

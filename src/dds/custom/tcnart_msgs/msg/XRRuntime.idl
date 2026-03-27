@@ -1,0 +1,49 @@
+#ifndef TCNART_MSG_XRRUNTIME
+#define TCNART_MSG_XRRUNTIME
+
+#include "std_msgs/msg/Header.idl"
+#include "tcnart_msgs/msg/Types.idl"
+
+module tcnart_msgs {
+  module msg {
+
+    struct XRSessionStateMessage {
+      std_msgs::msg::Header header;
+
+      boolean session_active;
+      XREnvironmentBlendMode environment_blend_mode;
+      XRReferenceSpaceType reference_space;
+      XRGazeSpaceType gaze_space;
+
+      boolean controllers_enabled;
+      boolean hand_tracking_enabled;
+      boolean eye_tracking_enabled;
+      boolean publish_gaze_ray;
+
+      boolean imu_enabled;
+      boolean microphones_enabled;
+      boolean proximity_enabled;
+      boolean infrared_cameras_enabled;
+      boolean depth_sensor_enabled;
+      boolean body_tracking_enabled;
+      boolean face_tracking_enabled;
+      boolean scene_understanding_enabled;
+    };
+
+    struct XRRuntimeStateMessage {
+      std_msgs::msg::Header header;
+
+      boolean tracking_active;
+      boolean input_active;
+      boolean head_pose_valid;
+      boolean left_controller_active;
+      boolean right_controller_active;
+
+      uint32 left_hand_count;
+      uint32 right_hand_count;
+    };
+
+  };
+};
+
+#endif
