@@ -179,9 +179,27 @@ not calibrate leave the sequence empty.
 | — | `string stream_descriptor_topic` | **new**, from `SISRelationMessage.tracker_stream_descriptor_topic` |
 | — | `sequence<SRCalibration> calibration` | **new**, 0 or 1 entries |
 | — | `string materialized_from` | **new**, set on edges created by a template |
+| — | `sequence<string> derived_from` | **new**, set on edges published by a relation stream |
 
 Field order in 0.3.0: `name, source, target, temporal_type, transform, weight,
-is_invertible, stream_descriptor_topic, calibration, materialized_from`.
+is_invertible, stream_descriptor_topic, calibration, materialized_from,
+derived_from`.
+
+> **Derived edges.** A running relation stream publishes its own result back
+> into the graph as a `SRG_EDGE_DYNAMIC` edge from observer to target, with
+> `stream_descriptor_topic` set to its output topic and a weight below the sum
+> of the edges it walked. Pathfinding therefore prefers it automatically, and a
+> relation computed once becomes a subpath anything else can reuse.
+>
+> `derived_from` names the edges that stream's path walked. It exists because
+> the weight rule steers into cycles: a stream asked to compute a relation it
+> already publishes would otherwise route through its own output and sample the
+> buffer it is filling. Compiling a stream excludes every derived edge that
+> transitively depends on the edge being compiled.
+>
+> A producer that only declares its own graph never sets this. A consumer
+> reading the graph should treat a non-empty `derived_from` as "computed by the
+> engine, not measured".
 
 > **`is_invertible` and reversibility.** A relation is declared in one
 > direction, `source -> target`, and a path resolver walks it the other way by
@@ -271,6 +289,7 @@ struct SISRelationStreamStartRequest {
     SISFrameRef target;
     string output_topic;
     SRStreamTrigger trigger;
+    double freshness_bias;      // [0,1]; 0 reuses shortcuts, 1 walks only measured edges
 };
 
 struct SISRelationStreamStopRequest { string output_topic; };
@@ -306,6 +325,34 @@ the old destination; `target` is the old source.
 The old "both client and node empty means world coordinates" case has no
 equivalent and needs none — there is no world frame any more, and a relation
 between two named frames is what it was approximating.
+
+### Repeated requests
+
+Streams are keyed by `output_topic`, and the same application launched twice will
+ask for the same relation twice. That is expected, not an error:
+
+| State | Result |
+| --- | --- |
+| no stream on that topic | created, `SIS_RS_ACTIVE` |
+| identical observer, target, trigger and bias | no-op, `SIS_RS_ACTIVE` |
+| different properties | `SIS_RS_REJECTED` |
+
+A client must not assume its properties won. Reconfiguring in place would change
+the meaning of a stream a third party is already consuming, so the second request
+is refused rather than silently applied.
+
+Stopping a stream removes its derived edge, and any other stream whose path
+walked it is recompiled onto the longer route. A consumer may therefore see a
+stream's latency change when an unrelated stream stops.
+
+### Freshness bias
+
+A relation already computed by another stream is available as a derived edge
+weighted below the path it replaces, so it is normally preferred. It is also
+strictly staler by one publish-ingest-buffer round. `freshness_bias` in `[0,1]`
+lets the consumer choose: `0` takes every shortcut, `1` ignores derived edges and
+walks only measured relations, and values between move a derived edge's effective
+weight toward the path it replaced. Applied at compile time.
 
 ### Trigger modes
 
