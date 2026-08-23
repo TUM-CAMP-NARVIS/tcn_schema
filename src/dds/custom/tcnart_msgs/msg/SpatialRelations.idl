@@ -174,6 +174,20 @@ module tcnart_msgs {
             // materialization created it.
             string materialized_from;
 
+            // Non-empty on a *derived* edge -- one published by a relation
+            // stream rather than declared by a client. Names every edge the
+            // stream's path walked.
+            //
+            // This is not bookkeeping. A derived edge is weighted below the
+            // path it replaces so that pathfinding prefers it, which means
+            // pathfinding actively steers into cycles: a stream asked to
+            // recompute a relation it already publishes would route through its
+            // own output. Compiling a stream excludes any derived edge that
+            // transitively depends on the edge being compiled, and this list is
+            // what makes that computable -- including after a restart, or by a
+            // second engine reading the same graph.
+            sequence<string> derived_from;
+
         };
 
         // --- graph -------------------------------------------------------------

@@ -90,6 +90,21 @@ module tcnart_msgs {
         SISFrameRef target;             // the frame being located
         string output_topic;
         SRStreamTrigger trigger;
+
+        // How much this consumer prefers freshness over reuse, in [0, 1].
+        //
+        // A relation already computed by another stream is available as a
+        // derived edge weighted below the path it replaces, so it is normally
+        // preferred: fewer hops, less work. But it is strictly staler by one
+        // publish-ingest-buffer round, which a render loop will never notice
+        // and a latency-sensitive alignment might.
+        //
+        // 0 takes every shortcut available. 1 ignores derived edges entirely
+        // and walks only measured relations. Values between move a derived
+        // edge's effective weight toward the path it replaced. Applied when the
+        // stream is compiled, so no weight changes at runtime and no path is
+        // recompiled because a number drifted.
+        double freshness_bias;
     };
 
     struct SISRelationStreamStopRequest {
