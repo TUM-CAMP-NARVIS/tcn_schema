@@ -1,13 +1,35 @@
 #ifndef TCNART_MSG_SRG
 #define TCNART_MSG_SRG
 
+#include "builtin_interfaces/msg/Time_.idl"
 #include "tcnart_msgs/msg/Types.idl"
 
 module tcnart_msgs {
   module msg {
 
+        // --- coordinate conventions ------------------------------------------
+
+        // Which signed axis plays each of the three roles. 6 x 4 x 2 = 48 valid
+        // assignments; anything reusing an axis is degenerate.
+        enum CoordinateAxis {
+            COORD_AXIS_X_POS,
+            COORD_AXIS_X_NEG,
+            COORD_AXIS_Y_POS,
+            COORD_AXIS_Y_NEG,
+            COORD_AXIS_Z_POS,
+            COORD_AXIS_Z_NEG
+        };
+
+        struct CoordinateSystem {
+            CoordinateAxis forward;
+            CoordinateAxis right;
+            CoordinateAxis up;
+            uint8 dimensions;             // 2 or 3
+        };
+
+        // --- nodes -------------------------------------------------------------
+
         enum SRNodeType {
-          SRG_NODE_NONE,
           SRG_NODE_GENERIC,
           SRG_NODE_SENSOR,
           SRG_NODE_DISPLAY,
@@ -15,57 +37,97 @@ module tcnart_msgs {
           SRG_NODE_CONTENT
         };
 
-        enum SREdgeTemporalType {
-          SRG_EDGE_TEMPORAL_NONE,
-          SRG_EDGE_TEMPORAL_STATIC,
-          SRG_EDGE_TEMPORAL_STATIC_CALIBRATED,
-          SRG_EDGE_TEMPORAL_DYNAMIC,
-          SRG_EDGE_TEMPORAL_DYNAMIC_INFERRED
-        };
-
-        enum CoordinateAxis {
-            X,
-            XNegative,
-            Y,
-            YNegative,
-            Z,
-            ZNegative
-        };
-
-        struct CoordinateSystem {
-            CoordinateAxis forward;
-            CoordinateAxis right;
-            CoordinateAxis up;
-            int8 dimensions;
+        // Local nodes are private to their graph and are namespaced with the
+        // owner's prefix when two graphs are fused. Global nodes keep their bare
+        // name and are the only thing that joins two graphs together.
+        enum SRNodeScope {
+          SRG_SCOPE_LOCAL,
+          SRG_SCOPE_GLOBAL
         };
 
         struct SRNode {
 
-            SRNodeType node_type;
-            UUID node_uuid;
-            uint32 node_id;
-            string node_name;
+            // Identity within the graph. Edges reference nodes by this.
+            string name;
 
+            SRNodeType node_type;
+            SRNodeScope scope;
+
+            // The convention this node's data is expressed in.
+            CoordinateSystem coord;
+
+            // Inactive nodes are not traversed when resolving a path.
+            boolean active;
+
+            // Stable identity across sessions; all-zero when unused.
+            UUID uuid;
+
+            // Non-empty: this node's device announces its streams on this topic.
+            string stream_descriptor_topic;
+
+            // Opaque, application-defined.
             string custom_data;
 
         };
 
+        // --- edges -------------------------------------------------------------
+
+        enum SREdgeTemporalType {
+          SRG_EDGE_STATIC,              // fixed by construction or declaration
+          SRG_EDGE_STATIC_CALIBRATED,   // fixed, but measured; carries provenance
+          SRG_EDGE_DYNAMIC,             // supplied live by a tracker
+          SRG_EDGE_DYNAMIC_INFERRED     // derived from other edges, not measured directly
+        };
+
+        enum SRTransformType {
+          SRG_TRANSFORM_POSE6D,
+          SRG_TRANSFORM_TRANSLATION3D
+        };
+
+        union SRTransform switch(SRTransformType) {
+        case SRG_TRANSFORM_POSE6D:
+            RigidTransform pose6d;
+        case SRG_TRANSFORM_TRANSLATION3D:
+            Vector3 translation3d;
+        };
+
+        struct SRCalibration {
+            string method;                    // free-form: "hand-eye", "aruco-board", ...
+            double residual;                  // RMS error in metres; negative if not reported
+            builtin_interfaces::msg::Time computed_at;
+        };
+
         struct SREdge {
 
-            string edge_name;
+            // Identity within the graph. Parallel edges between the same pair of
+            // nodes are legal and are distinguished by this.
+            string name;
 
-            uint32 node_source_id;
-            uint32 node_destination_id;
+            string source;                    // SRNode.name
+            string target;                    // SRNode.name
 
             SREdgeTemporalType temporal_type;
 
-            string data_type;
-            string uri;
+            // The static value, or a dynamic edge's seed.
+            SRTransform transform;
+
+            // Traversal cost. Lower is preferred; a path minimises the sum.
+            double weight;
+
+            // Dynamic edges: where this edge's live value comes from.
+            string stream_descriptor_topic;
+
+            // 0 or 1 entries; populated for SRG_EDGE_STATIC_CALIBRATED.
+            sequence<SRCalibration> calibration;
+
         };
+
+        // --- graph -------------------------------------------------------------
 
         struct SRGraph {
 
-            string graph_name;
+            string name;                      // the owning client's identifier
+            string origin;                    // SRNode.name; the root of this graph
 
             sequence<SRNode> nodes;
             sequence<SREdge> edges;

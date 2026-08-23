@@ -45,6 +45,13 @@ module tcnart_msgs {
       uint8 audio_channels;
       AudioAACProfile aac_profile;
 
+      // nanoseconds between the measurement and the header stamp; 0 if unknown.
+      // A consumer interpolating across sensors subtracts this before use.
+      int64 sensor_latency_ns;
+
+      // empty means the default synchronized domain
+      string clock_domain;
+
     };
   };
 };
