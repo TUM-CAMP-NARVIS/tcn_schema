@@ -175,12 +175,28 @@ not calibrate leave the sequence empty.
 | `string uri` | *removed* | had no defined meaning |
 | — | `SRTransform transform` | **new**, from `SISRelationMessage.transform` |
 | — | `double weight` | **new**, from `SISRelationMessage.weight` |
+| — | `boolean is_invertible` | **new**, see below |
 | — | `string stream_descriptor_topic` | **new**, from `SISRelationMessage.tracker_stream_descriptor_topic` |
 | — | `sequence<SRCalibration> calibration` | **new**, 0 or 1 entries |
 | — | `string materialized_from` | **new**, set on edges created by a template |
 
 Field order in 0.3.0: `name, source, target, temporal_type, transform, weight,
-stream_descriptor_topic, calibration, materialized_from`.
+is_invertible, stream_descriptor_topic, calibration, materialized_from`.
+
+> **`is_invertible` and reversibility.** A relation is declared in one
+> direction, `source -> target`, and a path resolver walks it the other way by
+> composing its inverse. That is what makes a single forward declaration enough
+> to answer a query in either direction, and it is why the graph needs only one
+> edge per relation rather than two.
+>
+> Not every relation has an inverse. One that discards information — a
+> projection into an image plane, for instance — cannot be reversed, and
+> composing something called its inverse would invent the dimension it lost.
+> Set `is_invertible` to `false` for those; pathfinding will route around them
+> rather than through them backwards.
+>
+> **Porting:** rigid transforms are invertible, so `true` reproduces 0.2.0
+> behaviour, where every edge was walked in both directions unconditionally.
 
 > **`name` now carries meaning.** Parallel edges between the same pair of nodes
 > are legal and are distinguished by name. Edge removal takes a name and removes

@@ -155,6 +155,15 @@ module tcnart_msgs {
             // Traversal cost. Lower is preferred; a path minimises the sum.
             double weight;
 
+            // Whether a path may walk this relation backwards by composing its
+            // inverse. True for a rigid transform, which is what makes the graph
+            // effectively bidirectional: one declaration of source -> target is
+            // enough to resolve an optimal path in either direction. False for a
+            // relation that discards information -- a projection into an image
+            // plane has no inverse to compose, and pathfinding routes around it
+            // rather than through it backwards.
+            boolean is_invertible;
+
             // Dynamic edges: where this edge's live value comes from.
             string stream_descriptor_topic;
 
