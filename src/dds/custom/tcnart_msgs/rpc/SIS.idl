@@ -46,46 +46,63 @@ module tcnart_msgs {
         string name;
     };
 
-    // --- topic translation -------------------------------------------------
+    // --- relation streams -------------------------------------------------
 
+    // A frame of reference: a node within an owning graph.
     struct SISFrameRef {
-        string client;                  // the owning graph
+        string client;                  // owning graph
         string node;                    // SRNode.name within it
     };
 
-    enum SISEndpointKind {
-        SIS_ENDPOINT_FRAME,             // translate into or out of this frame
-        SIS_ENDPOINT_RAW                // pass through untransformed
+    enum SRStreamTriggerKind {
+        SRG_TRIGGER_FIXED_RATE,         // a timer; sample at "now"
+        SRG_TRIGGER_ON_STREAM,          // a named stream; sample at its stamp
+        SRG_TRIGGER_ON_ANY              // any input on the path; sample at the arriving stamp
     };
 
-    union SISEndpoint switch(SISEndpointKind) {
-    case SIS_ENDPOINT_FRAME:
-        SISFrameRef frame;
-    case SIS_ENDPOINT_RAW:
+    // When a relation stream is evaluated, and therefore at which instant every
+    // edge on the path is sampled. The three differ in more than rate: a fixed
+    // rate extrapolates every edge to the present, while a stream trigger
+    // interpolates the others to the master's timestamp.
+    union SRStreamTrigger switch(SRStreamTriggerKind) {
+    case SRG_TRIGGER_FIXED_RATE:
+        double hz;
+    case SRG_TRIGGER_ON_STREAM:
+        string topic;
+    case SRG_TRIGGER_ON_ANY:
         boolean unused;
     };
 
-    // Republish a pose stream from one frame of reference into another.
-    // Both endpoints SIS_ENDPOINT_RAW is a plain topic-to-topic relay.
-    struct SISTopicTranslationStartRequest {
-        string src_topic;
-        string dst_topic;
-        SISEndpoint src;
-        SISEndpoint dst;
+    // Publish the spatial relation between two frames as a stream.
+    //
+    // This replaces topic translation. What a consumer wants is not a copy of
+    // some pose stream re-expressed, but the answer to "where is target, as seen
+    // from observer, at this instant" -- which the engine resolves through the
+    // unified graph. The path may cross tracked edges, static edges, calibrated
+    // edges, and several clients' graphs; it may also be entirely static, which
+    // topic translation could not express at all.
+    //
+    // If `target` names a template node, the stream carries one entry per
+    // instance materialized from it -- "every ArUco marker this camera sees, in
+    // the headset's frame" -- observed at one instant, in one message.
+    struct SISRelationStreamStartRequest {
+        SISFrameRef observer;           // the frame poses are expressed in
+        SISFrameRef target;             // the frame being located
+        string output_topic;
+        SRStreamTrigger trigger;
     };
 
-    struct SISTopicTranslationStopRequest {
-        string src_topic;
-        string dst_topic;
+    struct SISRelationStreamStopRequest {
+        string output_topic;
     };
 
-    enum SISTopicTranslationStatus {
-        SIS_TT_ACTIVE,                  // running
-        SIS_TT_INACTIVE,                // not running; stopped, or never started
-        SIS_TT_NO_PATH,                 // the graph does not connect these two frames
-        SIS_TT_UNKNOWN_FRAME,           // a named client or node does not exist
-        SIS_TT_CLOCK_DOMAIN_MISMATCH,   // the path crosses unsynchronized clocks
-        SIS_TT_REJECTED                 // malformed request
+    enum SISRelationStreamStatus {
+        SIS_RS_ACTIVE,                  // running
+        SIS_RS_INACTIVE,                // not running; stopped, or never started
+        SIS_RS_NO_PATH,                 // the graph does not connect these two frames
+        SIS_RS_UNKNOWN_FRAME,           // a named client or node does not exist
+        SIS_RS_CLOCK_DOMAIN_MISMATCH,   // the path crosses unsynchronized clocks
+        SIS_RS_REJECTED                 // malformed request
     };
 
   };

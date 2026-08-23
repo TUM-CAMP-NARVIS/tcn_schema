@@ -235,9 +235,13 @@ Their content moved into `msg/SpatialRelations.idl` as described above.
 | `SISRelationRef` (as remove) | `SISEdgeRemoveRequest { string name }` | **by edge name, not endpoint pair** |
 | — | `SISLeaveRequest { string client }` | **new** |
 
-### `SISTopicTranslationStartRequest`
+### Topic translation becomes relation streams
 
-0.2.0:
+`SISTopicTranslationStartRequest`, `SISTopicTranslationStopRequest` and
+`SISTopicTranslationStatusReply` are **removed**. Nothing replaces them
+field-for-field; the concept changed.
+
+0.2.0 asked the engine to take a pose stream and republish it re-expressed:
 
 ```idl
 string src_topic; string dst_topic;
@@ -247,42 +251,95 @@ SISComponentRef src_node;
 SISComponentRef dst_node;
 ```
 
-0.3.0:
-
-```idl
-string src_topic; string dst_topic;
-SISEndpoint src;
-SISEndpoint dst;
-```
-
-where
+0.3.0 asks it for a spatial relation instead:
 
 ```idl
 struct SISFrameRef { string client; string node; };
-enum SISEndpointKind { SIS_ENDPOINT_FRAME, SIS_ENDPOINT_RAW };
-union SISEndpoint switch(SISEndpointKind) {
-case SIS_ENDPOINT_FRAME: SISFrameRef frame;
-case SIS_ENDPOINT_RAW:   boolean unused;
+
+enum SRStreamTriggerKind {
+    SRG_TRIGGER_FIXED_RATE, SRG_TRIGGER_ON_STREAM, SRG_TRIGGER_ON_ANY
 };
+
+union SRStreamTrigger switch(SRStreamTriggerKind) {
+case SRG_TRIGGER_FIXED_RATE: double hz;
+case SRG_TRIGGER_ON_STREAM:  string topic;
+case SRG_TRIGGER_ON_ANY:     boolean unused;
+};
+
+struct SISRelationStreamStartRequest {
+    SISFrameRef observer;
+    SISFrameRef target;
+    string output_topic;
+    SRStreamTrigger trigger;
+};
+
+struct SISRelationStreamStopRequest { string output_topic; };
 ```
 
-**Porting rule:** where 0.2.0 left a client and node empty, send
-`SIS_ENDPOINT_RAW`. Where it set both, send `SIS_ENDPOINT_FRAME` with the same
-two strings. Setting one and not the other was already invalid and is now
-unrepresentable.
+**Why the reshape.** A source topic was doing two unrelated jobs: naming the
+payload to copy, and implicitly deciding when the translation fired. Splitting
+them is what makes a fixed output rate expressible. It also makes a purely
+static relation streamable — a calibrated edge maintained at runtime can be
+published with no tracker anywhere on the path, which topic translation could
+not express.
 
-### `SISTopicTranslationStatusReply` → `SISTopicTranslationStatus`
+**Porting rule.** A 0.2.0 translation
+
+```
+src_topic = T, src_client = A, src_node = N,
+            dst_client = B, dst_node = M, dst_topic = U
+```
+
+becomes
+
+```
+observer = { client: B, node: M },
+target   = { client: A, node: N },
+output_topic = U,
+trigger = SRG_TRIGGER_ON_STREAM { topic: T }
+```
+
+Note the **inversion**: translation named the frame poses came *from* first,
+whereas a relation names the frame poses are expressed *in* first. `observer` is
+the old destination; `target` is the old source.
+
+The old "both client and node empty means world coordinates" case has no
+equivalent and needs none — there is no world frame any more, and a relation
+between two named frames is what it was approximating.
+
+### Trigger modes
+
+| Kind | Fires on | Every edge sampled at |
+| --- | --- | --- |
+| `SRG_TRIGGER_FIXED_RATE` | a timer at `hz` | now — every edge extrapolated to the present |
+| `SRG_TRIGGER_ON_STREAM` | a sample on `topic` | that sample's stamp, latency-corrected |
+| `SRG_TRIGGER_ON_ANY` | any input on the path | the arriving sample's stamp |
+
+There is no default; the discriminator is always present. The three differ in
+more than rate, and picking one for a client would be picking whether its poses
+are interpolated or extrapolated.
+
+### Template targets
+
+If `target` names a node carrying a `node_template`, the stream publishes one
+entry per instance materialized from it, all observed at the same instant. This
+is how a multi-marker tracker stream survives the move away from topic copying:
+"every ArUco marker this camera sees, in the headset's frame" is one request and
+one message, not one per marker.
+
+### Status
+
+`SISTopicTranslationStatusReply` becomes `SISRelationStreamStatus`:
 
 | 0.2.0 | 0.3.0 |
 | --- | --- |
-| `SIS_TTSTATUS_ACTIVE` | `SIS_TT_ACTIVE` |
-| `SIS_TTSTATUS_INACTIVE` | `SIS_TT_INACTIVE` |
-| `SIS_TTSTATUS_UNAVAILABLE` | splits into `SIS_TT_NO_PATH`, `SIS_TT_UNKNOWN_FRAME`, `SIS_TT_CLOCK_DOMAIN_MISMATCH`, `SIS_TT_REJECTED` |
+| `SIS_TTSTATUS_ACTIVE` | `SIS_RS_ACTIVE` |
+| `SIS_TTSTATUS_INACTIVE` | `SIS_RS_INACTIVE` |
+| `SIS_TTSTATUS_UNAVAILABLE` | splits into `SIS_RS_NO_PATH`, `SIS_RS_UNKNOWN_FRAME`, `SIS_RS_CLOCK_DOMAIN_MISMATCH`, `SIS_RS_REJECTED` |
 
 **Porting rule:** a client that retried on `UNAVAILABLE` must now distinguish.
-`SIS_TT_NO_PATH` and `SIS_TT_UNKNOWN_FRAME` are permanent for the current graph
-— retrying without changing the graph will never succeed. Only transient
-conditions warrant a retry.
+`SIS_RS_NO_PATH` and `SIS_RS_UNKNOWN_FRAME` are permanent for the current graph
+— retrying without changing the graph will never succeed.
 
 ---
 
@@ -344,7 +401,9 @@ an error that presents as a small fixed offset rather than as a fault.
    the old implicit identity if you have no better name.
 4. Reference nodes by **name** rather than `uint32` id.
 5. Set `SRGraph.origin` from what was `SISJoinMessage.origin.name`.
-6. Convert translation-start endpoints to `SISEndpoint`.
+6. Convert every topic translation into a relation stream, remembering that
+   `observer` is the old *destination* and `target` the old *source*, and
+   choosing a trigger explicitly.
 7. Handle the four replacement status values; stop retrying on permanent ones.
 8. Drop `target_count` from target-tracking publishers.
 9. Optionally declare `sensor_latency_ns` and `clock_domain`.
