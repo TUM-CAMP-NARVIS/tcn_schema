@@ -76,9 +76,44 @@ Moved from `rpc::SISScope`, whose values map one to one
 | — | `CoordinateSystem coord` | **new**, from `SISComponentMessage.coord` |
 | — | `boolean active` | **new**, from `SISComponentMessage.active` |
 | — | `string stream_descriptor_topic` | **new**, from `SISComponentMessage.tracker_stream_descriptor_topic` |
+| — | `sequence<SRNodeTemplate> node_template` | **new**, see Templates below |
+| — | `string materialized_from` | **new** |
+| — | `uint32 materialized_id` | **new** |
 
 Field order in 0.3.0: `name, node_type, scope, coord, active, uuid,
-stream_descriptor_topic, custom_data`.
+stream_descriptor_topic, node_template, materialized_from, materialized_id,
+custom_data`.
+
+### Templates — replacing `is_template` / `template_type` / `template_match_id`
+
+Those three properties existed only in the database schema, never in the IDL,
+and were written as hardcoded constants. They are replaced by a modelled
+concept.
+
+```idl
+struct SRNodeTemplate {
+    MarkerType marker_type;             // what kind of observation matches
+    sequence<uint32> match_ids;         // empty = any id an observer reports
+    string instance_name_pattern;       // "aruco_{id}" -> "aruco_7"
+};
+```
+
+A node carrying a non-empty `node_template` is a **blueprint**, not a frame of
+reference. It is never traversed. When an observation matches its rule, the
+template node **and every edge attached to it** are materialized into concrete
+copies: the new node takes its name from `instance_name_pattern`, and both the
+node and the edges record `materialized_from` (the template's name) and, on the
+node, `materialized_id` (the id that matched).
+
+This models what a client genuinely cannot know at announcement time — which
+ArUco ids are in the room, which instruments will be brought in — instead of
+leaving it to be discovered by side effect.
+
+**Porting:** a client that previously relied on the engine fabricating a node
+the first time a tracker reported an unknown marker id should now declare a
+template node with an edge from the observing camera. The old implicit rule is
+reproduced by `match_ids` empty, `instance_name_pattern` set to the marker
+prefix plus `{id}`, and a single `SRG_EDGE_DYNAMIC` edge from the observer.
 
 ### `SREdgeTemporalType` — renamed enumerators
 
@@ -86,11 +121,22 @@ stream_descriptor_topic, custom_data`.
 | --- | --- |
 | `SRG_EDGE_TEMPORAL_NONE` | *removed* |
 | `SRG_EDGE_TEMPORAL_STATIC` | `SRG_EDGE_STATIC` |
+| — | `SRG_EDGE_STATIC_UNCALIBRATED` (**new**) |
 | `SRG_EDGE_TEMPORAL_STATIC_CALIBRATED` | `SRG_EDGE_STATIC_CALIBRATED` |
 | `SRG_EDGE_TEMPORAL_DYNAMIC` | `SRG_EDGE_DYNAMIC` |
 | `SRG_EDGE_TEMPORAL_DYNAMIC_INFERRED` | `SRG_EDGE_DYNAMIC_INFERRED` |
 
-`_NONE` removal shifts every ordinal down by one. **Wire change.**
+`_NONE` removal shifts every ordinal down by one, and the new
+`SRG_EDGE_STATIC_UNCALIBRATED` sits between `SRG_EDGE_STATIC` and
+`SRG_EDGE_STATIC_CALIBRATED`, shifting the two dynamic values up again.
+**Wire change.** Final order: `STATIC`, `STATIC_UNCALIBRATED`,
+`STATIC_CALIBRATED`, `DYNAMIC`, `DYNAMIC_INFERRED`.
+
+`SRG_EDGE_STATIC_UNCALIBRATED` is the second kind of unknown: both endpoints
+are known, but their relation has not been measured. Such an edge is **not
+traversable** — a path may not compose a value that does not exist yet. It is
+the work queue an external calibration tool reads, and the tool promotes it to
+`SRG_EDGE_STATIC_CALIBRATED` with an `SRCalibration` entry once solved.
 
 ### `SRTransform` — new union
 
@@ -131,9 +177,10 @@ not calibrate leave the sequence empty.
 | — | `double weight` | **new**, from `SISRelationMessage.weight` |
 | — | `string stream_descriptor_topic` | **new**, from `SISRelationMessage.tracker_stream_descriptor_topic` |
 | — | `sequence<SRCalibration> calibration` | **new**, 0 or 1 entries |
+| — | `string materialized_from` | **new**, set on edges created by a template |
 
 Field order in 0.3.0: `name, source, target, temporal_type, transform, weight,
-stream_descriptor_topic, calibration`.
+stream_descriptor_topic, calibration, materialized_from`.
 
 > **`name` now carries meaning.** Parallel edges between the same pair of nodes
 > are legal and are distinguished by name. Edge removal takes a name and removes
@@ -286,6 +333,11 @@ an error that presents as a small fixed offset rather than as a fault.
 8. Drop `target_count` from target-tracking publishers.
 9. Optionally declare `sensor_latency_ns` and `clock_domain`.
 10. Send `SISLeaveRequest` on shutdown instead of relying on the timeout.
+11. Declare a **template node** for anything whose identity is unknown at
+    announcement time, rather than relying on the engine to fabricate nodes when
+    an unknown marker id appears.
+12. Mark relations awaiting calibration as `SRG_EDGE_STATIC_UNCALIBRATED`
+    rather than declaring an identity transform and hoping.
 
 ## Wire-level ordinal shifts
 
@@ -294,7 +346,8 @@ shifts down by one. A peer built against 0.2.0 that somehow decodes 0.3.0 bytes
 would misread these silently:
 
 - `SRNodeType` — `SRG_NODE_NONE` removed
-- `SREdgeTemporalType` — `SRG_EDGE_TEMPORAL_NONE` removed
+- `SREdgeTemporalType` — `SRG_EDGE_TEMPORAL_NONE` removed and
+  `SRG_EDGE_STATIC_UNCALIBRATED` inserted
 
 Every other change is either a source-level rename or a structural change that
 fails to decode outright.

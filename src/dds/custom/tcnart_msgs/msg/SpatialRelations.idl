@@ -45,6 +45,29 @@ module tcnart_msgs {
           SRG_SCOPE_GLOBAL
         };
 
+        // --- templates ---------------------------------------------------------
+
+        // A blueprint for entities that are not known when the graph is announced.
+        //
+        // A client usually cannot know which ArUco ids are in the room, or which
+        // instruments will be brought in. A template node stands for "an entity of
+        // this kind, not yet identified". It is never traversed itself. When an
+        // observation matches its rule, the template node and every edge attached
+        // to it are materialized into concrete copies carrying the observed id.
+        struct SRNodeTemplate {
+
+            // What kind of observation materializes this template.
+            MarkerType marker_type;
+
+            // Ids that match. Empty means any id an observer reports.
+            sequence<uint32> match_ids;
+
+            // Name given to a materialized node. "{id}" is substituted with the
+            // observed id, so "aruco_{id}" produces "aruco_7".
+            string instance_name_pattern;
+
+        };
+
         struct SRNode {
 
             // Identity within the graph. Edges reference nodes by this.
@@ -65,6 +88,19 @@ module tcnart_msgs {
             // Non-empty: this node's device announces its streams on this topic.
             string stream_descriptor_topic;
 
+            // 0 or 1 entries. Non-empty makes this node a blueprint rather than a
+            // frame of reference: it is never traversed, and observations matching
+            // its rule materialize concrete copies of it.
+            sequence<SRNodeTemplate> node_template;
+
+            // Non-empty on a materialized node: the template node it came from.
+            // Removing a template retires everything it materialized.
+            string materialized_from;
+
+            // The observed id that matched. Meaningful only when
+            // materialized_from is non-empty.
+            uint32 materialized_id;
+
             // Opaque, application-defined.
             string custom_data;
 
@@ -72,9 +108,14 @@ module tcnart_msgs {
 
         // --- edges -------------------------------------------------------------
 
+        // Two different unknowns are expressible here. A template node covers
+        // "which entity is this?"; SRG_EDGE_STATIC_UNCALIBRATED covers "both ends
+        // are known, but their relation has not been measured yet" -- which is the
+        // work queue an external calibration tool reads.
         enum SREdgeTemporalType {
           SRG_EDGE_STATIC,              // fixed by construction or declaration
-          SRG_EDGE_STATIC_CALIBRATED,   // fixed, but measured; carries provenance
+          SRG_EDGE_STATIC_UNCALIBRATED, // declared; value not yet measured, not traversable
+          SRG_EDGE_STATIC_CALIBRATED,   // fixed, and measured; carries provenance
           SRG_EDGE_DYNAMIC,             // supplied live by a tracker
           SRG_EDGE_DYNAMIC_INFERRED     // derived from other edges, not measured directly
         };
@@ -119,6 +160,10 @@ module tcnart_msgs {
 
             // 0 or 1 entries; populated for SRG_EDGE_STATIC_CALIBRATED.
             sequence<SRCalibration> calibration;
+
+            // Non-empty on a materialized edge: the template node whose
+            // materialization created it.
+            string materialized_from;
 
         };
 
