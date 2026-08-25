@@ -473,3 +473,109 @@ would misread these silently:
 
 Every other change is either a source-level rename or a structural change that
 fails to decode outright.
+
+---
+
+## 5. Graph fragments, addendum: `SRNode.pinned`, `SIS_RS_PENDING`, status notifications
+
+The engine is moving from one graph per client to a single merged graph
+assembled from fragments a client announces and can later retract. This
+addendum adds the three fields that later work in that migration depends on.
+It is layered onto 0.3.0 rather than given its own version number; treat it as
+part of the same port.
+
+### `SRNode.pinned` — **new, wire break for CDR publishers of `SRNode`**
+
+```idl
+struct SRNode {
+    ...
+    string stream_descriptor_topic;
+
+    // Survives fragment retraction. Set by whatever created the node
+    // outside a fragment's lifecycle -- a surveyed fiducial, a
+    // calibrated rig. The engine never sets this; it only honours it,
+    // so no tool needs the engine's permission to keep its own data.
+    boolean pinned;
+
+    sequence<SRNodeTemplate> node_template;
+    ...
+};
+```
+
+Inserted immediately after `stream_descriptor_topic`, before `node_template`.
+Field order in 0.3.0+: `name, node_type, scope, coord, active, uuid,
+stream_descriptor_topic, pinned, node_template, materialized_from,
+materialized_id, custom_data`.
+
+**This is a wire break.** `SRNode` is a fixed-size-field struct nested as a
+`sequence<SRNode>` inside `SRGraph`, and CDR has no field names or
+self-describing lengths — every field is positional. A publisher built
+against pre-addendum 0.3.0 (no `pinned`) and a reader built against this
+addendum disagree about where one `SRNode` ends and the next begins. On a
+graph with exactly one node this happens to still decode, because the reader
+simply runs out of input at the same point the writer stopped; on a graph
+with two or more nodes, every node after the first is read starting from the
+wrong offset — a garbage graph with no decode error. **Every CDR publisher of
+`SRNode` (directly, or via `SRGraph`, `SISJoinRequest`, or
+`SISNodeUpdateRequest`) must be rebuilt against this addendum before any
+reader is.** A node created by anything other than the engine itself
+(surveyed fiducials, calibration rigs) should set `pinned = true`; the engine
+never sets it and only honours it.
+
+### `SISRelationStreamStatus::SIS_RS_PENDING` — appended, not a wire break
+
+```idl
+enum SISRelationStreamStatus {
+    SIS_RS_ACTIVE,
+    SIS_RS_INACTIVE,
+    SIS_RS_NO_PATH,
+    SIS_RS_UNKNOWN_FRAME,
+    SIS_RS_CLOCK_DOMAIN_MISMATCH,
+    SIS_RS_REJECTED,
+    SIS_RS_PENDING           // new; appended last so no existing ordinal moves
+};
+```
+
+`SIS_RS_PENDING` covers a relation stream that is accepted but not yet
+producing — either because its path runs through a
+frame that fragment retraction withdrew and which is not `pinned` — distinct
+from `SIS_RS_NO_PATH` (no path ever existed) because a parked stream may
+resume with no reconfiguration if the fragment reappears. Appended at the end
+so every existing ordinal (`SIS_RS_ACTIVE` through `SIS_RS_REJECTED`) is
+unchanged; a peer that has not been rebuilt simply never sees this value.
+
+### `SISRelationStreamStatusNotification` — new
+
+```idl
+// Published on "{output_topic}/status" when a stream's status changes.
+//
+// A consumer otherwise cannot tell "the engine says there is no path" from
+// "the engine died", and only the first is recoverable by waiting.
+struct SISRelationStreamStatusNotification {
+    string output_topic;
+    SISRelationStreamStatus status;
+    string detail;                  // human-readable reason; may be empty
+};
+```
+
+A new type, so introducing it breaks nothing that does not already publish or
+subscribe to it. The engine publishes one on `"{output_topic}/status"`
+whenever a relation stream's `SISRelationStreamStatus` changes — including
+into and out of `SIS_RS_PENDING`. A consumer that previously inferred stream
+health only from the presence or absence of output on `output_topic` should
+subscribe to the status topic instead: silence on the data topic is
+ambiguous between "the engine has nothing new to say" and "the engine is no
+longer running the stream", and only the notification disambiguates it.
+
+### Porting checklist (addendum)
+
+13. Rebuild every `SRNode` / `SRGraph` CDR publisher before any reader that
+    expects `pinned` — the field ordering makes this a hard dependency, not a
+    courtesy.
+14. Set `pinned = true` on any node whose lifetime a tool manages itself,
+    independent of the fragment that first announced it.
+15. Handle `SIS_RS_PENDING` alongside the existing statuses; unlike
+    `SIS_RS_NO_PATH` and `SIS_RS_UNKNOWN_FRAME`, it is not necessarily
+    permanent for the current graph.
+16. Subscribe to `"{output_topic}/status"` for `SISRelationStreamStatusNotification`
+    rather than inferring stream health from silence on `output_topic`.

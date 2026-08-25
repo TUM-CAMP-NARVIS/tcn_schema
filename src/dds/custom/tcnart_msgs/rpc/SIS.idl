@@ -117,7 +117,26 @@ module tcnart_msgs {
         SIS_RS_NO_PATH,                 // the graph does not connect these two frames
         SIS_RS_UNKNOWN_FRAME,           // a named client or node does not exist
         SIS_RS_CLOCK_DOMAIN_MISMATCH,   // the path crosses unsynchronized clocks
-        SIS_RS_REJECTED                 // malformed request
+        SIS_RS_REJECTED,                // malformed request
+        SIS_RS_PENDING                  // accepted, but not yet producing: a frame on the
+                                         // path was withdrawn and is not pinned, or an edge
+                                         // on it is not calibrated yet. Re-evaluated on every
+                                         // graph mutation and resumes on its own once the
+                                         // missing part arrives — the client does nothing.
+                                         // Distinct from SIS_RS_NO_PATH, which means the
+                                         // frames are not connectable at all and the request
+                                         // is refused. Appended last so existing ordinals
+                                         // hold.
+    };
+
+    // Published on "{output_topic}/status" when a stream's status changes.
+    //
+    // A consumer otherwise cannot tell "the engine says there is no path" from
+    // "the engine died", and only the first is recoverable by waiting.
+    struct SISRelationStreamStatusNotification {
+        string output_topic;
+        SISRelationStreamStatus status;
+        string detail;                  // human-readable reason; may be empty
     };
 
   };

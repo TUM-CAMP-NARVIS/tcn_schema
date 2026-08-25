@@ -88,6 +88,12 @@ module tcnart_msgs {
             // Non-empty: this node's device announces its streams on this topic.
             string stream_descriptor_topic;
 
+            // Survives fragment retraction. Set by whatever created the node
+            // outside a fragment's lifecycle -- a surveyed fiducial, a
+            // calibrated rig. The engine never sets this; it only honours it,
+            // so no tool needs the engine's permission to keep its own data.
+            boolean pinned;
+
             // 0 or 1 entries. Non-empty makes this node a blueprint rather than a
             // frame of reference: it is never traversed, and observations matching
             // its rule materialize concrete copies of it.
