@@ -85,10 +85,14 @@ module tcnart_msgs {
     // If `target` names a template node, the stream carries one entry per
     // instance materialized from it -- "every ArUco marker this camera sees, in
     // the headset's frame" -- observed at one instant, in one message.
+    //
+    // The client asks *what* relation it wants, not *where* to put it: there is
+    // no output_topic here. 0.3.0's third field is gone, and the engine answers
+    // with the topic it assigned (SISRelationStreamReply, below). Field order is
+    // now: observer, target, trigger, freshness_bias.
     struct SISRelationStreamStartRequest {
         SISFrameRef observer;           // the frame poses are expressed in
         SISFrameRef target;             // the frame being located
-        string output_topic;
         SRStreamTrigger trigger;
 
         // How much this consumer prefers freshness over reuse, in [0, 1].
@@ -107,8 +111,13 @@ module tcnart_msgs {
         double freshness_bias;
     };
 
+    // Stops the stream named by the handle the engine issued in
+    // SISRelationStreamReply.handle. Renamed from 0.3.0's `output_topic` on
+    // purpose: the value is no longer a topic the client chose, and a rename
+    // turns a peer that keeps supplying its own into a compile error instead of
+    // a request that decodes cleanly and stops nothing.
     struct SISRelationStreamStopRequest {
-        string output_topic;
+        string handle;
     };
 
     enum SISRelationStreamStatus {
@@ -129,10 +138,54 @@ module tcnart_msgs {
                                          // hold.
     };
 
+    // Whether a reply carries a handle at all.
+    //
+    // A refusal has no stream to name, and an empty string standing in for
+    // "absent" is exactly the plausible default this project has been bitten by
+    // before: it is a legal topic-shaped value that every consumer would have to
+    // remember to special-case. A discriminated union makes absence a case the
+    // decoder has to handle.
+    enum SISRelationStreamHandleKind {
+        SIS_RSH_NONE,                   // no stream to consume, and so no handle
+        SIS_RSH_ASSIGNED                // the engine assigned this handle
+    };
+
+    // Carries a filler `boolean` in the NONE case because IDL requires every
+    // union case to declare a member -- the same reason SRStreamTrigger's
+    // SRG_TRIGGER_ON_ANY carries one.
+    union SISRelationStreamHandle switch(SISRelationStreamHandleKind) {
+    case SIS_RSH_NONE:
+        boolean unused;
+    case SIS_RSH_ASSIGNED:
+        string topic;
+    };
+
+    // The answer to SISRelationStreamStartRequest and
+    // SISRelationStreamStopRequest. 0.3.0 replied with a bare
+    // SISRelationStreamStatus; the handle is what a client now needs to
+    // subscribe to anything at all, because it no longer chose the topic.
+    //
+    // The handle is ASSIGNED exactly when the status is SIS_RS_ACTIVE or
+    // SIS_RS_PENDING -- the two statuses that mean "there is a stream on this
+    // topic for you". Every other status (including SIS_RS_INACTIVE, the answer
+    // to a stop) is NONE.
+    //
+    // The assigned topic is "sqe/{engine_id}/rel/{handle}"; its status
+    // notifications are on "{topic}/status" and its stream descriptor on
+    // "sqe/{engine_id}/cfg/desc/{handle}". Treat all three as opaque: read them
+    // from this reply rather than recomputing them.
+    struct SISRelationStreamReply {
+        SISRelationStreamStatus status;
+        SISRelationStreamHandle handle;
+    };
+
     // Published on "{output_topic}/status" when a stream's status changes.
     //
     // A consumer otherwise cannot tell "the engine says there is no path" from
     // "the engine died", and only the first is recoverable by waiting.
+    // `output_topic` now carries the engine-issued handle from
+    // SISRelationStreamReply, not a topic the client picked. The field name and
+    // its position are unchanged, so this struct's wire layout is untouched.
     struct SISRelationStreamStatusNotification {
         string output_topic;
         SISRelationStreamStatus status;

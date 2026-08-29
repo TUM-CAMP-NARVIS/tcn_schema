@@ -579,3 +579,138 @@ longer running the stream", and only the notification disambiguates it.
     permanent for the current graph.
 16. Subscribe to `"{output_topic}/status"` for `SISRelationStreamStatusNotification`
     rather than inferring stream health from silence on `output_topic`.
+
+---
+
+## 6. Engine-issued stream handles: the client no longer chooses `output_topic`
+
+A relation stream's output topic is now **assigned by the engine**, in the
+engine's own namespace, and returned in the reply. A client asks *what*
+relation it wants; it no longer says *where* to put it.
+
+This is layered onto 0.3.0 like section 5 — treat it as part of the same port.
+
+### `SISRelationStreamStartRequest` — **`output_topic` removed; wire break**
+
+```idl
+struct SISRelationStreamStartRequest {
+    SISFrameRef observer;
+    SISFrameRef target;
+    SRStreamTrigger trigger;        // was the 4th field, is now the 3rd
+    double freshness_bias;          // was the 5th field, is now the 4th
+};
+```
+
+`string output_topic` sat **third**, between `target` and `trigger`. It is
+gone; `trigger` and `freshness_bias` each move up one position. Field order in
+0.3.0+section-6: `observer, target, trigger, freshness_bias`.
+
+**This is a wire break, and it is not reliably a loud one.** CDR is positional
+and carries no field names. A publisher that still writes `output_topic` puts a
+`uint32` string length where the reader now expects `SRStreamTrigger`'s
+discriminator. Whether that fails depends on the topic the old publisher
+happened to pick:
+
+| Old `output_topic` | Length written | Read as discriminator | Result |
+| --- | --- | --- | --- |
+| `"hmd/rel/camera"` | 15 | 15 — no such case | decode error; the request is refused |
+| `"a"` | 2 | 2 = `SRG_TRIGGER_ON_ANY` | **decodes**, wrong trigger, garbage bias |
+| `""` | 1 | 1 = `SRG_TRIGGER_ON_STREAM` | **decodes**, trigger topic read from the wrong bytes |
+
+Two of those three are silent. **Rebuild every publisher of
+`SISRelationStreamStartRequest` before, or with, the engine** — do not rely on
+a decode error to find them.
+
+### `SISRelationStreamStopRequest` — field renamed to `handle`
+
+```idl
+struct SISRelationStreamStopRequest {
+    string handle;                  // was `output_topic`
+};
+```
+
+The wire layout is unchanged — one string, same position — so this rename
+costs no bytes. What changed is the **value**: it must be the handle the engine
+issued in `SISRelationStreamReply.handle`, not a topic the client picked. The
+field is renamed rather than merely redocumented because a peer that keeps
+supplying its own topic would otherwise compile, decode, and stop nothing. The
+rename makes it a compile error at the peer instead.
+
+### `SISRelationStreamReply` — new; **replaces the bare status reply**
+
+```idl
+enum SISRelationStreamHandleKind {
+    SIS_RSH_NONE,                   // no stream to consume, and so no handle
+    SIS_RSH_ASSIGNED                // the engine assigned this handle
+};
+
+union SISRelationStreamHandle switch(SISRelationStreamHandleKind) {
+case SIS_RSH_NONE:      boolean unused;
+case SIS_RSH_ASSIGNED:  string topic;
+};
+
+struct SISRelationStreamReply {
+    SISRelationStreamStatus status;
+    SISRelationStreamHandle handle;
+};
+```
+
+Both `/sis/stream/start` and `/sis/stream/stop` previously replied with a bare
+`SISRelationStreamStatus` (a 4-byte enum). They now reply with
+`SISRelationStreamReply`, annotated
+`application/cdr;tcnart_msgs::rpc::SISRelationStreamReply`. A peer decoding the
+reply as a bare enum reads `status` correctly by accident — it is still the
+first field — and then stops, never seeing the handle it now needs. **A client
+that computed the output topic itself must read it from this reply instead.**
+
+`handle` is `SIS_RSH_ASSIGNED` exactly when `status` is `SIS_RS_ACTIVE` or
+`SIS_RS_PENDING`, the two statuses that mean "there is a stream on this topic
+for you". Every other status — `SIS_RS_INACTIVE` (including the answer to a
+stop), `SIS_RS_NO_PATH`, `SIS_RS_UNKNOWN_FRAME`, `SIS_RS_CLOCK_DOMAIN_MISMATCH`,
+`SIS_RS_REJECTED` — replies `SIS_RSH_NONE`. It is a union, not an empty string,
+so "there is no handle" is a case the decoder must handle rather than a legal
+topic-shaped value every consumer has to remember to special-case.
+
+### The topics the handle names
+
+```text
+sqe/{engine_id}/rel/{handle}            the relation output (TargetTrackingMessage)
+sqe/{engine_id}/rel/{handle}/status     SISRelationStreamStatusNotification
+sqe/{engine_id}/cfg/desc/{handle}       StreamDescriptorMessage for that output
+```
+
+`engine_id` is the engine's configured identity (`--engine-id`). `handle` is
+derived from the requested relation, so **two clients asking for the same
+relation receive the same topic** — one stream, one computation. Treat the
+whole string as **opaque**: subscribe to what the reply gave you, and derive
+the status and descriptor topics from it by appending `/status` and by
+replacing the `rel` segment with `cfg/desc`, rather than recomputing the handle.
+
+`SISRelationStreamStatusNotification.output_topic` keeps its name and position,
+so that struct's layout is untouched; its *value* is now the engine-issued
+handle topic.
+
+### Porting checklist (section 6)
+
+17. Remove `output_topic` from every `SISRelationStreamStartRequest` you
+    construct, and rebuild — a stale publisher can decode into a wrong trigger
+    without erroring.
+18. Decode start and stop replies as `SISRelationStreamReply`, not as a bare
+    `SISRelationStreamStatus`.
+19. Subscribe to the topic the reply hands you. Delete any code that builds a
+    relation-stream output topic, status topic, or descriptor topic from the
+    client's own naming scheme.
+20. Send the reply's handle back in `SISRelationStreamStopRequest.handle`; a
+    stored topic string from before this change will not stop anything.
+21. Handle `SIS_RSH_NONE`: a refusal names no topic. Do not treat an absent
+    handle as an empty topic.
+22. Accept `SIS_RS_PENDING` as acceptance on a *start*, not failure. A
+    duplicate request arriving while the first one's database read is still
+    out is now answered `SIS_RS_PENDING` rather than `SIS_RS_ACTIVE`: nothing
+    is running on that handle yet, and the request may still be refused.
+    Watch `"{handle}/status"` for the transition.
+23. Stop assuming two requests for the same relation with different triggers
+    or freshness biases can coexist. The handle is a function of
+    `(observer, target)`, so the second lands on the first's handle and is
+    refused with `SIS_RS_REJECTED`. Serving one from the other is a deferred
+    feature.
