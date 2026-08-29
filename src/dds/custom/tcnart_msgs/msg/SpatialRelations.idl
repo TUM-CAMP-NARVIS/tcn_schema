@@ -1,13 +1,35 @@
 #ifndef TCNART_MSG_SRG
 #define TCNART_MSG_SRG
 
+#include "builtin_interfaces/msg/Time_.idl"
 #include "tcnart_msgs/msg/Types.idl"
 
 module tcnart_msgs {
   module msg {
 
+        // --- coordinate conventions ------------------------------------------
+
+        // Which signed axis plays each of the three roles. 6 x 4 x 2 = 48 valid
+        // assignments; anything reusing an axis is degenerate.
+        enum CoordinateAxis {
+            COORD_AXIS_X_POS,
+            COORD_AXIS_X_NEG,
+            COORD_AXIS_Y_POS,
+            COORD_AXIS_Y_NEG,
+            COORD_AXIS_Z_POS,
+            COORD_AXIS_Z_NEG
+        };
+
+        struct CoordinateSystem {
+            CoordinateAxis forward;
+            CoordinateAxis right;
+            CoordinateAxis up;
+            uint8 dimensions;             // 2 or 3
+        };
+
+        // --- nodes -------------------------------------------------------------
+
         enum SRNodeType {
-          SRG_NODE_NONE,
           SRG_NODE_GENERIC,
           SRG_NODE_SENSOR,
           SRG_NODE_DISPLAY,
@@ -15,57 +37,171 @@ module tcnart_msgs {
           SRG_NODE_CONTENT
         };
 
-        enum SREdgeTemporalType {
-          SRG_EDGE_TEMPORAL_NONE,
-          SRG_EDGE_TEMPORAL_STATIC,
-          SRG_EDGE_TEMPORAL_STATIC_CALIBRATED,
-          SRG_EDGE_TEMPORAL_DYNAMIC,
-          SRG_EDGE_TEMPORAL_DYNAMIC_INFERRED
+        // Local nodes are private to their graph and are namespaced with the
+        // owner's prefix when two graphs are fused. Global nodes keep their bare
+        // name and are the only thing that joins two graphs together.
+        enum SRNodeScope {
+          SRG_SCOPE_LOCAL,
+          SRG_SCOPE_GLOBAL
         };
 
-        enum CoordinateAxis {
-            X,
-            XNegative,
-            Y,
-            YNegative,
-            Z,
-            ZNegative
-        };
+        // --- templates ---------------------------------------------------------
 
-        struct CoordinateSystem {
-            CoordinateAxis forward;
-            CoordinateAxis right;
-            CoordinateAxis up;
-            int8 dimensions;
+        // A blueprint for entities that are not known when the graph is announced.
+        //
+        // A client usually cannot know which ArUco ids are in the room, or which
+        // instruments will be brought in. A template node stands for "an entity of
+        // this kind, not yet identified". It is never traversed itself. When an
+        // observation matches its rule, the template node and every edge attached
+        // to it are materialized into concrete copies carrying the observed id.
+        struct SRNodeTemplate {
+
+            // What kind of observation materializes this template.
+            MarkerType marker_type;
+
+            // Ids that match. Empty means any id an observer reports.
+            sequence<uint32> match_ids;
+
+            // Name given to a materialized node. "{id}" is substituted with the
+            // observed id, so "aruco_{id}" produces "aruco_7".
+            string instance_name_pattern;
+
         };
 
         struct SRNode {
 
-            SRNodeType node_type;
-            UUID node_uuid;
-            uint32 node_id;
-            string node_name;
+            // Identity within the graph. Edges reference nodes by this.
+            string name;
 
+            SRNodeType node_type;
+            SRNodeScope scope;
+
+            // The convention this node's data is expressed in.
+            CoordinateSystem coord;
+
+            // Inactive nodes are not traversed when resolving a path.
+            boolean active;
+
+            // Stable identity across sessions; all-zero when unused.
+            UUID uuid;
+
+            // Non-empty: this node's device announces its streams on this topic.
+            string stream_descriptor_topic;
+
+            // Survives fragment retraction. Set by whatever created the node
+            // outside a fragment's lifecycle -- a surveyed fiducial, a
+            // calibrated rig. The engine never sets this; it only honours it,
+            // so no tool needs the engine's permission to keep its own data.
+            boolean pinned;
+
+            // 0 or 1 entries. Non-empty makes this node a blueprint rather than a
+            // frame of reference: it is never traversed, and observations matching
+            // its rule materialize concrete copies of it.
+            sequence<SRNodeTemplate> node_template;
+
+            // Non-empty on a materialized node: the template node it came from.
+            // Removing a template retires everything it materialized.
+            string materialized_from;
+
+            // The observed id that matched. Meaningful only when
+            // materialized_from is non-empty.
+            uint32 materialized_id;
+
+            // Opaque, application-defined.
             string custom_data;
 
         };
 
+        // --- edges -------------------------------------------------------------
+
+        // Two different unknowns are expressible here. A template node covers
+        // "which entity is this?"; SRG_EDGE_STATIC_UNCALIBRATED covers "both ends
+        // are known, but their relation has not been measured yet" -- which is the
+        // work queue an external calibration tool reads.
+        enum SREdgeTemporalType {
+          SRG_EDGE_STATIC,              // fixed by construction or declaration
+          SRG_EDGE_STATIC_UNCALIBRATED, // declared; value not yet measured, not traversable
+          SRG_EDGE_STATIC_CALIBRATED,   // fixed, and measured; carries provenance
+          SRG_EDGE_DYNAMIC,             // supplied live by a tracker
+          SRG_EDGE_DYNAMIC_INFERRED     // derived from other edges, not measured directly
+        };
+
+        enum SRTransformType {
+          SRG_TRANSFORM_POSE6D,
+          SRG_TRANSFORM_TRANSLATION3D
+        };
+
+        union SRTransform switch(SRTransformType) {
+        case SRG_TRANSFORM_POSE6D:
+            RigidTransform pose6d;
+        case SRG_TRANSFORM_TRANSLATION3D:
+            Vector3 translation3d;
+        };
+
+        struct SRCalibration {
+            string method;                    // free-form: "hand-eye", "aruco-board", ...
+            double residual;                  // RMS error in metres; negative if not reported
+            builtin_interfaces::msg::Time computed_at;
+        };
+
         struct SREdge {
 
-            string edge_name;
+            // Identity within the graph. Parallel edges between the same pair of
+            // nodes are legal and are distinguished by this.
+            string name;
 
-            uint32 node_source_id;
-            uint32 node_destination_id;
+            string source;                    // SRNode.name
+            string target;                    // SRNode.name
 
             SREdgeTemporalType temporal_type;
 
-            string data_type;
-            string uri;
+            // The static value, or a dynamic edge's seed.
+            SRTransform transform;
+
+            // Traversal cost. Lower is preferred; a path minimises the sum.
+            double weight;
+
+            // Whether a path may walk this relation backwards by composing its
+            // inverse. True for a rigid transform, which is what makes the graph
+            // effectively bidirectional: one declaration of source -> target is
+            // enough to resolve an optimal path in either direction. False for a
+            // relation that discards information -- a projection into an image
+            // plane has no inverse to compose, and pathfinding routes around it
+            // rather than through it backwards.
+            boolean is_invertible;
+
+            // Dynamic edges: where this edge's live value comes from.
+            string stream_descriptor_topic;
+
+            // 0 or 1 entries; populated for SRG_EDGE_STATIC_CALIBRATED.
+            sequence<SRCalibration> calibration;
+
+            // Non-empty on a materialized edge: the template node whose
+            // materialization created it.
+            string materialized_from;
+
+            // Non-empty on a *derived* edge -- one published by a relation
+            // stream rather than declared by a client. Names every edge the
+            // stream's path walked.
+            //
+            // This is not bookkeeping. A derived edge is weighted below the
+            // path it replaces so that pathfinding prefers it, which means
+            // pathfinding actively steers into cycles: a stream asked to
+            // recompute a relation it already publishes would route through its
+            // own output. Compiling a stream excludes any derived edge that
+            // transitively depends on the edge being compiled, and this list is
+            // what makes that computable -- including after a restart, or by a
+            // second engine reading the same graph.
+            sequence<string> derived_from;
+
         };
+
+        // --- graph -------------------------------------------------------------
 
         struct SRGraph {
 
-            string graph_name;
+            string name;                      // the owning client's identifier
+            string origin;                    // SRNode.name; the root of this graph
 
             sequence<SRNode> nodes;
             sequence<SREdge> edges;
