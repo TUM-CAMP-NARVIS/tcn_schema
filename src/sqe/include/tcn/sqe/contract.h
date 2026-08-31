@@ -47,14 +47,14 @@ namespace sqe {
 /// error instead of a retry loop against an acceptance.
 ///
 /// It is 35, not 42, and the number is a floor rather than a boast:
-///   * B36 — the relation lease table's local refcount — is specified by the
-///     design and **not implemented in this slice**, so the floor stops below
-///     it. This is the entry that keeps the number low, and it is deliberate:
-///     a level that claimed 39 while B36 was missing would be exactly the
-///     silently-wrong signal this constant exists to prevent.
+///   * B36 — the relation lease table's local refcount — is not here. It
+///     needs a start and a stop to go out, so it belongs to the `sqe_session`
+///     component, where `RelationLeaseTable` implements it; a consumer that
+///     links only `sqe_contract` does not have it, and this number must not
+///     say otherwise. `tcn/sqe/session.h` declares its own floor,
+///     `kSessionBLevel`, which is above this one.
 ///   * B39 — the identifier/fragment split — *is* implemented (see
-///     validate.h), above the floor. A later slice that adds B36 advances the
-///     floor past it in one step.
+///     validate.h), above the floor. A floor is not a boast.
 ///   * B41 is the liveliness token, a transport obligation: this component
 ///     names the key (`ClientId::alive_key`) but cannot declare the token.
 ///   * B40 and B42 concern the engine's own example clients and CLI.

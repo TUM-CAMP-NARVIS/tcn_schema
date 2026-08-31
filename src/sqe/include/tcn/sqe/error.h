@@ -58,7 +58,9 @@ enum class Error : int {
     /// over, because either half may be the wrong one.
     HandleInvariantViolated,
 
-    /// Reserved for RelationLeaseTable (§4.6); not implemented here.
+    /// A second `acquire` for a relation this process already leases, on
+    /// different terms. Implemented by `RelationLeaseTable` (§4.6) in the
+    /// `sqe_session` component; the ordinal was reserved here from the start.
     ConflictingLease,
 
     // --- wire encoding (§4.7) -----------------------------------------------
@@ -76,6 +78,37 @@ enum class Error : int {
     UnknownEncoding,
     /// The reply named an assigned handle whose topic was the empty string.
     EmptyHandleTopic,
+
+    // --- the session layer (sqe_session) --------------------------------------
+    //
+    // Appended, never inserted: a consumer may log the integer.
+
+    /// No transport, or no start/stop function, was supplied. A programming
+    /// error, reported rather than dereferenced.
+    NoTransport,
+    /// The adapter refused or failed for a reason of its own. It logs the
+    /// detail; this library does not log at all.
+    TransportFailed,
+    /// A query's timeout elapsed with no reply. Distinct from
+    /// `TransportFailed` because the request may still be in flight and may
+    /// still be acted on by the engine.
+    Timeout,
+    /// The consumer's codec could not serialise the request.
+    EncodeFailed,
+    /// The consumer's codec could not deserialise a reply whose declared type
+    /// was already checked and matched.
+    DecodeFailed,
+    /// `freshness_bias` was outside [0, 1] — or was NaN, which fails the same
+    /// comparison.
+    FreshnessBiasOutOfRange,
+    /// A fixed-rate trigger's `hz` was not a positive, finite number.
+    InvalidTriggerRate,
+    /// An on-stream trigger named no topic.
+    EmptyTriggerTopic,
+    /// The liveliness token could not be declared, so the session was not
+    /// opened. A client with no token is not visible to the engine (B41), and
+    /// this library will not pretend otherwise by continuing without one.
+    PresenceUnavailable,
 };
 
 /// A static, ASCII, locale-independent description. Never null, never
@@ -103,6 +136,15 @@ inline const char* describe(Error e) noexcept
         case Error::MissingDeclaredType:     return "encoding declares no type name";
         case Error::UnknownEncoding:         return "unrecognised encoding media type";
         case Error::EmptyHandleTopic:        return "assigned handle has an empty topic";
+        case Error::NoTransport:             return "no transport was supplied";
+        case Error::TransportFailed:         return "the transport reported a failure";
+        case Error::Timeout:                 return "the query timed out";
+        case Error::EncodeFailed:            return "the codec could not encode the request";
+        case Error::DecodeFailed:            return "the codec could not decode the reply";
+        case Error::FreshnessBiasOutOfRange: return "freshness_bias is not in [0, 1]";
+        case Error::InvalidTriggerRate:      return "trigger rate is not a positive finite value";
+        case Error::EmptyTriggerTopic:       return "on-stream trigger names no topic";
+        case Error::PresenceUnavailable:     return "the liveliness token could not be declared";
     }
     return "unknown error";
 }
