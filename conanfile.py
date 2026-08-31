@@ -142,6 +142,15 @@ class TcnSchemaConan(ConanFile):
         self.cpp_info.components["device_hl2_msgs"].defines = []
         self.cpp_info.components["device_hl2_msgs"].requires = dds_dep() + ["std_msgs", "geometry_msgs", "tcnart_msgs"]
 
+        # The SQE contract core: header-only, so no `libs`. It is not behind an
+        # option -- it adds no library to any link line and pulls in no new
+        # dependency, and an option would only create a configuration where one
+        # consumer has it and the other does not.
+        self.cpp_info.components["sqe_contract"].names["cmake_find_package"] = "sqe_contract"
+        self.cpp_info.components["sqe_contract"].libs = []
+        self.cpp_info.components["sqe_contract"].defines = []
+        self.cpp_info.components["sqe_contract"].requires = ["tcnart_msgs"]
+
         self.cpp_info.components["device_orbbec_msgs"].names["cmake_find_package"] = "device_orbbec_msgs"
         self.cpp_info.components["device_orbbec_msgs"].libs = ["tcn_schema_device_orbbec_msgs"]
         self.cpp_info.components["device_orbbec_msgs"].defines = []
