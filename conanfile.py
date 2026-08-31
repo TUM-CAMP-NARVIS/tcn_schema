@@ -151,6 +151,15 @@ class TcnSchemaConan(ConanFile):
         self.cpp_info.components["sqe_contract"].defines = []
         self.cpp_info.components["sqe_contract"].requires = ["tcnart_msgs"]
 
+        # The SIS protocol over an abstract transport. Header-only too, and it
+        # deliberately does **not** require zenoh: the two consumers move to new
+        # zenoh-cpp versions on their own schedules, so the adapter lives in the
+        # repository that owns the pin and this component names no zenoh type.
+        self.cpp_info.components["sqe_session"].names["cmake_find_package"] = "sqe_session"
+        self.cpp_info.components["sqe_session"].libs = []
+        self.cpp_info.components["sqe_session"].defines = []
+        self.cpp_info.components["sqe_session"].requires = ["sqe_contract"]
+
         self.cpp_info.components["device_orbbec_msgs"].names["cmake_find_package"] = "device_orbbec_msgs"
         self.cpp_info.components["device_orbbec_msgs"].libs = ["tcn_schema_device_orbbec_msgs"]
         self.cpp_info.components["device_orbbec_msgs"].defines = []
