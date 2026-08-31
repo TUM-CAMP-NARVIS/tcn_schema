@@ -41,6 +41,13 @@ add_test(NAME sqe_contract COMMAND ${TCN_SQE_TEST_TARGET})
 # compile; the test drives a build of it and expects that build to fail.
 #
 # Excluded from ALL, so an ordinary build never tries to compile them.
+#
+# They are OBJECT libraries and not executables, which is not cosmetic. As
+# executables they have no `main`, so the link step failed whatever the
+# compiler thought -- every case passed, including one whose source compiled
+# cleanly, and the suite asserted nothing. An OBJECT library has no link step,
+# so the build fails exactly when the compile does, which is the thing each of
+# these is claiming.
 
 set(TCN_SQE_MUST_NOT_COMPILE
         handle_from_string
@@ -55,7 +62,7 @@ set(TCN_SQE_MUST_NOT_COMPILE
         session_unregistered_request)
 
 foreach(case ${TCN_SQE_MUST_NOT_COMPILE})
-  add_executable(sqe_must_not_compile_${case} EXCLUDE_FROM_ALL negative/${case}.cpp)
+  add_library(sqe_must_not_compile_${case} OBJECT EXCLUDE_FROM_ALL negative/${case}.cpp)
   target_link_libraries(sqe_must_not_compile_${case} PRIVATE tcn_schema_sqe_session)
   set_target_properties(sqe_must_not_compile_${case} PROPERTIES
           EXCLUDE_FROM_DEFAULT_BUILD TRUE)
