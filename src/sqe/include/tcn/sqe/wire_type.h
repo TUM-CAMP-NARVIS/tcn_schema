@@ -38,6 +38,8 @@ class StreamDescriptorMessage;
 class SRGraph;
 class SRNode;
 class SREdge;
+class SRNodeView;
+class SREdgeView;
 
 }  // namespace msg
 
@@ -54,8 +56,14 @@ class SISRelationStreamStopRequest;
 class SISRelationStreamHandle;
 class SISRelationStreamReply;
 class SISRelationStreamStatusNotification;
+class SISMutationReply;
+class SISGraphQueryRequest;
+class SISGraphQueryReply;
 
 enum SISRelationStreamStatus : std::uint32_t;
+enum SISMutationStatus : std::uint32_t;
+enum SISGraphQueryKind : std::uint32_t;
+enum SISGraphQueryStatus : std::uint32_t;
 
 }  // namespace rpc
 }  // namespace tcnart_msgs
@@ -103,6 +111,11 @@ TCN_SQE_REGISTER_WIRE_TYPE(::tcnart_msgs::msg::StreamDescriptorMessage, "tcnart_
 TCN_SQE_REGISTER_WIRE_TYPE(::tcnart_msgs::msg::SRGraph, "tcnart_msgs::msg::SRGraph");
 TCN_SQE_REGISTER_WIRE_TYPE(::tcnart_msgs::msg::SRNode,  "tcnart_msgs::msg::SRNode");
 TCN_SQE_REGISTER_WIRE_TYPE(::tcnart_msgs::msg::SREdge,  "tcnart_msgs::msg::SREdge");
+// The read side of the same file: a declaration qualified by the fragment that
+// made it. `::msg::` and `SR*`, not `::rpc::` and `SIS*`, because these are
+// graph types and the namespace decides the wire name a peer must match.
+TCN_SQE_REGISTER_WIRE_TYPE(::tcnart_msgs::msg::SRNodeView, "tcnart_msgs::msg::SRNodeView");
+TCN_SQE_REGISTER_WIRE_TYPE(::tcnart_msgs::msg::SREdgeView, "tcnart_msgs::msg::SREdgeView");
 
 // tcnart_msgs/rpc/SIS.idl
 TCN_SQE_REGISTER_WIRE_TYPE(::tcnart_msgs::rpc::SISJoinRequest,                "tcnart_msgs::rpc::SISJoinRequest");
@@ -118,6 +131,14 @@ TCN_SQE_REGISTER_WIRE_TYPE(::tcnart_msgs::rpc::SISRelationStreamHandle,       "t
 TCN_SQE_REGISTER_WIRE_TYPE(::tcnart_msgs::rpc::SISRelationStreamReply,        "tcnart_msgs::rpc::SISRelationStreamReply");
 TCN_SQE_REGISTER_WIRE_TYPE(::tcnart_msgs::rpc::SISRelationStreamStatusNotification,
                            "tcnart_msgs::rpc::SISRelationStreamStatusNotification");
+TCN_SQE_REGISTER_WIRE_TYPE(::tcnart_msgs::rpc::SISMutationStatus,   "tcnart_msgs::rpc::SISMutationStatus");
+TCN_SQE_REGISTER_WIRE_TYPE(::tcnart_msgs::rpc::SISMutationReply,    "tcnart_msgs::rpc::SISMutationReply");
+TCN_SQE_REGISTER_WIRE_TYPE(::tcnart_msgs::rpc::SISGraphQueryKind,   "tcnart_msgs::rpc::SISGraphQueryKind");
+TCN_SQE_REGISTER_WIRE_TYPE(::tcnart_msgs::rpc::SISGraphQueryStatus, "tcnart_msgs::rpc::SISGraphQueryStatus");
+TCN_SQE_REGISTER_WIRE_TYPE(::tcnart_msgs::rpc::SISGraphQueryRequest,
+                           "tcnart_msgs::rpc::SISGraphQueryRequest");
+TCN_SQE_REGISTER_WIRE_TYPE(::tcnart_msgs::rpc::SISGraphQueryReply,
+                           "tcnart_msgs::rpc::SISGraphQueryReply");
 
 namespace detail {
 
