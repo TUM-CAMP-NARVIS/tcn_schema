@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.18)
-project(tcn_schema VERSION 0.2.0 LANGUAGES CXX)
+project(tcn_schema VERSION 0.3.0 LANGUAGES CXX)
 
 
 option(WITH_DDS "Compile with DDS Implementation" OFF)
@@ -44,6 +44,13 @@ add_subdirectory(src/dds/custom/tcnart_msgs)
 add_subdirectory(src/dds/custom/pcpd_msgs)
 add_subdirectory(src/dds/custom/device_hl2_msgs)
 add_subdirectory(src/dds/custom/device_orbbec_msgs)
+
+# The SQE contract core. Header-only and dependency-free, so it adds nothing to
+# a link line; it is added last because its INTERFACE target names
+# tcn_schema_tcnart_msgs. Not behind an option -- a component with no libs
+# costs a consumer nothing but a header copy, and an option here would only
+# create a configuration in which one consumer has it and the other does not.
+add_subdirectory(src/sqe)
 
 
 # generated cpp/h files need one import from fastrtps, which we provide to avoid pulling the dependency, if it should be build without

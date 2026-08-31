@@ -1,6 +1,9 @@
 CMakeUserPresets.json
 build/
-include/
+# The fastddsgen output directory, anchored to the repository root: the
+# pattern used to be `include/`, which git matches at *any* depth, so it also
+# swallowed hand-written headers under src/*/include.
+/include/
 /cmake-build-debug/.cmake/api/v1/query/cache-v2
 /cmake-build-debug/.cmake/api/v1/query/cmakeFiles-v1
 /cmake-build-debug/.cmake/api/v1/query/codemodel-v2
