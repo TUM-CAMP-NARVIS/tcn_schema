@@ -46,6 +46,67 @@ module tcnart_msgs {
         string name;
     };
 
+    // --- the answer to a mutation -----------------------------------------
+
+    // A mutation is a `put`, and a `put` is answered by nothing. That has been
+    // the contract for every key above and it does not change: an existing
+    // publisher keeps publishing and keeps hearing nothing back.
+    //
+    // What changes is that a client may instead `get` on the same key, with
+    // the same request payload, and be answered with the reply below. The two
+    // verbs are independent Zenoh declarations on one key expression -- a
+    // `put` reaches the subscriber, a `get` reaches the queryable -- so the
+    // choice is the caller's, per call, and costs a publisher that never makes
+    // it exactly nothing.
+    //
+    // This type is deliberately NOT relation-shaped. Only
+    // `/sis/relation/update` answers today, because a calibration push is the
+    // mutation whose whole point is knowing the value landed. The other
+    // mutation keys are expected to follow, and they must not each invent
+    // their own reply: one type now is cheaper than four reconciled later.
+    // `/sis/leave` is the deliberate exception and will never answer -- a
+    // withdrawn liveliness token reaches the identical departure with no query
+    // behind it to answer, and one route answering while the other cannot is
+    // worse than uniform silence.
+    //
+    // It carries no handle and no echo of what was written. An echo would be a
+    // read, and a read riding on a write reply is the one shape guaranteed to
+    // disagree with the read RPC beside it (SISGraphQueryReply, below).
+    enum SISMutationStatus {
+        SIS_MU_ACCEPTED,        // stored: the row and its transform are in the
+                                //   database. It does NOT mean visible to the
+                                //   next read -- a read is a separate query on
+                                //   a separate task, and nothing orders it
+                                //   against this reply. There is no
+                                //   read-your-write guarantee here to give.
+        SIS_MU_UNKNOWN_CLIENT,  // no such fragment; join before mutating it
+        SIS_MU_UNKNOWN_FRAME,   // a named endpoint node does not exist. One
+                                //   status, not two: which endpoint was wrong
+                                //   is in `detail`, because a client fixes the
+                                //   name either way and a status it branches
+                                //   on should be one it can branch on usefully
+        SIS_MU_REJECTED,        // malformed, undecodable, or a refused value:
+                                //   a non-finite weight, an invalid identifier,
+                                //   a temporal-type transition the engine
+                                //   refuses, or a push naming an engine-derived
+                                //   edge. The same values are refused for a
+                                //   `put`, where the only trace is a log line
+        SIS_MU_UNAVAILABLE      // the write did not complete inside its bound.
+                                //   This means *unknown*, not "did not land":
+                                //   a timed-out write may still be applied.
+                                //   Retrying is safe and is the recommended
+                                //   behaviour -- the write is an upsert, so a
+                                //   repeat is the same write. Reporting it to
+                                //   an operator as a failed calibration is not.
+    };
+
+    // `status` first, matching SISRelationStreamReply, so a decoder that reads
+    // only the leading enum degrades the way the existing one already does.
+    struct SISMutationReply {
+        SISMutationStatus status;
+        string detail;                  // human-readable; may be empty
+    };
+
     // --- relation streams -------------------------------------------------
 
     // A frame of reference: a node within an owning graph.
@@ -209,6 +270,194 @@ module tcnart_msgs {
         string output_topic;
         SISRelationStreamStatus status;
         string detail;                  // human-readable reason; may be empty
+    };
+
+    // --- reading the graph -------------------------------------------------
+
+    // What a read may ask for.
+    //
+    // Every kind is bounded by something the asker already knows the size of.
+    // There is no kind meaning "the whole graph", and that is the point rather
+    // than an omission: the engine holds no in-memory graph, and the connected
+    // region around any seed is the transitive closure over every relation,
+    // which in a fused deployment is the entire fleet. A read of it is
+    // unbounded however small the reply that comes back is shaped.
+    enum SISGraphQueryKind {
+        SIS_GQ_FRAGMENT,        // everything one client declared. Bounded by
+                                //   that fragment's own size
+        SIS_GQ_NEIGHBOURS,      // one node and its incident relations. Bounded
+                                //   by that node's degree
+        SIS_GQ_SEARCH,          // a filter within one of the two anchors above.
+                                //   See the filter fields on the request
+        SIS_GQ_PATH             // RESERVED, and not implemented. A path read
+                                //   that means anything has to answer *which*
+                                //   predicate it walked -- the shape predicate
+                                //   a pending stream probes with, or the
+                                //   walkability one that refuses uncalibrated
+                                //   edges -- and neither is a plain traversal.
+                                //   Answering it honestly means loading a
+                                //   region, which is the read above refuses.
+                                //   Declared last so the three that ship keep
+                                //   their ordinals when it arrives
+    };
+
+    // One request type and one key for all four kinds, not four of each.
+    //
+    // Four keys would read better and would be worse in every other way: four
+    // reply types to keep in step, four places to forget the result cap, and --
+    // decisively -- four rate-limit buckets per client instead of one, so a
+    // client respecting each limit individually could still poll at four times
+    // the intended rate. The cost of one key is its mirror image and is stated
+    // here so nobody discovers it: the item cap and the minimum interval are
+    // ONE shared budget. A client running a UI refresh and a calibration sweep
+    // is competing with itself, which is correct -- it is one client's share of
+    // one database.
+    //
+    // Which fields matter depends on `kind`; the rest are ignored, not refused.
+    struct SISGraphQueryRequest {
+
+        SISGraphQueryKind kind;
+
+        // FRAGMENT: whose fragment. SEARCH: the fragment anchor.
+        // Empty for the other kinds, and empty for a SEARCH anchored on `from`.
+        string client;
+
+        // NEIGHBOURS: the node. SEARCH: the node anchor. PATH: the observer.
+        SISFrameRef from;
+
+        // PATH: the target. Unused by every kind that ships today.
+        SISFrameRef to;
+
+        // An upper bound on nodes plus edges in one reply. 0 asks for the
+        // engine's default. This may only LOWER the engine's own cap, never
+        // raise it: a reply is additionally bounded by a byte ceiling, because
+        // an item count does not bound bytes when a field like `custom_data`
+        // is arbitrary.
+        uint32 max_items;
+
+        // Opaque; empty on a first page, otherwise the `next_cursor` of the
+        // page before. A cursor and not an offset: the graph mutates under a
+        // paginated read and there is no transaction held across pages, so an
+        // offset silently skips or repeats rows. What stability a cursor
+        // offers is the engine's to state, and it is free to change what the
+        // value is -- a client that parses one has broken the contract.
+        string cursor;
+
+        // --- search filters ------------------------------------------------
+        //
+        // Read only for SIS_GQ_SEARCH. Optional, ANDed, and applied to the
+        // anchored set -- never to the graph. An empty sequence or an empty
+        // string means *unfiltered* for that field, so a SEARCH with an anchor
+        // and no filters is "everything in this scope", which is the FRAGMENT
+        // or NEIGHBOURS read with a cap.
+        //
+        // **The anchor is mandatory and has no default.** A SEARCH carrying
+        // neither `client` nor `from` is SIS_GQ_REJECTED, and is not treated as
+        // "everywhere". This is the single most important sentence here: an
+        // unanchored search IS the whole-graph read this service refuses, and a
+        // default that widens to the graph is how one arrives without anyone
+        // deciding to add it. The anchor is also the only thing that bounds the
+        // work -- none of the properties filtered on below is indexed, so every
+        // filter is a post-filter over an already-loaded set.
+        //
+        // The search anchor is one hop. A hop bound of two from a
+        // well-connected global node is already most of the region, so a bound
+        // that appears to bound does not; there is no field for it.
+        //
+        // What is deliberately absent, each for a stated reason:
+        //
+        //   no regex, glob or substring -- unbounded, unservable by any index,
+        //     and a glob over an identifier alphabet is one `*` away from
+        //     matching everything, which is the unanchored search again;
+        //   no top-level negation -- "every edge that is NOT calibrated" reads
+        //     as a filter and behaves as a scan. Negation *inside*
+        //     `temporal_type` is fine: the set is finite, so spell the wanted
+        //     variants out;
+        //   no sort key -- sorting means materialising the whole candidate set
+        //     before the first page, which defeats the cursor and turns a
+        //     bounded read into an unbounded one with a small reply. The cursor
+        //     and a sort order are the same mechanism and there can be one;
+        //   no cross-fragment aggregation -- "every uncalibrated edge
+        //     everywhere" is a real question, and it is the operator's, not a
+        //     client's. It is unbounded, and it does not belong on a key
+        //     prefixed by one client's id.
+
+        // Which temporal types to keep, as a set. Empty keeps all of them.
+        //
+        // The reason search exists. { SRG_EDGE_STATIC_UNCALIBRATED } is the
+        // work queue an external calibration tool reads -- both ends known,
+        // their relation not yet measured -- and a set rather than one value is
+        // what makes "not usable yet" and "measured somehow" one round trip
+        // each instead of one per variant.
+        sequence<tcnart_msgs::msg::SREdgeTemporalType> temporal_type;
+
+        // Which node scopes to keep, as a set. Empty keeps both.
+        //
+        // "Which of my nodes are shared with other fragments?" is the second
+        // question a fragment author asks, and usually the answer to why their
+        // relation does not resolve: only a global node joins two graphs.
+        sequence<tcnart_msgs::msg::SRNodeScope> scope;
+
+        // Which node types to keep, as a set. Empty keeps all of them.
+        sequence<tcnart_msgs::msg::SRNodeType> node_type;
+
+        // Keep names beginning with this. A prefix, and nothing more -- not a
+        // pattern, not an expression. Matched against SRNode.name and
+        // SREdge.name. Empty keeps everything.
+        //
+        // A prefix is enough because the composed names this project generates
+        // are all prefixes: a materialized marker and an engine-derived edge
+        // are each distinguishable from a client's own declaration by their
+        // leading text alone. It needs no new validation rule either -- every
+        // prefix of a valid identifier is itself a valid identifier -- so this
+        // introduces no second alphabet.
+        string name_prefix;
+
+    };
+
+    enum SISGraphQueryStatus {
+        SIS_GQ_OK,              // answered. A search matching nothing is OK
+                                //   with empty sequences, never an UNKNOWN_*:
+                                //   "no uncalibrated edges" is the SUCCESS of a
+                                //   calibration sweep -- it is what a finished
+                                //   deployment looks like -- and a tool obliged
+                                //   to treat it as an error will end up
+                                //   treating a real error as normal
+        SIS_GQ_UNKNOWN_CLIENT,  // the named fragment does not exist
+        SIS_GQ_UNKNOWN_FRAME,   // the anchored node does not exist
+        SIS_GQ_TRUNCATED,       // a page came back and `next_cursor` is not
+                                //   empty. A distinct status, not an inference
+                                //   from the cursor, so a client that ignores
+                                //   paging can still see from the status alone
+                                //   that it did not get everything
+        SIS_GQ_REJECTED,        // malformed, undecodable, or a SEARCH with no
+                                //   anchor
+        SIS_GQ_UNAVAILABLE      // the read failed, timed out, or was refused by
+                                //   the per-client rate limit. `detail` says
+                                //   which. A read is not a subscription: a
+                                //   client that polls this key is the failure
+                                //   mode this status exists to report
+    };
+
+    // `status` first, for SISMutationReply's reason.
+    //
+    // Nodes and edges rather than an SRGraph: an SRGraph names one owning
+    // client and one origin, and a reply may span fragments and has no origin
+    // at all. The two sequences are also independently paged, which a graph
+    // could not express.
+    struct SISGraphQueryReply {
+        SISGraphQueryStatus status;
+        sequence<tcnart_msgs::msg::SRNodeView> nodes;
+        sequence<tcnart_msgs::msg::SREdgeView> edges;
+
+        // Empty when the reply is complete. Pass it back verbatim in
+        // `SISGraphQueryRequest.cursor` for the next page, with every other
+        // field unchanged.
+        string next_cursor;
+
+        // Human-readable; may be empty. On UNAVAILABLE this is where a rate
+        // limit says so, and on REJECTED it is where a missing anchor does.
+        string detail;
     };
 
   };

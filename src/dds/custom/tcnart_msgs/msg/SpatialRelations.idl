@@ -207,6 +207,78 @@ module tcnart_msgs {
             sequence<SREdge> edges;
 
         };
+
+        // --- views: the graph as the engine holds it --------------------------
+
+        // Everything above is a *declaration*: what a client asserts about its
+        // own fragment. The two types below are the other direction -- what a
+        // read of the engine's graph answers with -- and they exist because a
+        // declaration is not addressable outside the fragment that made it.
+        //
+        // SRNode.name and SREdge.source/target are names *within one graph*.
+        // That is sufficient while a message describes one client's own
+        // fragment, which is all any of the types above ever do. A read is not
+        // so confined: a node's neighbours may sit in another client's
+        // fragment, and two clients may each declare a local node called
+        // "camera". A view therefore carries the owning fragment alongside the
+        // declaration, and the pair (client, name) is what identifies a frame
+        // across the fused graph.
+        //
+        // The engine's own fusion key -- a bare name for a global node,
+        // "{client}::{name}" for a local one -- is deliberately NOT what is
+        // sent. It is an internal encoding, and a wire contract that obliged a
+        // client to build or split such a string would break the moment the
+        // encoding changed. Two fields cannot be mis-parsed.
+        //
+        // # What a view does and does not promise
+        //
+        // The embedded SRNode / SREdge is the declaration as stored, field for
+        // field: every one of them persists, so a client reads back what it
+        // wrote and may resubmit it unchanged (the write is an idempotent
+        // upsert). Two things are still not round-trips, and both are
+        // properties of the store rather than of this type:
+        //
+        //   * a relation carries one transform in one representation. Pushing
+        //     a translation over a pose replaces it, rotation included, and a
+        //     view reports what is stored, not what was last sent.
+        //   * a relation whose stored representation is ambiguous -- both a
+        //     6D and a 3D row, neither strictly newer -- reads back as
+        //     SRG_EDGE_STATIC_UNCALIBRATED with no transform, which is what
+        //     the engine itself sees. That is a truthful report of an
+        //     ambiguous row, not a report that the client declared it so.
+        //
+        // A view is never a template for a mutation the engine promises to
+        // reproduce; it is an observation, and `client` is what makes it one.
+
+        struct SRNodeView {
+
+            // The fragment that declared this node. With `node.name`, the
+            // frame's identity across the fused graph.
+            string client;
+
+            // As stored. `name` is the declared name, not the fusion key.
+            SRNode node;
+
+        };
+
+        struct SREdgeView {
+
+            // The fragment that declared this relation. Not necessarily the
+            // owner of either endpoint: a client may relate its own node to
+            // another fragment's global node.
+            string client;
+
+            // The fragments owning `edge.source` and `edge.target`. Each pairs
+            // with the corresponding name in `edge` to identify a frame, and
+            // either may differ from `client` and from the other.
+            string source_client;
+            string target_client;
+
+            // As stored. `derived_from` names *declared* edge names, so it
+            // means the same thing whichever read produced this view.
+            SREdge edge;
+
+        };
     };
 };
 #endif
