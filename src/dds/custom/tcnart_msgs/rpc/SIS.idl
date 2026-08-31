@@ -48,22 +48,33 @@ module tcnart_msgs {
 
     // --- the answer to a mutation -----------------------------------------
 
-    // A mutation is a `put`, and a `put` is answered by nothing. That has been
-    // the contract for every key above and it does not change: an existing
-    // publisher keeps publishing and keeps hearing nothing back.
+    // Mutations used to be `put` onto a plain subscriber and answered by
+    // nothing. `/sis/relation/update` is now a **queryable**: one key, one
+    // verb. A client `get`s it with the same SISEdgeUpdateRequest as before
+    // and is answered with the reply below.
     //
-    // What changes is that a client may instead `get` on the same key, with
-    // the same request payload, and be answered with the reply below. The two
-    // verbs are independent Zenoh declarations on one key expression -- a
-    // `put` reaches the subscriber, a `get` reaches the queryable -- so the
-    // choice is the caller's, per call, and costs a publisher that never makes
-    // it exactly nothing.
+    // The subscriber is gone, not kept alongside. A peer that keeps `put`ting
+    // reaches nothing at all -- which is the loud kind of failure, because the
+    // calibration it was pushing visibly never lands, and it is affordable
+    // here only because every publisher of this key belongs to the engine's
+    // own repository. Do not read this as a general licence: a key with
+    // publishers outside the engine cannot be moved this way.
+    //
+    // Nothing about a `get` that writes is anomalous. `/sis/stream/start` and
+    // `/sis/stream/stop` are already queryables and both mutate -- starting a
+    // stream creates records, spawns a pipeline and publishes a derived edge.
+    // The rule this protocol follows is **queryable when the caller needs an
+    // answer**, not "queryable when the operation reads", and by that rule the
+    // fire-and-forget `put` was the outlier. A calibration push is exactly the
+    // case: a rig that computed a transform and cannot tell whether the graph
+    // now holds it has not finished its job.
     //
     // This type is deliberately NOT relation-shaped. Only
-    // `/sis/relation/update` answers today, because a calibration push is the
-    // mutation whose whole point is knowing the value landed. The other
-    // mutation keys are expected to follow, and they must not each invent
-    // their own reply: one type now is cheaper than four reconciled later.
+    // `/sis/relation/update` is a queryable today, because a calibration push
+    // is the mutation whose whole point is knowing the value landed. The other
+    // mutation keys are expected to follow -- each becoming a queryable in its
+    // turn -- and they must not each invent their own reply: one type now is
+    // cheaper than four reconciled later.
     // `/sis/leave` is the deliberate exception and will never answer -- a
     // withdrawn liveliness token reaches the identical departure with no query
     // behind it to answer, and one route answering while the other cannot is
@@ -89,8 +100,9 @@ module tcnart_msgs {
                                 //   a non-finite weight, an invalid identifier,
                                 //   a temporal-type transition the engine
                                 //   refuses, or a push naming an engine-derived
-                                //   edge. The same values are refused for a
-                                //   `put`, where the only trace is a log line
+                                //   edge -- whose provenance is engine-written
+                                //   and is what cycle exclusion is computed
+                                //   from, so a client overwrite breaks it
         SIS_MU_UNAVAILABLE      // the write did not complete inside its bound.
                                 //   This means *unknown*, not "did not land":
                                 //   a timed-out write may still be applied.

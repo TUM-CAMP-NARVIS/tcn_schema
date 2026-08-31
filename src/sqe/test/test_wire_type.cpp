@@ -73,9 +73,9 @@ TCN_SQE_TEST(the_two_new_replies_do_not_answer_for_each_other)
                   "application/cdr;tcnart_msgs::rpc::SISGraphQueryReply"),
               Error::WrongDeclaredType);
 
-    // A `get` on /sis/relation/update carries the same request payload as the
-    // `put` beside it, and is answered with something else entirely. Reading
-    // the reply as the request is the mistake that shape invites.
+    // /sis/relation/update is a queryable: the `get` carries a request and is
+    // answered with something else entirely, on one key. Reading the reply as
+    // the request is the mistake that shape invites.
     CHECK_ERR(check_declared_type<rpc::SISMutationReply>(
                   "application/cdr;tcnart_msgs::rpc::SISEdgeUpdateRequest"),
               Error::WrongDeclaredType);
