@@ -132,7 +132,7 @@ class TcnSchemaConan(ConanFile):
         self.cpp_info.components["pcpd_msgs"].defines = []
         self.cpp_info.components["pcpd_msgs"].requires = dds_dep() + ["std_msgs", "geometry_msgs", "tcnart_msgs"]
 
-        self.cpp_info.components["tcnart_msgs"].names["cmake_find_package"] = "device_hl2_msgs"
+        self.cpp_info.components["tcnart_msgs"].names["cmake_find_package"] = "tcnart_msgs"
         self.cpp_info.components["tcnart_msgs"].libs = ["tcn_schema_tcnart_msgs"]
         self.cpp_info.components["tcnart_msgs"].defines = []
         self.cpp_info.components["tcnart_msgs"].requires = dds_dep() + ["std_msgs", "geometry_msgs"]
