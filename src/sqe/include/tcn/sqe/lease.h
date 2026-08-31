@@ -82,10 +82,48 @@ private:
 /// The process-wide record of which relation streams this process holds, and
 /// how many local claims each one has.
 ///
-/// One table per process is the intended shape — the count has to span every
-/// component in the process, because the thing being shared (the client id's
-/// attachment to a stream, engine-side) does too. Two tables in one process
-/// reintroduce exactly the bug this type removes.
+/// # One table must cover every requester that shares a client id
+///
+/// **This is an integrator's obligation. The library does not enforce it, on
+/// purpose.** Where a process-wide object lives — a singleton, an entry in a
+/// service locator, a member of the root application object, a field on a
+/// long-lived pipeline — is a question about *your* architecture, and a library
+/// that answered it for you would fight whichever answer you had already
+/// chosen. So it is documented here rather than imposed.
+///
+/// The requirement itself is not negotiable. The count has to span every
+/// component that requests relations under the same client id, because the
+/// thing being counted — that client id's attachment to a stream, engine-side —
+/// spans them too. The engine deduplicates by `(observer, target)`: two
+/// components asking for the same relation are handed the *same* handle and
+/// attach the *same* requester id. It cannot tell them apart, and it is not
+/// trying to.
+///
+/// **What a second table costs.** Each table believes it is the sole holder. The
+/// first one to release issues a stop, the engine sees its only requester
+/// withdraw, and the stream is retired — out from under the other component,
+/// which still believes it holds a live claim. Its subscriber simply stops
+/// receiving. There is no error on either side: the stop was well-formed, the
+/// engine did exactly what it was asked, and the surviving component was never
+/// told. This is the failure `RelationLeaseTable` exists to remove, reappearing
+/// one level up.
+///
+/// **What to do.** Own one table wherever your architecture owns process-wide
+/// services, and hand every component a reference to it. Do **not** construct
+/// one per component, per pipeline, per connection or per request — that is the
+/// two-table case, and it looks correct in review because each site is
+/// individually reasonable.
+///
+/// **How to recognise it in the wild.** Two components request the same
+/// relation; one of them stops; the *other* stops receiving poses while the
+/// engine reports the stream retired normally. If that happens, count your
+/// tables before suspecting the engine — and see `local_count()`, which is
+/// exported for exactly this diagnosis.
+///
+/// One table per *client id* is the precise rule; one per process is the same
+/// thing whenever a process joins under a single client id, which is the
+/// ordinary case. A process that deliberately joins as two distinct clients has
+/// two independent attachment sets engine-side, and wants one table each.
 ///
 /// Not internally synchronized, in keeping with the rest of the library: the
 /// owner serializes on its own request thread.
