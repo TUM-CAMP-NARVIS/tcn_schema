@@ -15,9 +15,12 @@ add_executable(${TCN_SQE_TEST_TARGET}
         test_status.cpp
         test_topics.cpp
         test_wire_type.cpp
-        test_handle.cpp)
+        test_handle.cpp
+        test_relation.cpp
+        test_lease.cpp
+        test_session.cpp)
 
-target_link_libraries(${TCN_SQE_TEST_TARGET} PRIVATE tcn_schema_sqe_contract)
+target_link_libraries(${TCN_SQE_TEST_TARGET} PRIVATE tcn_schema_sqe_session)
 target_include_directories(${TCN_SQE_TEST_TARGET} PRIVATE ${CMAKE_CURRENT_SOURCE_DIR})
 
 if(MSVC)
@@ -45,11 +48,15 @@ set(TCN_SQE_MUST_NOT_COMPILE
         handle_from_reply_string
         handle_default_construct
         wire_type_unregistered
-        client_id_unvalidated)
+        client_id_unvalidated
+        lease_copy
+        lease_public_stop
+        session_wrong_request_mode
+        session_unregistered_request)
 
 foreach(case ${TCN_SQE_MUST_NOT_COMPILE})
   add_executable(sqe_must_not_compile_${case} EXCLUDE_FROM_ALL negative/${case}.cpp)
-  target_link_libraries(sqe_must_not_compile_${case} PRIVATE tcn_schema_sqe_contract)
+  target_link_libraries(sqe_must_not_compile_${case} PRIVATE tcn_schema_sqe_session)
   set_target_properties(sqe_must_not_compile_${case} PROPERTIES
           EXCLUDE_FROM_DEFAULT_BUILD TRUE)
 
