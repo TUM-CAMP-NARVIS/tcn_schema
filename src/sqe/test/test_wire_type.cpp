@@ -19,6 +19,8 @@ TCN_SQE_TEST(cdr_encoding_names_every_registered_type_exactly)
     CHECK_STR_EQ(cdr_encoding<msg::SRGraph>(),                "application/cdr;tcnart_msgs::msg::SRGraph");
     CHECK_STR_EQ(cdr_encoding<msg::SRNode>(),                 "application/cdr;tcnart_msgs::msg::SRNode");
     CHECK_STR_EQ(cdr_encoding<msg::SREdge>(),                 "application/cdr;tcnart_msgs::msg::SREdge");
+    CHECK_STR_EQ(cdr_encoding<msg::SRNodeView>(),             "application/cdr;tcnart_msgs::msg::SRNodeView");
+    CHECK_STR_EQ(cdr_encoding<msg::SREdgeView>(),             "application/cdr;tcnart_msgs::msg::SREdgeView");
 
     CHECK_STR_EQ(cdr_encoding<rpc::SISJoinRequest>(),         "application/cdr;tcnart_msgs::rpc::SISJoinRequest");
     CHECK_STR_EQ(cdr_encoding<rpc::SISLeaveRequest>(),        "application/cdr;tcnart_msgs::rpc::SISLeaveRequest");
@@ -38,6 +40,66 @@ TCN_SQE_TEST(cdr_encoding_names_every_registered_type_exactly)
                  "application/cdr;tcnart_msgs::rpc::SISRelationStreamReply");
     CHECK_STR_EQ(cdr_encoding<rpc::SISRelationStreamStatusNotification>(),
                  "application/cdr;tcnart_msgs::rpc::SISRelationStreamStatusNotification");
+
+    CHECK_STR_EQ(cdr_encoding<rpc::SISMutationStatus>(),
+                 "application/cdr;tcnart_msgs::rpc::SISMutationStatus");
+    CHECK_STR_EQ(cdr_encoding<rpc::SISMutationReply>(),
+                 "application/cdr;tcnart_msgs::rpc::SISMutationReply");
+    CHECK_STR_EQ(cdr_encoding<rpc::SISGraphQueryKind>(),
+                 "application/cdr;tcnart_msgs::rpc::SISGraphQueryKind");
+    CHECK_STR_EQ(cdr_encoding<rpc::SISGraphQueryStatus>(),
+                 "application/cdr;tcnart_msgs::rpc::SISGraphQueryStatus");
+    CHECK_STR_EQ(cdr_encoding<rpc::SISGraphQueryRequest>(),
+                 "application/cdr;tcnart_msgs::rpc::SISGraphQueryRequest");
+    CHECK_STR_EQ(cdr_encoding<rpc::SISGraphQueryReply>(),
+                 "application/cdr;tcnart_msgs::rpc::SISGraphQueryReply");
+}
+
+// The two replies are answers to different questions on different keys, and a
+// reader of one must refuse the other. Nothing about their CDR layouts stops a
+// SISMutationReply decoding as a SISGraphQueryReply -- both open with an enum
+// -- so the annotation is the only thing that separates them.
+TCN_SQE_TEST(the_two_new_replies_do_not_answer_for_each_other)
+{
+    CHECK_OK(check_declared_type<rpc::SISMutationReply>(
+        "application/cdr;tcnart_msgs::rpc::SISMutationReply"));
+    CHECK_OK(check_declared_type<rpc::SISGraphQueryReply>(
+        "application/cdr;tcnart_msgs::rpc::SISGraphQueryReply"));
+
+    CHECK_ERR(check_declared_type<rpc::SISGraphQueryReply>(
+                  "application/cdr;tcnart_msgs::rpc::SISMutationReply"),
+              Error::WrongDeclaredType);
+    CHECK_ERR(check_declared_type<rpc::SISMutationReply>(
+                  "application/cdr;tcnart_msgs::rpc::SISGraphQueryReply"),
+              Error::WrongDeclaredType);
+
+    // /sis/relation/update is a queryable: the `get` carries a request and is
+    // answered with something else entirely, on one key. Reading the reply as
+    // the request is the mistake that shape invites.
+    CHECK_ERR(check_declared_type<rpc::SISMutationReply>(
+                  "application/cdr;tcnart_msgs::rpc::SISEdgeUpdateRequest"),
+              Error::WrongDeclaredType);
+}
+
+// A view is a `::msg::` graph type, not a `::rpc::` one, and the namespace is
+// on the wire. A peer that guessed `tcnart_msgs::rpc::SISNodeView` -- the name
+// the design prose used before this rule was applied -- must be refused rather
+// than accepted on a shape match.
+TCN_SQE_TEST(the_view_types_are_msg_types_and_say_so)
+{
+    CHECK_OK(check_declared_type<msg::SRNodeView>(
+        "application/cdr;tcnart_msgs::msg::SRNodeView"));
+    CHECK_ERR(check_declared_type<msg::SRNodeView>(
+                  "application/cdr;tcnart_msgs::rpc::SISNodeView"),
+              Error::WrongDeclaredType);
+
+    // And a view is not the declaration it embeds.
+    CHECK_ERR(check_declared_type<msg::SRNodeView>(
+                  "application/cdr;tcnart_msgs::msg::SRNode"),
+              Error::WrongDeclaredType);
+    CHECK_ERR(check_declared_type<msg::SREdge>(
+                  "application/cdr;tcnart_msgs::msg::SREdgeView"),
+              Error::WrongDeclaredType);
 }
 
 // The engine matches the schema half after a `;`. A space after the separator
