@@ -32,6 +32,13 @@
 namespace tcn {
 namespace sqe {
 
+/// Declared, never defined here. `Declaration` below friends
+/// `declare_presence`, whose signature names a `ClientId`; nothing in this
+/// header needs the complete type, and the transport interface should not
+/// acquire a dependency on the naming rules to get one. Defined in
+/// `client_id.h`.
+class ClientId;
+
 /// A borrowed, contiguous byte range.
 ///
 /// Not `std::span` (C++20) and not `std::vector` (an owner). Borrowed because
@@ -208,6 +215,73 @@ public:
     /// knows what it issued, so a second entry point would carry no information
     /// either side did not already have.
     virtual void undeclare(Registration r) noexcept = 0;
+};
+
+/// RAII over one thing the transport declared for us: a liveliness token or a
+/// subscriber.
+///
+/// One class for both, because the lifetime is the whole of what this library
+/// does with either — declare it, hold it, drop it exactly once — and a second
+/// class would differ only in the factory that produced it. Move-only; there is
+/// no way to construct one except by declaring.
+///
+/// **Why it lives here and not in `session.h`.** It is RAII over exactly the
+/// two things this header defines — a `Transport*` and a `Registration` — and
+/// its whole job is to call `Transport::undeclare` once. It sat in `session.h`
+/// only because that is where the two factories that produce one are written.
+/// `lease.h` now stores one (see `RelationLeaseTable::StreamClaim`), and
+/// `session.h` already includes `lease.h`, so the include could not be turned
+/// around; a forward declaration was not an option either, because the lease
+/// table's `Record` holds a `Declaration` by value and needs the complete type.
+/// Moving it down to the header that owns `Transport` and `Registration` is the
+/// answer that leaves both includes pointing the same way they already did.
+///
+/// A default-constructed `Declaration` holds nothing, and that state is
+/// meaningful rather than merely permitted: it is how a caller says "no
+/// subscriber here" to an API that asks for one.
+class Declaration
+{
+public:
+    Declaration() noexcept : t_(nullptr), reg_() {}
+
+    Declaration(const Declaration&) = delete;
+    Declaration& operator=(const Declaration&) = delete;
+
+    Declaration(Declaration&& o) noexcept : t_(o.t_), reg_(o.reg_) { o.t_ = nullptr; o.reg_ = Registration{}; }
+
+    Declaration& operator=(Declaration&& o) noexcept
+    {
+        if (this != &o)
+        {
+            release();
+            t_ = o.t_; reg_ = o.reg_;
+            o.t_ = nullptr; o.reg_ = Registration{};
+        }
+        return *this;
+    }
+
+    ~Declaration() { release(); }
+
+    bool held() const noexcept { return t_ != nullptr && reg_.valid(); }
+
+    /// Drop it now rather than at the end of the scope. Idempotent.
+    void undeclare() noexcept { release(); }
+
+private:
+    friend Result<Declaration> declare_presence(Transport&, const ClientId&);
+    friend Result<Declaration> declare_subscription(Transport&, std::string_view, SampleFn);
+
+    Declaration(Transport* t, Registration r) noexcept : t_(t), reg_(r) {}
+
+    void release() noexcept
+    {
+        if (t_ && reg_.valid()) { t_->undeclare(reg_); }
+        t_ = nullptr;
+        reg_ = Registration{};
+    }
+
+    Transport* t_;
+    Registration reg_;
 };
 
 }  // namespace sqe

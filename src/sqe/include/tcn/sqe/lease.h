@@ -18,7 +18,9 @@
 //
 // It does no I/O. The start and stop are functions the owner supplies, which is
 // what lets every rule below be tested with no daemon, no session, and no
-// network.
+// network. The table does hold one thing the transport made — the
+// `{handle}/status` subscriber's `Declaration`, produced by the owner's start
+// function — but it only stores it, and never calls a `Transport` itself.
 #ifndef TCN_SQE_LEASE_H
 #define TCN_SQE_LEASE_H
 
@@ -34,11 +36,47 @@
 #include "tcn/sqe/relation.h"
 #include "tcn/sqe/result.h"
 #include "tcn/sqe/status.h"
+#include "tcn/sqe/transport.h"
 
 namespace tcn {
 namespace sqe {
 
 class RelationLeaseTable;
+
+/// What a start produced: the handle the engine issued, and the
+/// `{handle}/status` subscriber declared for it.
+///
+/// **Why the subscriber is in the return type.** `{handle}/status` is the only
+/// channel on which a client learns that a stream it holds went `NoPath`, or
+/// that the engine stopped answering, and those two are not distinguishable any
+/// other way. It is also the only teardown event guaranteed to arrive: the
+/// pipeline stop, the descriptor withdrawal and the derived-edge retraction are
+/// each gated on the stream currently holding that thing, so a consumer waiting
+/// on a withdrawal instead simply hangs. Documenting "declare it in your start
+/// function" asked nothing of anybody: an integrator who forgot got no error,
+/// ever. Returning it makes producing one a type obligation.
+///
+/// **Why the table keeps it rather than the caller.** The subscriber's lifetime
+/// is the *lease's* — declared when the stream begins, dropped when nothing
+/// publishes on that key any more — and only the table knows when that is.
+/// Declared per-component instead, N components sharing one stream leave N
+/// subscribers on it, and the released ones go on listening to a dead key.
+/// Handing the `Declaration` over is what turns that coupling from documented
+/// into enforced: the integrator no longer holds it and so cannot drop it in
+/// the wrong place.
+///
+/// **An empty `status` is allowed, and is a choice.** An integrator who
+/// genuinely wants no status subscriber returns a default-constructed
+/// `Declaration`. The type asks; it does not compel. What it buys is that the
+/// empty appears in the integrator's own code, where a reviewer can see it,
+/// instead of being an omission nobody ever notices.
+///
+/// Move-only, because `Declaration` is.
+struct StreamClaim
+{
+    Handle handle;
+    Declaration status;
+};
 
 /// One component's claim on a relation stream. Move-only; releasing is what
 /// the destructor does.
@@ -130,21 +168,33 @@ private:
 class RelationLeaseTable
 {
 public:
-    /// Sends the start and returns the handle the engine issued.
+    /// Sends the start, and returns both of the things a stream begins with:
+    /// the handle the engine issued, and the `{handle}/status` subscriber
+    /// declared for it.
     ///
-    /// It returns a `Handle`, not the generated reply, so that this header
-    /// includes no generated type and its tests need no fastddsgen toolchain.
-    /// The one line that turns a reply into a `Handle` — `Handle::from_reply`
-    /// — already lives in the contract core and enforces the reply invariant on
-    /// the way through, so the consumer's start function is a call to its own
-    /// query wrapper followed by that.
+    /// It returns a `StreamClaim` and not the generated reply, so that this
+    /// header includes no generated type and its tests need no fastddsgen
+    /// toolchain. The one line that turns a reply into a `Handle` —
+    /// `Handle::from_reply` — already lives in the contract core and enforces
+    /// the reply invariant on the way through, so the consumer's start function
+    /// is a call to its own query wrapper, that, and a `subscribe`.
     ///
-    /// Called exactly when a handle's local count goes 0 -> 1, which makes it
-    /// also the right place to declare the `{handle}/status` subscriber.
-    using StartFn = std::function<Result<Handle>(const RelationStreamRequest&)>;
+    /// Called exactly when a handle's local count goes 0 -> 1, which is exactly
+    /// when the subscriber should be declared. See `StreamClaim` for why the
+    /// subscriber is in the return type at all, and why the table keeps it.
+    ///
+    /// A start that is called but whose claim is not kept — two spellings of
+    /// one relation converging on a handle this table already holds — drops the
+    /// `Declaration` it was handed, immediately. That is the point: the record
+    /// already has a subscriber for that key, and a second one would be the
+    /// duplicate this design exists to prevent.
+    using StartFn = std::function<Result<StreamClaim>(const RelationStreamRequest&)>;
 
-    /// Sends the stop. Called exactly when a handle's local count reaches 0,
-    /// which makes it also the right place to undeclare that subscriber.
+    /// Sends the stop. Called exactly when a handle's local count reaches 0.
+    ///
+    /// It does **not** undeclare the status subscriber, and must not try: the
+    /// table holds that `Declaration` and drops it itself, *after* this
+    /// function returns. See `retire`.
     ///
     /// The engine answers `Inactive`, and that means only *"you are no longer
     /// attached"*. It does **not** mean the stream stopped: another process may
@@ -164,6 +214,10 @@ public:
     /// A lease outliving its table is a lifetime bug the owner should not
     /// write; it is handled anyway, because the alternative is a dangling
     /// pointer in a destructor.
+    ///
+    /// Every stop goes out before any record is erased, so every status
+    /// subscriber is still held while the stops run — the same ordering
+    /// `retire` keeps, and for the same reason.
     ~RelationLeaseTable()
     {
         for (RelationLease* l : live_) { l->detach(); }
@@ -172,7 +226,7 @@ public:
         {
             for (const auto& kv : records_) { (void)stop_(kv.second.handle); }
         }
-        records_.clear();
+        records_.clear();   // and with them the status subscribers
         memo_.clear();
     }
 
@@ -216,15 +270,21 @@ public:
             memo_.erase(memo);
         }
 
-        const Result<Handle> started = start_(req);
+        Result<StreamClaim> started = start_(req);
         if (!started) { return Result<RelationLease>::fail(started.error()); }
-        const Handle& h = started.value();
+        StreamClaim claim = std::move(started.value());
+        const Handle& h = claim.handle;
 
         const auto existing = records_.find(h.data_topic());
         if (existing != records_.end())
         {
             // Two spellings of one relation. The engine resolved them to the
             // same handle, which is the authority; the memo learns the alias.
+            //
+            // `claim.status` is *not* kept: this record already holds a
+            // subscriber for that key, and a second one on one stream is the
+            // duplicate the design exists to prevent. It is dropped — and so
+            // undeclared — when `claim` goes out of scope below.
             memo_.emplace(rel, h.data_topic());
             if (!existing->second.terms.same_terms_as(req))
             {
@@ -239,9 +299,10 @@ public:
             return Result<RelationLease>::ok(RelationLease(this, existing->second.handle));
         }
 
-        records_.emplace(h.data_topic(), Record{h, req, 1});
-        memo_.emplace(rel, h.data_topic());
-        return Result<RelationLease>::ok(RelationLease(this, h));
+        const std::string topic = h.data_topic();
+        records_.emplace(topic, Record{claim.handle, req, 1, std::move(claim.status)});
+        memo_.emplace(rel, topic);
+        return Result<RelationLease>::ok(RelationLease(this, claim.handle));
     }
 
     /// How many local claims stand on `h`. Zero for a handle this process does
@@ -297,6 +358,15 @@ private:
         Handle handle;
         RelationStreamRequest terms;
         std::size_t count;
+
+        /// The `{handle}/status` subscriber, owned for exactly as long as this
+        /// record exists. The table never touches the transport itself — this
+        /// `Declaration` was produced by the integrator's `StartFn` and is only
+        /// stored here — which is what keeps the lease table's own logic free
+        /// of any transport dependency.
+        ///
+        /// Move-only, so `Record` is, and so is this table's `records_` map.
+        Declaration status;
     };
 
     void enroll(RelationLease* l) { live_.push_back(l); }
@@ -333,15 +403,35 @@ private:
         retire(it);
     }
 
+    /// Drops the record, sends the stop, and *then* drops the status
+    /// subscriber.
+    ///
+    /// **That order is the point, and it is easy to get backwards.** The
+    /// subscriber is moved out of the record and held in a local across the
+    /// stop, so it is still live while `StopFn` runs and for the reply that
+    /// ends it. A final publish on `{handle}/status` — the engine reporting the
+    /// stream retired, or reporting `NoPath` in the same breath — therefore
+    /// still reaches it. Undeclare first and that last message goes nowhere,
+    /// which is precisely the event a consumer waiting on a teardown is waiting
+    /// for: the status publish is the only teardown event guaranteed to arrive,
+    /// because the pipeline stop, the descriptor withdrawal and the derived-edge
+    /// retraction are each gated on the stream still holding that thing.
+    ///
+    /// The record is erased *before* the stop, and that order matters too: a
+    /// `StopFn` that re-enters this table must see a count of zero, not a
+    /// record that is about to vanish.
     void retire(std::map<std::string, Record>::iterator it)
     {
         const Handle h = it->second.handle;
+        Declaration status = std::move(it->second.status);   // outlives the record
         records_.erase(it);
         for (auto m = memo_.begin(); m != memo_.end();)
         {
             if (m->second == h.data_topic()) { m = memo_.erase(m); } else { ++m; }
         }
         if (stop_) { (void)stop_(h); }
+        // `status` is undeclared here, by leaving scope: after the stop, never
+        // before it.
     }
 
     StartFn start_;

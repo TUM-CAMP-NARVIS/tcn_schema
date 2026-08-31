@@ -58,6 +58,7 @@ set(TCN_SQE_MUST_NOT_COMPILE
         client_id_unvalidated
         lease_copy
         lease_public_stop
+        lease_start_without_status
         session_wrong_request_mode
         session_unregistered_request)
 

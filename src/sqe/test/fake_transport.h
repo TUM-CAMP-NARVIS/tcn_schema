@@ -10,6 +10,14 @@
 //
 // It is also a size check on the interface. If an adapter is much longer than
 // this, the interface has grown something it should not have.
+//
+// It backs two things: the session tests, and the lease table's status
+// subscriber. `RelationLeaseTable::StartFn` returns a `StreamClaim` — a handle
+// *and* the `{handle}/status` subscriber's `Declaration` — so the worked
+// example of a start function now runs against this fake: see the `Engine`
+// fixture at the top of test_lease.cpp, which declares that subscriber through
+// a `Transport&` and hands the `Declaration` to the table. `live_count` and
+// `deliver` below are what make the resulting lifetime observable.
 #ifndef TCN_SQE_TEST_FAKE_TRANSPORT_H
 #define TCN_SQE_TEST_FAKE_TRANSPORT_H
 

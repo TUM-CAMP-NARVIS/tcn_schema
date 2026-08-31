@@ -8,17 +8,25 @@
 // a stream, and the table is the only thing standing between them.
 //
 // Nothing here does I/O. The start and stop are recording functions, which is
-// what makes the arithmetic testable with no daemon and no network.
+// what makes the arithmetic testable with no daemon and no network — the
+// `FakeTransport` below is in-memory too, and exists only so that the
+// `{handle}/status` subscriber a `StartFn` now returns is a real `Declaration`
+// over a real `Registration`, whose declare and undeclare can be observed.
 #include <cstdio>
+#include <functional>
 #include <string>
 #include <utility>
 #include <vector>
 
 #include "check.h"
+#include "fake_transport.h"
 #include "stub_msgs.h"
 #include "tcn/sqe/lease.h"
+#include "tcn/sqe/session.h"   // for declare_subscription: the only way to make one
 
 using namespace tcn::sqe;
+using tcn::sqe::test::DeclaredThing;
+using tcn::sqe::test::FakeTransport;
 using tcn::sqe::test::handle_for;
 
 namespace {
@@ -53,15 +61,46 @@ public:
     /// for it. Anything not listed gets a handle derived from the target node.
     std::string handle_override;
 
+    /// When set, every start declares the `{handle}/status` subscriber through
+    /// this transport and hands the `Declaration` to the table -- the shape a
+    /// real integrator writes. Left null, every start returns a
+    /// default-constructed `Declaration`, which is the documented way to say
+    /// "no status subscriber here".
+    Transport* transport = nullptr;
+
+    /// Every sample the status subscriber received, as `"key|payload"`.
+    std::vector<std::string> status_samples;
+
+    /// Run from inside `StopFn`, before it returns -- the one instant at which
+    /// the ordering rule ("the subscriber outlives the stop") is observable.
+    std::function<void(const Handle&)> during_stop;
+
     RelationLeaseTable::StartFn start_fn()
     {
-        return [this](const RelationStreamRequest& r) -> Result<Handle> {
+        return [this](const RelationStreamRequest& r) -> Result<StreamClaim> {
             starts.push_back(describe(r));
-            if (start_error != Error::Ok) { return Result<Handle>::fail(start_error); }
+            if (start_error != Error::Ok) { return Result<StreamClaim>::fail(start_error); }
             const std::string topic = handle_override.empty()
                                           ? ("sqe/eng/rel/" + r.observer().node() + "-" + r.target().node())
                                           : handle_override;
-            return Result<Handle>::ok(handle_for(topic.c_str()));
+            Handle h = handle_for(topic.c_str());
+
+            if (transport == nullptr)
+            {
+                // The deliberate opt-out: an empty `Declaration`, spelled out
+                // where a reviewer can see it.
+                return Result<StreamClaim>::ok(StreamClaim{std::move(h), Declaration()});
+            }
+
+            Result<Declaration> sub = declare_subscription(
+                *transport, h.status_topic(),
+                [this](const Sample& s) {
+                    status_samples.push_back(std::string(s.key) + "|" +
+                                             std::string(reinterpret_cast<const char*>(s.payload.data),
+                                                         s.payload.size));
+                });
+            if (!sub) { return Result<StreamClaim>::fail(sub.error()); }
+            return Result<StreamClaim>::ok(StreamClaim{std::move(h), std::move(sub.value())});
         };
     }
 
@@ -69,6 +108,7 @@ public:
     {
         return [this](const Handle& h) -> Result<Status> {
             stops.push_back(h.data_topic());
+            if (during_stop) { during_stop(h); }
             // A stop always answers Inactive, and that means only "you are no
             // longer attached" -- never "the stream stopped".
             return Result<Status>::ok(Status::Inactive);
@@ -424,4 +464,264 @@ TCN_SQE_TEST(a_lease_names_its_own_status_topic)
     if (!a) { return; }
     CHECK_STR_EQ(a.value().handle().data_topic(), "sqe/eng/rel/head-marker");
     CHECK_STR_EQ(a.value().status_topic(), "sqe/eng/rel/head-marker/status");
+}
+
+
+// ---------------------------------------------------------------------------
+// The status subscriber's lifetime is the lease's
+// ---------------------------------------------------------------------------
+//
+// `{handle}/status` is the only channel on which a client learns that a stream
+// it holds went `NoPath` or that the engine stopped answering, and it is the
+// only teardown event guaranteed to arrive at all. Before `StartFn` returned
+// one, an integrator who forgot to declare it got no error, ever. These tests
+// are what the type obligation buys.
+
+// Declared by the start, and released when -- and only when -- the record
+// retires. Undeclared anywhere else, a subscriber is left alive on a key
+// nothing publishes on any more.
+TCN_SQE_TEST(the_status_subscriber_is_declared_by_the_start_and_released_when_the_lease_retires)
+{
+    FakeTransport t;
+    Engine e;
+    e.transport = &t;
+    RelationLeaseTable table(e.start_fn(), e.stop_fn());
+
+    {
+        Result<RelationLease> a = table.acquire(req("head", "marker"));
+        CHECK_OK(a);
+        if (!a) { return; }
+
+        CHECK_INT_EQ(t.live_count(DeclaredThing::Subscriber), 1);
+        const DeclaredThing* d = t.find_declared("sqe/eng/rel/head-marker/status");
+        CHECK(d != nullptr);
+        if (d) { CHECK(d->kind == DeclaredThing::Subscriber); }
+
+        CHECK(t.deliver("sqe/eng/rel/head-marker/status", "application/cdr;x", "nopath"));
+        CHECK_INT_EQ(e.status_samples.size(), 1);
+    }
+
+    CHECK_MSG(t.live_count(DeclaredThing::Subscriber) == 0,
+              "the retired lease left its status subscriber declared");
+    CHECK_MSG(!t.deliver("sqe/eng/rel/head-marker/status", "application/cdr;x", "late"),
+              "a sample reached a subscriber that should have been undeclared");
+    CHECK_INT_EQ(e.status_samples.size(), 1);
+    CHECK_INT_EQ(t.declared.size(), 1);   // undeclared, never re-declared
+}
+
+// A release that is not the last one must leave the subscriber held. Otherwise
+// the first component to let go blinds every other component in the process to
+// the stream's status -- the same failure the lease count exists to prevent,
+// one channel over.
+TCN_SQE_TEST(a_non_final_release_leaves_the_status_subscriber_held)
+{
+    FakeTransport t;
+    Engine e;
+    e.transport = &t;
+    RelationLeaseTable table(e.start_fn(), e.stop_fn());
+
+    Result<RelationLease> a = table.acquire(req("head", "marker"));
+    Result<RelationLease> b = table.acquire(req("head", "marker"));
+    CHECK_OK(a); CHECK_OK(b);
+    if (!a || !b) { return; }
+
+    // One start, so one subscriber -- never one per component.
+    CHECK_INT_EQ(e.starts.size(), 1);
+    CHECK_INT_EQ(t.declared.size(), 1);
+
+    a = Result<RelationLease>::fail(Error::Empty);
+
+    CHECK_INT_EQ(e.stops.size(), 0);
+    CHECK_MSG(t.live_count(DeclaredThing::Subscriber) == 1,
+              "a non-final release undeclared the status subscriber");
+    CHECK(t.deliver("sqe/eng/rel/head-marker/status", "application/cdr;x", "still-listening"));
+    CHECK_INT_EQ(e.status_samples.size(), 1);
+
+    b = Result<RelationLease>::fail(Error::Empty);
+    CHECK_INT_EQ(e.stops.size(), 1);
+    CHECK_INT_EQ(t.live_count(DeclaredThing::Subscriber), 0);
+}
+
+// The ordering, directly: the subscriber is still live *while* `StopFn` runs,
+// so the engine's final status publish -- "retired", or a `NoPath` in the same
+// breath -- still reaches it. Undeclared first, that last message goes nowhere,
+// and it is the only teardown event a consumer is guaranteed to get.
+TCN_SQE_TEST(the_status_subscriber_is_still_held_while_the_stop_runs)
+{
+    FakeTransport t;
+    Engine e;
+    e.transport = &t;
+
+    int live_during_stop = -1;
+    bool delivered_during_stop = false;
+    e.during_stop = [&](const Handle& h) {
+        live_during_stop = static_cast<int>(t.live_count(DeclaredThing::Subscriber));
+        delivered_during_stop = t.deliver(h.status_topic(), "application/cdr;x", "retired");
+    };
+
+    {
+        RelationLeaseTable table(e.start_fn(), e.stop_fn());
+        Result<RelationLease> a = table.acquire(req("head", "marker"));
+        CHECK_OK(a);
+        if (!a) { return; }
+    }
+
+    CHECK_INT_EQ(e.stops.size(), 1);
+    CHECK_MSG(live_during_stop == 1,
+              "the status subscriber was undeclared before the stop returned");
+    CHECK_MSG(delivered_during_stop,
+              "the engine's final status publish did not reach the subscriber");
+    CHECK_INT_EQ(e.status_samples.size(), 1);
+    if (e.status_samples.size() == 1)
+    {
+        CHECK_STR_EQ(e.status_samples.front(), "sqe/eng/rel/head-marker/status|retired");
+    }
+    CHECK_INT_EQ(t.live_count(DeclaredThing::Subscriber), 0);
+}
+
+// The same ordering when the table itself is destroyed while it still holds
+// streams. A lease outliving its table is a lifetime bug, but the teardown it
+// forces must still be the right way round.
+TCN_SQE_TEST(a_table_destroyed_holding_a_stream_stops_it_before_dropping_its_subscriber)
+{
+    FakeTransport t;
+    Engine e;
+    e.transport = &t;
+
+    int live_during_stop = -1;
+    e.during_stop = [&](const Handle&) {
+        live_during_stop = static_cast<int>(t.live_count(DeclaredThing::Subscriber));
+    };
+
+    Result<RelationLease> a = Result<RelationLease>::fail(Error::Empty);
+    {
+        RelationLeaseTable table(e.start_fn(), e.stop_fn());
+        a = table.acquire(req("head", "marker"));
+        CHECK_OK(a);
+    }
+    CHECK_INT_EQ(e.stops.size(), 1);
+    CHECK_INT_EQ(live_during_stop, 1);
+    CHECK_MSG(t.live_count(DeclaredThing::Subscriber) == 0,
+              "the destroyed table left a status subscriber declared");
+}
+
+// `force_detach_process_from` retires the record, so it takes the subscriber
+// with it -- there is nothing left to hear from on that key.
+TCN_SQE_TEST(force_detach_releases_the_status_subscriber_too)
+{
+    FakeTransport t;
+    Engine e;
+    e.transport = &t;
+    RelationLeaseTable table(e.start_fn(), e.stop_fn());
+
+    Result<RelationLease> a = table.acquire(req("head", "marker"));
+    CHECK_OK(a);
+    if (!a) { return; }
+    CHECK_INT_EQ(t.live_count(DeclaredThing::Subscriber), 1);
+
+    CHECK(table.force_detach_process_from(a.value().handle()));
+    CHECK_INT_EQ(t.live_count(DeclaredThing::Subscriber), 0);
+
+    // And the lease's own release afterwards is still a no-op -- it must not
+    // undeclare a second time or send a second stop.
+    a = Result<RelationLease>::fail(Error::Empty);
+    CHECK_INT_EQ(e.stops.size(), 1);
+    CHECK_INT_EQ(t.declared.size(), 1);
+}
+
+// A start whose claim the table does not keep must not leave its subscriber
+// behind. Two spellings of one relation both reach the engine, which resolves
+// them to one handle; the second claim's `Declaration` is dropped immediately,
+// because the record already holds a subscriber for that key and two on one
+// stream is exactly the duplicate this design removes.
+TCN_SQE_TEST(a_redundant_start_drops_the_subscriber_it_declared)
+{
+    FakeTransport t;
+    Engine e;
+    e.transport = &t;
+    e.handle_override = "sqe/eng/rel/one-and-the-same";
+    RelationLeaseTable table(e.start_fn(), e.stop_fn());
+
+    Result<RelationLease> a = table.acquire(req("head", "marker"));
+    Result<RelationLease> b = table.acquire(req("hand", "marker"));
+    CHECK_OK(a); CHECK_OK(b);
+    if (!a || !b) { return; }
+
+    CHECK_INT_EQ(e.starts.size(), 2);
+    CHECK_INT_EQ(t.declared.size(), 2);            // both starts declared one
+    CHECK_MSG(t.live_count(DeclaredThing::Subscriber) == 1,
+              "the redundant start left a second subscriber on one stream");
+
+    // One subscriber, so one delivery -- not two.
+    CHECK(t.deliver("sqe/eng/rel/one-and-the-same/status", "application/cdr;x", "s"));
+    CHECK_INT_EQ(e.status_samples.size(), 1);
+
+    a = Result<RelationLease>::fail(Error::Empty);
+    b = Result<RelationLease>::fail(Error::Empty);
+    CHECK_INT_EQ(e.stops.size(), 1);
+    CHECK_INT_EQ(t.live_count(DeclaredThing::Subscriber), 0);
+}
+
+// The same, on the path where the redundant start is *refused*: a conflicting
+// second acquire must not damage the held lease, and must not leak the
+// subscriber its own start declared.
+TCN_SQE_TEST(a_conflicting_redundant_start_drops_its_subscriber_and_leaves_the_held_one)
+{
+    FakeTransport t;
+    Engine e;
+    e.transport = &t;
+    e.handle_override = "sqe/eng/rel/one-and-the-same";
+    RelationLeaseTable table(e.start_fn(), e.stop_fn());
+
+    Result<RelationLease> a = table.acquire(req("head", "marker", 30.0));
+    CHECK_OK(a);
+    if (!a) { return; }
+
+    CHECK_ERR(table.acquire(req("hand", "marker", 90.0)), Error::ConflictingLease);
+
+    CHECK_INT_EQ(e.starts.size(), 2);
+    CHECK_INT_EQ(t.declared.size(), 2);
+    CHECK_MSG(t.live_count(DeclaredThing::Subscriber) == 1,
+              "a refused acquire left the subscriber its start declared");
+    CHECK_INT_EQ(e.stops.size(), 0);
+
+    // The surviving subscriber is the held lease's, not the refused one's.
+    CHECK(t.deliver("sqe/eng/rel/one-and-the-same/status", "application/cdr;x", "s"));
+    CHECK_INT_EQ(e.status_samples.size(), 1);
+}
+
+// A start that failed leased nothing, so there is nothing to undeclare -- and
+// the failure path must not be the one that leaks.
+TCN_SQE_TEST(a_start_whose_subscriber_the_transport_refused_leases_nothing)
+{
+    FakeTransport t;
+    Engine e;
+    e.transport = &t;
+    t.subscriber_fails = true;
+    RelationLeaseTable table(e.start_fn(), e.stop_fn());
+
+    CHECK_ERR(table.acquire(req("head", "marker")), Error::TransportFailed);
+    CHECK_INT_EQ(table.size(), 0);
+    CHECK_INT_EQ(t.declared.size(), 0);
+    CHECK_INT_EQ(e.stops.size(), 0);
+}
+
+// The documented opt-out. An integrator who genuinely wants no status
+// subscriber returns a default-constructed `Declaration`; the table stores it,
+// retires it and asks nothing further. The type asks -- it does not compel.
+TCN_SQE_TEST(a_start_that_returns_no_subscriber_is_allowed_and_retires_normally)
+{
+    FakeTransport t;
+    Engine e;                    // e.transport stays null: the empty Declaration
+    RelationLeaseTable table(e.start_fn(), e.stop_fn());
+
+    {
+        Result<RelationLease> a = table.acquire(req("head", "marker"));
+        CHECK_OK(a);
+        if (!a) { return; }
+        CHECK_INT_EQ(table.local_count(a.value().handle()), 1);
+    }
+    CHECK_INT_EQ(e.stops.size(), 1);
+    CHECK_INT_EQ(table.size(), 0);
+    CHECK_INT_EQ(t.declared.size(), 0);
 }

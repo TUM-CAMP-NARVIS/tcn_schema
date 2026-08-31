@@ -107,57 +107,10 @@ inline constexpr int kSessionBLevel = 41;
 /// running that the client holds no handle for and cannot stop until it leaves.
 inline constexpr std::uint32_t kDefaultQueryTimeoutMs = 35000;
 
-/// RAII over one thing the transport declared for us: a liveliness token or a
-/// subscriber.
-///
-/// One class for both, because the lifetime is the whole of what this library
-/// does with either — declare it, hold it, drop it exactly once — and a second
-/// class would differ only in the factory that produced it. Move-only; there is
-/// no way to construct one except by declaring.
-class Declaration
-{
-public:
-    Declaration() noexcept : t_(nullptr), reg_() {}
-
-    Declaration(const Declaration&) = delete;
-    Declaration& operator=(const Declaration&) = delete;
-
-    Declaration(Declaration&& o) noexcept : t_(o.t_), reg_(o.reg_) { o.t_ = nullptr; o.reg_ = Registration{}; }
-
-    Declaration& operator=(Declaration&& o) noexcept
-    {
-        if (this != &o)
-        {
-            release();
-            t_ = o.t_; reg_ = o.reg_;
-            o.t_ = nullptr; o.reg_ = Registration{};
-        }
-        return *this;
-    }
-
-    ~Declaration() { release(); }
-
-    bool held() const noexcept { return t_ != nullptr && reg_.valid(); }
-
-    /// Drop it now rather than at the end of the scope. Idempotent.
-    void undeclare() noexcept { release(); }
-
-private:
-    friend Result<Declaration> declare_presence(Transport&, const ClientId&);
-    friend Result<Declaration> declare_subscription(Transport&, std::string_view, SampleFn);
-
-    Declaration(Transport* t, Registration r) noexcept : t_(t), reg_(r) {}
-
-    void release() noexcept
-    {
-        if (t_ && reg_.valid()) { t_->undeclare(reg_); }
-        t_ = nullptr;
-        reg_ = Registration{};
-    }
-
-    Transport* t_;
-    Registration reg_;
-};
+// `Declaration` — the RAII wrapper these two factories produce — is defined in
+// transport.h, alongside the `Transport` and `Registration` it is RAII over.
+// `lease.h` stores one, and `session.h` includes `lease.h`, so it could not
+// stay here.
 
 /// The liveliness token, held for as long as the client is present.
 ///
@@ -180,11 +133,15 @@ inline Result<Declaration> declare_presence(Transport& t, const ClientId& id)
 /// The one this library exists to make correct is `{handle}/status`: it is the
 /// only channel on which a client learns that a stream it holds went `NoPath`,
 /// or that the engine stopped answering, and those two are not distinguishable
-/// any other way. It belongs inside `RelationLeaseTable::StartFn` — which runs
-/// exactly on the 0 -> 1 transition — with the `Declaration` kept beside the
-/// lease and dropped by `StopFn`, so that the last release both stops the
-/// stream and takes the subscriber down with it. Undeclaring it anywhere else
-/// leaves a subscriber alive on a key nothing publishes on any more.
+/// any other way. It is also the only teardown event guaranteed to arrive — the
+/// pipeline stop, the descriptor withdrawal and the derived-edge retraction are
+/// each gated on the stream still holding that thing — so a consumer waiting on
+/// a withdrawal instead simply hangs.
+///
+/// That is why `RelationLeaseTable::StartFn` returns the `Declaration` this
+/// produces, in a `StreamClaim`, rather than leaving it to the caller to keep
+/// somewhere: the subscriber's lifetime is the *lease's*, and the table is the
+/// only object that knows when that ends. See `lease.h`.
 inline Result<Declaration> declare_subscription(Transport& t, std::string_view key, SampleFn on_sample)
 {
     const Result<Registration> r = t.declare_subscriber(key, std::move(on_sample));
@@ -207,16 +164,29 @@ inline Result<Declaration> declare_subscription(Transport& t, std::string_view k
 ///
 /// Wiring the relation-stream half takes about a dozen lines and is not done
 /// for the consumer, because it is the one place the generated IDL types have
-/// to be named and this component names none:
+/// to be named and this component names none. The start returns a
+/// `StreamClaim` — the handle *and* the `{handle}/status` subscriber — because
+/// the subscriber's lifetime is the lease's, and the table is what knows when
+/// that ends:
 ///
 /// ```cpp
 /// RelationLeaseTable relations(
-///   [&](const RelationStreamRequest& r) -> Result<Handle> {
+///   [&](const RelationStreamRequest& r) -> Result<StreamClaim> {
 ///     tcnart_msgs::rpc::SISRelationStreamStartRequest req = to_idl(r);   // yours
 ///     tcnart_msgs::rpc::SISRelationStreamReply reply;
 ///     const auto q = session.query_request(req, reply);
-///     if (!q) { return Result<Handle>::fail(q.error()); }
-///     return Handle::from_reply(reply);           // enforces the invariant
+///     if (!q) { return Result<StreamClaim>::fail(q.error()); }
+///     Result<Handle> h = Handle::from_reply(reply);   // enforces the invariant
+///     if (!h) { return Result<StreamClaim>::fail(h.error()); }
+///
+///     // Declared here, on the 0 -> 1 transition, and handed to the table.
+///     Result<Declaration> sub = session.subscribe(
+///         h.value().status_topic(),
+///         [](const Sample& s) { /* NoPath, Retired, engine gone */ (void)s; });
+///     if (!sub) { return Result<StreamClaim>::fail(sub.error()); }
+///
+///     return Result<StreamClaim>::ok(
+///         StreamClaim{std::move(h.value()), std::move(sub.value())});
 ///   },
 ///   [&](const Handle& h) -> Result<Status> {
 ///     tcnart_msgs::rpc::SISRelationStreamStopRequest req;
@@ -227,6 +197,11 @@ inline Result<Declaration> declare_subscription(Transport& t, std::string_view k
 ///     return reply_status(reply);
 ///   });
 /// ```
+///
+/// A consumer that genuinely wants no status subscriber returns
+/// `StreamClaim{std::move(h.value()), Declaration()}`. The type asks; it does
+/// not compel — but the empty is then a visible choice in the consumer's own
+/// code rather than an omission nobody ever sees.
 ///
 /// Not internally synchronized. The owner serializes.
 template <class Codec>
