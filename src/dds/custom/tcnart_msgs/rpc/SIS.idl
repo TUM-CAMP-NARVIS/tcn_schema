@@ -170,10 +170,29 @@ module tcnart_msgs {
     // topic for you". Every other status (including SIS_RS_INACTIVE, the answer
     // to a stop) is NONE.
     //
-    // The assigned topic is "sqe/{engine_id}/rel/{handle}"; its status
-    // notifications are on "{topic}/status" and its stream descriptor on
-    // "sqe/{engine_id}/cfg/desc/{handle}". Treat all three as opaque: read them
-    // from this reply rather than recomputing them.
+    // This reply carries exactly ONE key: the data topic, in `handle.topic`.
+    // An earlier version of this comment said to "read all three from this
+    // reply", which was never possible -- there is one field. What is true:
+    //
+    //   data topic    read it from `handle.topic`. Never compute it. It is
+    //                 "sqe/{engine_id}/rel/{handle}" today, and that shape is
+    //                 not a promise -- a client that reconstructs it is broken
+    //                 by any change to the engine's own namespace.
+    //
+    //   status topic  derive it as "{handle.topic}/status". This derivation IS
+    //                 part of the contract and is stable; it is where a stream
+    //                 announces that it went NoPath, and the only teardown
+    //                 event guaranteed to arrive. Deriving it is correct and
+    //                 expected -- there is no field for it because it is a
+    //                 function of the one there is.
+    //
+    //   descriptor    do NOT derive it, and do not read it. It is the engine's
+    //                 own announcement, addressed to its ingest path, not to
+    //                 the client that asked for the stream. Reaching it means
+    //                 rewriting a middle segment of the data topic, which is
+    //                 exactly the recomputation the first rule forbids. If a
+    //                 client ever genuinely needs it, this reply gains a field;
+    //                 it does not gain a blessed string manipulation.
     struct SISRelationStreamReply {
         SISRelationStreamStatus status;
         SISRelationStreamHandle handle;
