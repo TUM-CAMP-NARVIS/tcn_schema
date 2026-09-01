@@ -146,6 +146,29 @@ module tcnart_msgs {
         boolean unused;
     };
 
+    // Whether the engine should keep looking for a better route once this
+    // stream is running, or serve whatever was best at the moment it compiled.
+    //
+    // A stream's route is chosen by the pathfinder from what is *walkable* at
+    // compile time, and an uncalibrated relation is not walkable. So a request
+    // whose shortest route crosses a relation nobody has calibrated yet is
+    // served over the longer walkable one -- correctly, and with no way to say
+    // so, because SIS_RS_ACTIVE is what the client is told. If that
+    // calibration later arrives, the shorter route becomes available and
+    // nothing looks at it again.
+    enum SISReoptimisePolicy {
+        SIS_RO_BEST_AVAILABLE_NOW,  // ordinal 0. Today's behaviour, and the
+                                    //   default: serve the best route
+                                    //   available at the moment of
+                                    //   compilation, and re-evaluate only
+                                    //   when something on that route changes.
+        SIS_RO_BEST_POSSIBLE        // ordinal 1. Serve me now over whatever is
+                                    //   available, and move me when a better
+                                    //   route appears -- typically when a
+                                    //   calibration makes a shorter path
+                                    //   walkable.
+    };
+
     // Publish the spatial relation between two frames as a stream.
     //
     // This replaces topic translation. What a consumer wants is not a copy of
@@ -162,7 +185,7 @@ module tcnart_msgs {
     // The client asks *what* relation it wants, not *where* to put it: there is
     // no output_topic here. 0.3.0's third field is gone, and the engine answers
     // with the topic it assigned (SISRelationStreamReply, below). Field order is
-    // now: observer, target, trigger, freshness_bias.
+    // now: observer, target, trigger, freshness_bias, reoptimise.
     struct SISRelationStreamStartRequest {
         SISFrameRef observer;           // the frame poses are expressed in
         SISFrameRef target;             // the frame being located
@@ -182,6 +205,36 @@ module tcnart_msgs {
         // stream is compiled, so no weight changes at runtime and no path is
         // recompiled because a number drifted.
         double freshness_bias;
+
+        // Appended last. Ordinal 0 is today's behaviour, so a zero-filled
+        // field is the default and a client that does not care need not think
+        // about it.
+        //
+        // **NOT part of stream identity, and it is the only field here that
+        // is not.** `observer`, `target`, `trigger` and `freshness_bias` are
+        // what the engine compares when a second request arrives for a
+        // relation it is already serving: one handle per (observer, target),
+        // and a request differing in `trigger` or `freshness_bias` is refused
+        // rather than attached, because both change *what is published*. This
+        // one does not: whichever route the engine settles on, the stream
+        // carries the same relation, in the same frame, at the same trigger,
+        // computed from live data. So a second request differing only in this
+        // field ATTACHES to the existing stream, and the policy is recorded
+        // against the requester rather than against the stream.
+        //
+        // A stream re-optimises if ANY of its requesters asked for
+        // SIS_RO_BEST_POSSIBLE -- the union, not the intersection. A
+        // best-available-now requester sharing such a stream can therefore be
+        // re-routed. That was already true before this field existed: a
+        // running stream is re-routed today whenever a relation on its own
+        // path changes, and always has been. What this field controls is on
+        // which *occasions* the engine looks for a better route, not whether
+        // re-routing can happen at all. It does not mean "never move me", and
+        // the protocol has never offered that.
+        //
+        // Watch `route_epoch` on SISRelationStreamStatusNotification to know
+        // when a re-route actually happened.
+        SISReoptimisePolicy reoptimise;
     };
 
     // Stops the stream named by the handle the engine issued in
@@ -354,12 +407,41 @@ module tcnart_msgs {
     // exists the stream is SIS_RS_ACTIVE, no list is produced, and the client
     // is served -- just not over the shorter route the missing calibration
     // would open.
+    //
+    // **It is also published when a running stream's route changes**, carrying
+    // SIS_RS_ACTIVE for a stream that was already active and an incremented
+    // `route_epoch`. A different route is a different composition of a
+    // different set of measurements, so the poses step at the switch; before
+    // `route_epoch` existed the engine performed the switch and said nothing
+    // at all. Every route change is announced, whatever caused it -- a
+    // consumer cannot care *why* its geometry provenance changed, only that it
+    // did.
     struct SISRelationStreamStatusNotification {
         string output_topic;
         SISRelationStreamStatus status;
         string detail;                  // human-readable reason; may be empty
         // Appended last, for SISRelationStreamReply's reason.
         sequence<SISBlockingRelation> blocked_by;
+
+        // Appended last, after SISRelationStreamReply's reason.
+        //
+        // Bumped whenever this stream's compiled route changes: a different
+        // set of relations composed, therefore a different accumulated error,
+        // and poses that step at the switch. A consumer detects a re-route by
+        // this value changing, not by the status -- a re-route republishes
+        // SIS_RS_ACTIVE for a stream that was already active, which a consumer
+        // treating status as state will correctly dedupe.
+        //
+        // Per-stream, monotonically increasing, starting at 0 on the first
+        // successful compile. Not a hash of the route: a stream with no
+        // derived edge (a single hop, a template) has no name to hash, and
+        // returning to a previously-taken route would reproduce a value
+        // already seen.
+        //
+        // Streams do not persist, so this resets when the engine restarts --
+        // together with the handle's whole record. A consumer that reconnects
+        // must assume a discontinuity anyway.
+        uint32 route_epoch;
     };
 
     // --- reading the graph -------------------------------------------------
