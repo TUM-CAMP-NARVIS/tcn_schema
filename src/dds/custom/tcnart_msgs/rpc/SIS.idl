@@ -211,6 +211,56 @@ module tcnart_msgs {
                                          // hold.
     };
 
+    // One relation on a pending stream's path whose value is not usable yet.
+    //
+    // SIS_RS_PENDING says *something* on the path is not calibrated. It never
+    // said **which**, and a client cannot launch a calibration routine for a
+    // relation it cannot name -- which is the whole point of accepting the
+    // request instead of refusing it. This is that name, in a form the client
+    // can act on rather than print.
+    //
+    // # What identifies a relation here, and why it is three fields
+    //
+    // The client's next action is a `/sis/relation/update` carrying a full
+    // SREdge, and that write is an upsert keyed on (source, target, name). A
+    // declared `name` alone does not address anything: two fragments may each
+    // declare a relation called `origin_camera`, and the engine's own region
+    // loader disambiguates them by row precisely because the name does not.
+    // So the pair of endpoints travels with the name, and each endpoint is a
+    // SISFrameRef -- the same {client, node} pair the start request named its
+    // own frames with, so nothing new has to be learnt to read this.
+    //
+    // `client` is empty exactly when the node is SRG_NODE_SCOPE_GLOBAL: a
+    // global node has one name in one namespace and belongs to no fragment
+    // (see SRNodeView, which draws the same distinction for the same reason).
+    // It is not "unknown".
+    //
+    // **Which fragment to send the update under.** The one owning a *local*
+    // endpoint -- `source.client` when it is non-empty, otherwise
+    // `target.client`, otherwise any joined fragment. That matters because
+    // `/sis/relation/update` resolves the bare `source`/`target` names it is
+    // given against the *sending* client's fragment first, then globally: sent
+    // under the wrong fragment, a local endpoint resolves to nothing and the
+    // push is answered SIS_MU_UNKNOWN_FRAME.
+    //
+    // The relation is **not** carried as a whole SREdge. An SREdge here would
+    // be a read riding on a status message, and it would go stale the moment
+    // anything else touched the row -- the same objection SISMutationReply
+    // records for its own missing echo. What is carried is an address plus the
+    // one property that says why the relation blocks.
+    struct SISBlockingRelation {
+        SISFrameRef source;             // the relation's source frame
+        SISFrameRef target;             // the relation's target frame
+        string name;                    // SREdge.name, as declared
+
+        // Why this relation cannot be composed: today always
+        // SRG_EDGE_STATIC_UNCALIBRATED, the one temporal type the pathfinder
+        // refuses (see SREdgeTemporalType). Carried rather than assumed, so a
+        // client branches on the reason instead of on a status that has only
+        // ever had one.
+        tcnart_msgs::msg::SREdgeTemporalType temporal_type;
+    };
+
     // Whether a reply carries a handle at all.
     //
     // A refusal has no stream to name, and an empty string standing in for
@@ -266,9 +316,23 @@ module tcnart_msgs {
     //                 exactly the recomputation the first rule forbids. If a
     //                 client ever genuinely needs it, this reply gains a field;
     //                 it does not gain a blessed string manipulation.
+    //
+    // `blocked_by` is populated only for SIS_RS_PENDING, and is empty for every
+    // other status. It is on the reply as well as on the notification below
+    // because a client told "pending" should learn why in the same answer: the
+    // notification carrying the same list may already have been published
+    // before that client subscribed to the status topic.
+    //
+    // An empty `blocked_by` on a SIS_RS_PENDING reply is meaningful and is not
+    // an omission -- the stream is waiting on something that is not a
+    // calibration (a withdrawn frame, an upstream stream not yet running), and
+    // there is nothing for a calibration routine to do about it.
     struct SISRelationStreamReply {
         SISRelationStreamStatus status;
         SISRelationStreamHandle handle;
+        // Appended last, so a decoder reading the two leading fields degrades
+        // exactly as it already did.
+        sequence<SISBlockingRelation> blocked_by;
     };
 
     // Published on "{output_topic}/status" when a stream's status changes.
@@ -277,11 +341,25 @@ module tcnart_msgs {
     // "the engine died", and only the first is recoverable by waiting.
     // `output_topic` now carries the engine-issued handle from
     // SISRelationStreamReply, not a topic the client picked. The field name and
-    // its position are unchanged, so this struct's wire layout is untouched.
+    // its position are unchanged.
+    //
+    // `blocked_by` carries the same list SISRelationStreamReply does, under the
+    // same rule, and it is **republished whenever the list itself changes**: a
+    // stream pending on two uncalibrated relations, one of which is then
+    // supplied, publishes SIS_RS_PENDING again naming only the one that is
+    // left. A client drives its calibration sequence off these republications
+    // and is done when SIS_RS_ACTIVE arrives.
+    //
+    // This only helps while the stream is *pending*. If a longer walkable path
+    // exists the stream is SIS_RS_ACTIVE, no list is produced, and the client
+    // is served -- just not over the shorter route the missing calibration
+    // would open.
     struct SISRelationStreamStatusNotification {
         string output_topic;
         SISRelationStreamStatus status;
         string detail;                  // human-readable reason; may be empty
+        // Appended last, for SISRelationStreamReply's reason.
+        sequence<SISBlockingRelation> blocked_by;
     };
 
     // --- reading the graph -------------------------------------------------

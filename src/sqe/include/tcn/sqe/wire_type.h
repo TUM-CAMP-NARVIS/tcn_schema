@@ -54,6 +54,7 @@ class SISEdgeRemoveRequest;
 class SISRelationStreamStartRequest;
 class SISRelationStreamStopRequest;
 class SISRelationStreamHandle;
+class SISBlockingRelation;
 class SISRelationStreamReply;
 class SISRelationStreamStatusNotification;
 class SISMutationReply;
@@ -128,6 +129,12 @@ TCN_SQE_REGISTER_WIRE_TYPE(::tcnart_msgs::rpc::SISRelationStreamStartRequest, "t
 TCN_SQE_REGISTER_WIRE_TYPE(::tcnart_msgs::rpc::SISRelationStreamStopRequest,  "tcnart_msgs::rpc::SISRelationStreamStopRequest");
 TCN_SQE_REGISTER_WIRE_TYPE(::tcnart_msgs::rpc::SISRelationStreamStatus,       "tcnart_msgs::rpc::SISRelationStreamStatus");
 TCN_SQE_REGISTER_WIRE_TYPE(::tcnart_msgs::rpc::SISRelationStreamHandle,       "tcnart_msgs::rpc::SISRelationStreamHandle");
+// The relation a pending stream is waiting on. Nested inside the reply and the
+// notification below rather than published alone, and registered anyway for the
+// same reason SRNodeView and SREdgeView are: a calibration tool passes one of
+// these around on its own, and a name it has to spell by hand is a name it can
+// spell wrong.
+TCN_SQE_REGISTER_WIRE_TYPE(::tcnart_msgs::rpc::SISBlockingRelation,           "tcnart_msgs::rpc::SISBlockingRelation");
 TCN_SQE_REGISTER_WIRE_TYPE(::tcnart_msgs::rpc::SISRelationStreamReply,        "tcnart_msgs::rpc::SISRelationStreamReply");
 TCN_SQE_REGISTER_WIRE_TYPE(::tcnart_msgs::rpc::SISRelationStreamStatusNotification,
                            "tcnart_msgs::rpc::SISRelationStreamStatusNotification");

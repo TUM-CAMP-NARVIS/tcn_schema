@@ -36,6 +36,8 @@ TCN_SQE_TEST(cdr_encoding_names_every_registered_type_exactly)
                  "application/cdr;tcnart_msgs::rpc::SISRelationStreamStatus");
     CHECK_STR_EQ(cdr_encoding<rpc::SISRelationStreamHandle>(),
                  "application/cdr;tcnart_msgs::rpc::SISRelationStreamHandle");
+    CHECK_STR_EQ(cdr_encoding<rpc::SISBlockingRelation>(),
+                 "application/cdr;tcnart_msgs::rpc::SISBlockingRelation");
     CHECK_STR_EQ(cdr_encoding<rpc::SISRelationStreamReply>(),
                  "application/cdr;tcnart_msgs::rpc::SISRelationStreamReply");
     CHECK_STR_EQ(cdr_encoding<rpc::SISRelationStreamStatusNotification>(),
@@ -78,6 +80,30 @@ TCN_SQE_TEST(the_two_new_replies_do_not_answer_for_each_other)
     // the request is the mistake that shape invites.
     CHECK_ERR(check_declared_type<rpc::SISMutationReply>(
                   "application/cdr;tcnart_msgs::rpc::SISEdgeUpdateRequest"),
+              Error::WrongDeclaredType);
+}
+
+// The relation a pending stream is blocked on is an `::rpc::` type, and it is
+// not the reply it travels inside. Both open with data a CDR reader will
+// happily consume as the other's, so the annotation is again the only
+// separator -- and a client that reads one blocking relation off a key
+// expecting a whole reply gets a name it will then push a calibration to.
+TCN_SQE_TEST(a_blocking_relation_is_not_the_reply_that_carries_it)
+{
+    CHECK_OK(check_declared_type<rpc::SISBlockingRelation>(
+        "application/cdr;tcnart_msgs::rpc::SISBlockingRelation"));
+
+    CHECK_ERR(check_declared_type<rpc::SISBlockingRelation>(
+                  "application/cdr;tcnart_msgs::rpc::SISRelationStreamReply"),
+              Error::WrongDeclaredType);
+    CHECK_ERR(check_declared_type<rpc::SISRelationStreamReply>(
+                  "application/cdr;tcnart_msgs::rpc::SISBlockingRelation"),
+              Error::WrongDeclaredType);
+
+    // It is an rpc type: it names frames the way a relation-stream request
+    // does, not the way the graph's own `::msg::` declarations do.
+    CHECK_ERR(check_declared_type<rpc::SISBlockingRelation>(
+                  "application/cdr;tcnart_msgs::msg::SISBlockingRelation"),
               Error::WrongDeclaredType);
 }
 
