@@ -42,6 +42,21 @@ static_assert(RequestKey<rpc::SISNodeUpdateRequest>::suffix == keys::kNodeUpdate
 static_assert(RequestKey<rpc::SISEdgeUpdateRequest>::suffix == keys::kEdgeUpdate, "");
 static_assert(RequestKey<rpc::SISJoinRequest>::mode == RequestMode::Publish, "");
 static_assert(RequestKey<rpc::SISRelationStreamStartRequest>::mode == RequestMode::Query, "");
+
+// Every mode, pinned, because a wrong one is silent on the wire: a `put` to a
+// key that carries only a queryable reaches nothing at all and nothing reports
+// it. `SISEdgeUpdateRequest` was registered as `Publish` until 2026-09-02 --
+// correct when written, wrong from B47 onward -- so the value being right today
+// is not evidence that it will stay right, and only an assertion per key makes a
+// future change deliberate rather than accidental.
+static_assert(RequestKey<rpc::SISJoinRequest>::mode        == RequestMode::Publish, "");
+static_assert(RequestKey<rpc::SISLeaveRequest>::mode       == RequestMode::Publish, "");
+static_assert(RequestKey<rpc::SISNodeUpdateRequest>::mode  == RequestMode::Publish, "");
+static_assert(RequestKey<rpc::SISNodeRemoveRequest>::mode  == RequestMode::Publish, "");
+static_assert(RequestKey<rpc::SISEdgeRemoveRequest>::mode  == RequestMode::Publish, "");
+static_assert(RequestKey<rpc::SISRelationStreamStopRequest>::mode == RequestMode::Query, "");
+// The one B47 moved.
+static_assert(RequestKey<rpc::SISEdgeUpdateRequest>::mode  == RequestMode::Query, "");
 static_assert(RequestKey<rpc::SISRelationStreamStopRequest>::suffix == keys::kStreamStop, "");
 
 // The floor a consumer static_asserts against.
@@ -148,15 +163,18 @@ TCN_SQE_TEST(each_mutation_request_reaches_its_own_key)
     CHECK_OK(s);
     if (!s) { return; }
 
+    // `SISEdgeUpdateRequest` is deliberately absent: since B47 that key is a
+    // queryable and `publish_request` refuses it at compile time, which is the
+    // whole point of `RequestMode`. Its answered form is covered below.
     rpc::SISNodeUpdateRequest node;
-    rpc::SISEdgeUpdateRequest edge;
+    rpc::SISLeaveRequest leave;
     CHECK_OK(s.value().publish_request(node));
-    CHECK_OK(s.value().publish_request(edge));
+    CHECK_OK(s.value().publish_request(leave));
 
     CHECK_INT_EQ(t.published.size(), 2);
     if (t.published.size() != 2) { return; }
     CHECK_STR_EQ(t.published[0].key, "tcn/loc/pcpd/hl2-01/sis/component/update");
-    CHECK_STR_EQ(t.published[1].key, "tcn/loc/pcpd/hl2-01/sis/relation/update");
+    CHECK_STR_EQ(t.published[1].key, "tcn/loc/pcpd/hl2-01/sis/leave");
 }
 
 // A publish that the transport refused is reported, not swallowed. It still
