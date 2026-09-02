@@ -36,6 +36,8 @@ TCN_SQE_TEST(cdr_encoding_names_every_registered_type_exactly)
                  "application/cdr;tcnart_msgs::rpc::SISRelationStreamStatus");
     CHECK_STR_EQ(cdr_encoding<rpc::SISRelationStreamHandle>(),
                  "application/cdr;tcnart_msgs::rpc::SISRelationStreamHandle");
+    CHECK_STR_EQ(cdr_encoding<rpc::SISReoptimisePolicy>(),
+                 "application/cdr;tcnart_msgs::rpc::SISReoptimisePolicy");
     CHECK_STR_EQ(cdr_encoding<rpc::SISBlockingRelation>(),
                  "application/cdr;tcnart_msgs::rpc::SISBlockingRelation");
     CHECK_STR_EQ(cdr_encoding<rpc::SISRelationStreamReply>(),
@@ -104,6 +106,30 @@ TCN_SQE_TEST(a_blocking_relation_is_not_the_reply_that_carries_it)
     // does, not the way the graph's own `::msg::` declarations do.
     CHECK_ERR(check_declared_type<rpc::SISBlockingRelation>(
                   "application/cdr;tcnart_msgs::msg::SISBlockingRelation"),
+              Error::WrongDeclaredType);
+}
+
+// The policy is a field of the start request, not the request, and not the
+// status enum it sits two fields away from in the same IDL module. All three
+// are `::rpc::` names opening with an enum, so a CDR reader will consume any of
+// them as any other and the annotation is the only separator. A client that
+// read a bare policy off a key expecting a whole request would start a stream
+// for two frames it invented.
+TCN_SQE_TEST(the_reoptimise_policy_is_not_the_request_that_carries_it)
+{
+    CHECK_OK(check_declared_type<rpc::SISReoptimisePolicy>(
+        "application/cdr;tcnart_msgs::rpc::SISReoptimisePolicy"));
+
+    CHECK_ERR(check_declared_type<rpc::SISReoptimisePolicy>(
+                  "application/cdr;tcnart_msgs::rpc::SISRelationStreamStartRequest"),
+              Error::WrongDeclaredType);
+    CHECK_ERR(check_declared_type<rpc::SISRelationStreamStartRequest>(
+                  "application/cdr;tcnart_msgs::rpc::SISReoptimisePolicy"),
+              Error::WrongDeclaredType);
+
+    // And it is not the other enum on the same conversation.
+    CHECK_ERR(check_declared_type<rpc::SISReoptimisePolicy>(
+                  "application/cdr;tcnart_msgs::rpc::SISRelationStreamStatus"),
               Error::WrongDeclaredType);
 }
 

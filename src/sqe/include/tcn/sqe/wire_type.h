@@ -62,6 +62,7 @@ class SISGraphQueryRequest;
 class SISGraphQueryReply;
 
 enum SISRelationStreamStatus : std::uint32_t;
+enum SISReoptimisePolicy : std::uint32_t;
 enum SISMutationStatus : std::uint32_t;
 enum SISGraphQueryKind : std::uint32_t;
 enum SISGraphQueryStatus : std::uint32_t;
@@ -129,6 +130,12 @@ TCN_SQE_REGISTER_WIRE_TYPE(::tcnart_msgs::rpc::SISRelationStreamStartRequest, "t
 TCN_SQE_REGISTER_WIRE_TYPE(::tcnart_msgs::rpc::SISRelationStreamStopRequest,  "tcnart_msgs::rpc::SISRelationStreamStopRequest");
 TCN_SQE_REGISTER_WIRE_TYPE(::tcnart_msgs::rpc::SISRelationStreamStatus,       "tcnart_msgs::rpc::SISRelationStreamStatus");
 TCN_SQE_REGISTER_WIRE_TYPE(::tcnart_msgs::rpc::SISRelationStreamHandle,       "tcnart_msgs::rpc::SISRelationStreamHandle");
+// The re-optimisation policy a start request carries (B51). Nested inside that
+// request rather than published alone, and registered for the same reason
+// SISRelationStreamStatus is: it is the one field of the request that is *not*
+// stream identity, a caller reasons about it on its own, and a name spelled by
+// hand is a name that can be spelled wrong.
+TCN_SQE_REGISTER_WIRE_TYPE(::tcnart_msgs::rpc::SISReoptimisePolicy,           "tcnart_msgs::rpc::SISReoptimisePolicy");
 // The relation a pending stream is waiting on. Nested inside the reply and the
 // notification below rather than published alone, and registered anyway for the
 // same reason SRNodeView and SREdgeView are: a calibration tool passes one of
