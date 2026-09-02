@@ -380,12 +380,33 @@ module tcnart_msgs {
     // an omission -- the stream is waiting on something that is not a
     // calibration (a withdrawn frame, an upstream stream not yet running), and
     // there is nothing for a calibration routine to do about it.
+    //
+    // `detail` says *why* an answer that names no stream is what it is, and it
+    // is what makes a refusal actionable at all. A client answered
+    // SIS_RS_REJECTED, SIS_RS_NO_PATH or SIS_RS_UNKNOWN_FRAME otherwise learns
+    // only *that* it failed: which of the two frames was unknown, and which
+    // parameter conflicted with the stream already on this handle, are exactly
+    // what the status cannot say.
+    //
+    // **It is the same string the refusal publishes on "{handle}/status".** A
+    // refusal emits both this reply and a notification, and both take their
+    // text from one value in the engine, so the two cannot disagree. Before
+    // this field the notification was the only carrier -- and unreachable in
+    // precisely this case, since a refused reply carries SIS_RSH_NONE and the
+    // client therefore cannot know the key its own explanation went to.
+    //
+    // Non-empty exactly when `handle` is SIS_RSH_NONE. An answer that names a
+    // stream needs no sentence: SIS_RS_ACTIVE is self-explanatory, and a
+    // SIS_RS_PENDING says what to calibrate in `blocked_by`, which prose
+    // restating it would only duplicate.
     struct SISRelationStreamReply {
         SISRelationStreamStatus status;
         SISRelationStreamHandle handle;
         // Appended last, so a decoder reading the two leading fields degrades
         // exactly as it already did.
         sequence<SISBlockingRelation> blocked_by;
+        // Appended last, after `blocked_by`.
+        string detail;                  // why, when there is no handle
     };
 
     // Published on "{output_topic}/status" when a stream's status changes.
