@@ -59,7 +59,18 @@ TCN_SQE_REGISTER_REQUEST_KEY(::tcnart_msgs::rpc::SISJoinRequest,       keys::kJo
 TCN_SQE_REGISTER_REQUEST_KEY(::tcnart_msgs::rpc::SISLeaveRequest,      keys::kLeave,      RequestMode::Publish);
 TCN_SQE_REGISTER_REQUEST_KEY(::tcnart_msgs::rpc::SISNodeUpdateRequest, keys::kNodeUpdate, RequestMode::Publish);
 TCN_SQE_REGISTER_REQUEST_KEY(::tcnart_msgs::rpc::SISNodeRemoveRequest, keys::kNodeRemove, RequestMode::Publish);
-TCN_SQE_REGISTER_REQUEST_KEY(::tcnart_msgs::rpc::SISEdgeUpdateRequest, keys::kEdgeUpdate, RequestMode::Publish);
+// A `Query`, not a `Publish`, since B47. `/sis/relation/update` stopped being a
+// subscriber and became a queryable: a `put` on that key now reaches **nothing
+// at all**, with no error on either side. It answers `SISMutationReply`, and
+// `SIS_MU_ACCEPTED` means *stored* -- the engine defers its reply until the
+// writer's call has returned, so it is not merely "received".
+//
+// This line said `Publish` until 2026-09-02, because B47 landed in the engine
+// after this table was written. That is the drift this library exists to
+// prevent, arriving from the one direction it cannot check for itself: nothing
+// here compiles against the engine. When a key changes mode, this table is the
+// second place to change and the easy one to miss.
+TCN_SQE_REGISTER_REQUEST_KEY(::tcnart_msgs::rpc::SISEdgeUpdateRequest, keys::kEdgeUpdate, RequestMode::Query);
 TCN_SQE_REGISTER_REQUEST_KEY(::tcnart_msgs::rpc::SISEdgeRemoveRequest, keys::kEdgeRemove, RequestMode::Publish);
 TCN_SQE_REGISTER_REQUEST_KEY(::tcnart_msgs::rpc::SISRelationStreamStartRequest, keys::kStreamStart, RequestMode::Query);
 TCN_SQE_REGISTER_REQUEST_KEY(::tcnart_msgs::rpc::SISRelationStreamStopRequest,  keys::kStreamStop,  RequestMode::Query);
