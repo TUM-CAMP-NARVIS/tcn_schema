@@ -58,6 +58,11 @@ static_assert(RequestKey<rpc::SISRelationStreamStopRequest>::mode == RequestMode
 // The one B47 moved.
 static_assert(RequestKey<rpc::SISEdgeUpdateRequest>::mode  == RequestMode::Query, "");
 static_assert(RequestKey<rpc::SISRelationStreamStopRequest>::suffix == keys::kStreamStop, "");
+static_assert(RequestKey<rpc::SISGraphQueryRequest>::suffix == keys::kGraphQuery, "");
+// The read is answered. If this ever reads Publish again, `query_request` on it
+// stops compiling and the only read the engine offers becomes unreachable from
+// this library -- which is how it stayed unreachable until now.
+static_assert(RequestKey<rpc::SISGraphQueryRequest>::mode == RequestMode::Query, "");
 
 // The floor a consumer static_asserts against.
 static_assert(kSessionBLevel >= 41, "");
@@ -246,6 +251,35 @@ TCN_SQE_TEST(a_query_goes_to_the_stream_key_with_a_timeout_above_the_engines_res
     // it, leaving a stream the client holds no handle for.
     CHECK_INT_EQ(t.queried[0].timeout_ms, kDefaultQueryTimeoutMs);
     CHECK_MSG(kDefaultQueryTimeoutMs > 30000, "the query timeout is below the engine's resolve bound");
+}
+
+// B46, and the reason this registration was worth adding: the engine has
+// answered reads since B46, and this library could not reach that key at all --
+// no suffix, no RequestKey entry, so `query_request` on it did not compile. The
+// test is the usage, not the constant: it asserts the key the read goes to and
+// the type it is annotated with, which is the whole of what the contract owns.
+TCN_SQE_TEST(the_graph_read_goes_to_its_own_key_and_names_its_own_type)
+{
+    FakeTransport t;
+    Result<Session> s = Session::open(t, client());
+    CHECK_OK(s);
+    if (!s) { return; }
+
+    t.scripted_replies.push_back(reply_bytes("application/cdr;tcnart_msgs::rpc::SISGraphQueryReply"));
+
+    rpc::SISGraphQueryRequest request;
+    rpc::SISGraphQueryReply reply;
+    CHECK_OK(s.value().query_request(request, reply));
+
+    CHECK_INT_EQ(t.queried.size(), 1);
+    if (t.queried.empty()) { return; }
+    CHECK_STR_EQ(t.queried[0].key, "tcn/loc/pcpd/hl2-01/sis/graph/query");
+    CHECK_STR_EQ(t.queried[0].encoding,
+                 "application/cdr;tcnart_msgs::rpc::SISGraphQueryRequest");
+
+    // A read is answered, so it must not have gone out as a publish -- the
+    // failure that would leave a caller waiting on a key nothing replies to.
+    CHECK_INT_EQ(t.published.size(), 0);
 }
 
 // CDR is not self-describing: a payload of the wrong type may decode into the

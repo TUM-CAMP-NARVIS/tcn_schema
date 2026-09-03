@@ -85,6 +85,29 @@ public:
     const SISRelationStreamHandleUnion& handle() const { return handle_; }
 };
 
+/// The read (B46). Only the fields this library touches: the key it goes to and
+/// the type name it is annotated with are what the contract owns, and the
+/// filters are the engine's business.
+class SISGraphQueryRequest
+{
+public:
+    std::int32_t kind = 0;
+    std::string client;
+    std::string cursor;
+};
+
+class SISGraphQueryReply
+{
+public:
+    std::int32_t status_ = 0;
+    std::string next_cursor_;
+    std::string detail_;
+
+    std::int32_t status() const { return status_; }
+    const std::string& next_cursor() const { return next_cursor_; }
+    const std::string& detail() const { return detail_; }
+};
+
 }  // namespace rpc
 }  // namespace tcnart_msgs
 

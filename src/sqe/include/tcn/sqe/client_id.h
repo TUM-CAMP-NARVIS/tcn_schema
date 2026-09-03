@@ -17,7 +17,7 @@
 namespace tcn {
 namespace sqe {
 
-/// The nine key suffixes. A client's key is `{client_id}{SUFFIX}`; every
+/// The ten key suffixes. A client's key is `{client_id}{SUFFIX}`; every
 /// suffix begins with `/`, which is why a client id must not end with one.
 namespace keys {
 
@@ -32,6 +32,11 @@ inline constexpr std::string_view kEdgeUpdate      = "/sis/relation/update";
 inline constexpr std::string_view kEdgeRemove      = "/sis/relation/remove";
 inline constexpr std::string_view kStreamStart     = "/sis/stream/start";
 inline constexpr std::string_view kStreamStop      = "/sis/stream/stop";
+/// The only **read** the engine answers. Every other key here writes, or asks
+/// the engine to run something; this one asks it what it knows. One key for all
+/// four query kinds rather than one each -- the kind is a field on the request,
+/// so a reply type, a result cap and a cursor exist once instead of four times.
+inline constexpr std::string_view kGraphQuery      = "/sis/graph/query";
 
 }  // namespace keys
 
@@ -83,6 +88,7 @@ public:
     std::string edge_remove_key()  const { return detail::concat(id_, keys::kEdgeRemove); }
     std::string stream_start_key() const { return detail::concat(id_, keys::kStreamStart); }
     std::string stream_stop_key()  const { return detail::concat(id_, keys::kStreamStop); }
+    std::string graph_query_key()  const { return detail::concat(id_, keys::kGraphQuery); }
 
     friend bool operator==(const ClientId& a, const ClientId& b) noexcept { return a.id_ == b.id_; }
     friend bool operator!=(const ClientId& a, const ClientId& b) noexcept { return !(a == b); }
