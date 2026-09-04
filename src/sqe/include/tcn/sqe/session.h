@@ -74,6 +74,10 @@ TCN_SQE_REGISTER_REQUEST_KEY(::tcnart_msgs::rpc::SISEdgeUpdateRequest, keys::kEd
 TCN_SQE_REGISTER_REQUEST_KEY(::tcnart_msgs::rpc::SISEdgeRemoveRequest, keys::kEdgeRemove, RequestMode::Publish);
 TCN_SQE_REGISTER_REQUEST_KEY(::tcnart_msgs::rpc::SISRelationStreamStartRequest, keys::kStreamStart, RequestMode::Query);
 TCN_SQE_REGISTER_REQUEST_KEY(::tcnart_msgs::rpc::SISRelationStreamStopRequest,  keys::kStreamStop,  RequestMode::Query);
+// The read. `Query` for the obvious reason and one less obvious: a read
+// answered by a subscriber would have nowhere to put SIS_GQ_TRUNCATED or a
+// cursor, so paging could not exist at all.
+TCN_SQE_REGISTER_REQUEST_KEY(::tcnart_msgs::rpc::SISGraphQueryRequest, keys::kGraphQuery, RequestMode::Query);
 
 namespace detail {
 

@@ -49,6 +49,7 @@ TCN_SQE_TEST(client_id_builds_all_nine_keys)
     CHECK_STR_EQ(c.edge_remove_key(),   "tcn/loc/pcpd/cam1/sis/relation/remove");
     CHECK_STR_EQ(c.stream_start_key(),  "tcn/loc/pcpd/cam1/sis/stream/start");
     CHECK_STR_EQ(c.stream_stop_key(),   "tcn/loc/pcpd/cam1/sis/stream/stop");
+    CHECK_STR_EQ(c.graph_query_key(),   "tcn/loc/pcpd/cam1/sis/graph/query");
 }
 
 TCN_SQE_TEST(the_key_suffixes_are_the_engine_s)
@@ -62,6 +63,7 @@ TCN_SQE_TEST(the_key_suffixes_are_the_engine_s)
     CHECK_STR_EQ(std::string(keys::kEdgeRemove),  "/sis/relation/remove");
     CHECK_STR_EQ(std::string(keys::kStreamStart), "/sis/stream/start");
     CHECK_STR_EQ(std::string(keys::kStreamStop),  "/sis/stream/stop");
+    CHECK_STR_EQ(std::string(keys::kGraphQuery),  "/sis/graph/query");
 }
 
 // Every suffix begins with '/' and the id never ends with one, so no key can
@@ -78,6 +80,7 @@ TCN_SQE_TEST(no_constructed_key_can_contain_an_empty_chunk)
         id.value().node_update_key(), id.value().node_remove_key(),
         id.value().edge_update_key(), id.value().edge_remove_key(),
         id.value().stream_start_key(), id.value().stream_stop_key(),
+        id.value().graph_query_key(),
     };
     for (const std::string& k : all)
     {
