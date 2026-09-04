@@ -27,6 +27,43 @@ module tcnart_msgs {
     };
 
 
+    // Which pose an entry of a Pose6DMapMessage carries.
+    //
+    // A device sends every pose it measures in one message at frame rate, and
+    // `item_id` says which is which. That mapping is a contract between a
+    // publisher and the engine and belongs to neither, so it is named here --
+    // beside the message it indexes, as TRACKER_STATUS_* is named beside the
+    // one it annotates. It is also what a relation's SREdge.stream_item_id
+    // names, which is how the engine knows which entry feeds which relation.
+    //
+    // Constants rather than an enum: the generator this schema is built with
+    // rejects explicit enumerator values, and the values are the whole point --
+    // they travel as a plain uint32 and must be stable.
+    //
+    // Ranges rather than dense packing: a device with joints nobody has
+    // enumerated yet gets room, and the arithmetic stays obvious at both ends.
+    // A key that matches no declared relation is ignored, which is what lets a
+    // client publish more than a given fragment models.
+    //
+    // See docs/internals/xr-pose-streams.md in the engine repository.
+
+    const uint32 XR_POSE_UNSET = 0;            // the absent value; a single-entry tracker
+
+    const uint32 XR_POSE_HMD = 1;              // the headset's own viewpoint
+
+    const uint32 XR_POSE_CTRL_LEFT_GRIP = 10;  // where the hand holds it
+    const uint32 XR_POSE_CTRL_LEFT_AIM = 11;   // where it points
+    const uint32 XR_POSE_CTRL_RIGHT_GRIP = 12;
+    const uint32 XR_POSE_CTRL_RIGHT_AIM = 13;
+
+    const uint32 XR_POSE_GAZE = 20;            // origin and direction; no measured roll
+
+    // + the runtime's joint ordinal. Twenty-six per hand today, and the gap to
+    // the next base is deliberate.
+    const uint32 XR_POSE_HAND_LEFT_BASE = 100;
+    const uint32 XR_POSE_HAND_RIGHT_BASE = 200;
+
+
     const uint32 TRACKER_STATUS_RUNNING = 0x01;
     const uint32 TRACKER_STATUS_VALID   = 0x02;
     const uint32 TRACKER_STATUS_ERROR   = 0x04;
