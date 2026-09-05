@@ -110,6 +110,7 @@ enum class MarkerKind : std::uint32_t {
     ArucoFractal = 3,
     IrTarget = 4,
     HmdPose = 5,
+    AprilTag = 6,
 };
 
 /// Joins a tracker's prefix to a marker id.
@@ -135,6 +136,7 @@ inline constexpr std::string_view marker_prefix(MarkerKind kind)
         case MarkerKind::ArucoFractal: return "_mtarucof_";
         case MarkerKind::IrTarget:     return "_mtirt_";
         case MarkerKind::HmdPose:      return "_hmdvp_";
+        case MarkerKind::AprilTag:     return "_mtapril_";
         case MarkerKind::None:         break;
     }
     return "_mtnone_";
