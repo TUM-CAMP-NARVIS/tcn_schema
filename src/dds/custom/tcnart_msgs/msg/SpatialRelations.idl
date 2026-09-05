@@ -194,6 +194,25 @@ module tcnart_msgs {
             // second engine reading the same graph.
             sequence<string> derived_from;
 
+            // Which entry of a multi-pose tracker payload feeds this relation.
+            //
+            // A Pose6DMapMessage carries `item_id -> pose`, and a device that
+            // reports many things at once -- a headset's two controllers, a
+            // hand's joints -- sends them in one message. Without this the
+            // engine cannot tell which entry belongs to which relation: every
+            // entry is written into every claim on the topic, so N relations
+            // and N entries is N*N writes and each buffer keeps whichever
+            // arrived last. Silently.
+            //
+            // Appended last, and optional by convention: 0 means "unset", which
+            // is what a single-entry tracker sends and what every peer written
+            // before this field sends. Those keep today's behaviour exactly.
+            //
+            // The values are a contract between a publisher and the engine and
+            // belong to neither, so they are named: see the XR_POSE_* constants
+            // in PoseTracking.idl for the ones this project defines.
+            uint32 stream_item_id;
+
         };
 
         // --- graph -------------------------------------------------------------
