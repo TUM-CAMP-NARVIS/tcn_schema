@@ -67,6 +67,12 @@ inline std::string engine_relation_status_topic(std::string_view engine_id, std:
 // carries only the data topic — so the library does not bless a derivation the
 // engine has not. If the engine adds the field, this becomes a two-line
 // addition; guessing it now would be the same mistake as computing a handle.
+//
+// `tracker.h`'s `descriptor_key` is not a counter-example and not an
+// exception. This file is about keys the **engine** issues, whose values are
+// the engine's to choose. That one composes a key from a *client's own* client
+// id and its own device name, and the engine composes the identical string
+// from the identical two parts when it resolves a marker announcement.
 
 }  // namespace sqe
 }  // namespace tcn

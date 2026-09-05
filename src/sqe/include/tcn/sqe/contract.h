@@ -8,8 +8,9 @@
 // What this header does NOT do, deliberately:
 //   * it does not compute a relation handle (the FNV-1a algorithm is
 //     specified, and implementing it is exactly the mistake it invites);
-//   * it does not derive a stream's descriptor topic (the engine has not
-//     blessed that derivation and the reply does not carry it);
+//   * it does not compose a *relation stream's* output topic (the engine
+//     chooses it and the reply carries it, so a computed one subscribes to a
+//     key nothing publishes on);
 //   * it does not implement `sqe.derived:` name generation (Rust's
 //     `DefaultHasher` is not reproducible in C++ at all);
 //   * it performs no I/O, holds no thread, opens no session, and logs nothing.
@@ -23,6 +24,7 @@
 #include "tcn/sqe/result.h"
 #include "tcn/sqe/status.h"
 #include "tcn/sqe/topics.h"
+#include "tcn/sqe/tracker.h"
 #include "tcn/sqe/validate.h"
 #include "tcn/sqe/wire_type.h"
 
@@ -57,6 +59,10 @@ namespace sqe {
 ///     validate.h), above the floor. A floor is not a boast.
 ///   * B41 is the liveliness token, a transport obligation: this component
 ///     names the key (`ClientId::alive_key`) but cannot declare the token.
+///     The same is true of the marker announcement (`marker_announce_key`),
+///     which is a token on a different key and no entry in the B-log at all:
+///     the engine added a subscription, and a client that declares nothing is
+///     exactly as correct as it was before.
 ///   * B40 and B42 concern the engine's own example clients and CLI.
 inline constexpr int kContractBLevel = 35;
 
