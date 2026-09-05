@@ -72,13 +72,22 @@ module tcnart_msgs {
         AUDIO_CHANNEL_LAYOUT_STEREO
     };
 
+    // What a tracker reports, and therefore what the engine calls the nodes it
+    // discovers: the spatial-query-engine derives a node-name prefix from this
+    // value, so every marker of a tracker of this kind becomes
+    // '{prefix}__sis_marker__{id}'. It is not cosmetic and it is not free to
+    // renumber -- an ordinal that changes meaning renames every node a tracker
+    // of that kind ever created.
+    //
+    // **Append only.** New kinds go at the end.
     enum MarkerType {
       MARKER_TYPE_NONE,
       MARKER_TYPE_ARUCO_MARKER,
       MARKER_TYPE_ARUCO_BOARD,
       MARKER_TYPE_ARUCO_FRACTAL,
       MARKER_TYPE_IR_TARGET,
-      MARKER_TYPE_HMD_POSE
+      MARKER_TYPE_HMD_POSE,
+      MARKER_TYPE_APRILTAG
     };
 
     enum Handedness {

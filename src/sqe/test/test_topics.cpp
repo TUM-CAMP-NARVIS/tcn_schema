@@ -112,6 +112,7 @@ TCN_SQE_TEST(a_marker_node_name_is_the_prefix_the_engine_derives)
     CHECK_STR_EQ(marker_node_name(MarkerKind::IrTarget, 2), "_mtirt___sis_marker__2");
     CHECK_STR_EQ(marker_node_name(MarkerKind::HmdPose, 3), "_hmdvp___sis_marker__3");
     CHECK_STR_EQ(marker_node_name(MarkerKind::None, 4), "_mtnone___sis_marker__4");
+    CHECK_STR_EQ(marker_node_name(MarkerKind::AprilTag, 5), "_mtapril___sis_marker__5");
 }
 
 // Every name it composes must survive the identifier rule, or the very key
@@ -119,9 +120,10 @@ TCN_SQE_TEST(a_marker_node_name_is_the_prefix_the_engine_derives)
 TCN_SQE_TEST(every_marker_node_name_is_a_legal_identifier_and_key_chunk)
 {
     const ClientId client = ClientId::parse("c").value();
-    const MarkerKind kinds[] = {MarkerKind::None,        MarkerKind::ArucoMarker,
-                                MarkerKind::ArucoBoard,  MarkerKind::ArucoFractal,
-                                MarkerKind::IrTarget,    MarkerKind::HmdPose};
+    const MarkerKind kinds[] = {MarkerKind::None,     MarkerKind::ArucoMarker,
+                                MarkerKind::ArucoBoard, MarkerKind::ArucoFractal,
+                                MarkerKind::IrTarget,   MarkerKind::HmdPose,
+                                MarkerKind::AprilTag};
     for (const MarkerKind kind : kinds)
     {
         const std::string name = marker_node_name(kind, 4294967295u);
