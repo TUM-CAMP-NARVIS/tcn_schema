@@ -194,6 +194,17 @@ module tcnart_msgs {
 
       RigidTransform pose;
 
+      // How well `pose` is known: 0 or 21 doubles, the upper triangle of the
+      // 6x6 in row-major order, ordered (tx, ty, tz, rx, ry, rz) and in
+      // m^2/rad^2. Empty means "not stated", which is different from a zero
+      // covariance meaning "known exactly".
+      //
+      // Per item rather than per map, because a map routinely mixes items that
+      // state a covariance with items that do not; a covariance-aware variant
+      // of the whole message would force a producer to fabricate one for the
+      // bare items or discard it for the stated ones.
+      sequence<double, 21> pose_covariance;
+
     };
 
     struct RigidTransformMap {
@@ -209,6 +220,13 @@ module tcnart_msgs {
       Vector3 position;
       float quality; // Normalized 0.0 to 1.0
       boolean visible;
+      // How well `position` is known: 0 or 6 doubles, the upper triangle of
+      // the 3x3 in row-major order, in m^2. A marker is a 3D point, so this is
+      // a 3x3 and not a sub-block of any pose's 6x6.
+      //
+      // Unrelated to `quality`: that is a vendor's tracking-confidence scalar,
+      // this is a metric statement. Neither is derivable from the other.
+      sequence<double, 6> position_covariance;
     };
 
     struct Target {
@@ -217,6 +235,12 @@ module tcnart_msgs {
       float quality; // Normalized 0.0 to 1.0
       sequence<Marker> markers;
       boolean is_tracked; // if enough markers on the tool are visible to track it
+      // How well `pose` is known: 0 or 21 doubles, upper triangle of the 6x6,
+      // row-major, (tx, ty, tz, rx, ry, rz), m^2/rad^2. See
+      // RigidTransformMapItem::pose_covariance for why this is per item.
+      //
+      // Unrelated to `quality`, as on Marker.
+      sequence<double, 21> pose_covariance;
     };
 
     struct Ray {
