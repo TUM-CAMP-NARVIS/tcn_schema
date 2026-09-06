@@ -97,6 +97,39 @@ TCN_SQE_TEST(trigger_kind_ordinals_match_the_idl_declaration_order)
     CHECK_INT_EQ(static_cast<int>(TriggerKind::FixedRate), 0);
     CHECK_INT_EQ(static_cast<int>(TriggerKind::OnStream), 1);
     CHECK_INT_EQ(static_cast<int>(TriggerKind::OnAny), 2);
+    CHECK_INT_EQ(static_cast<int>(TriggerKind::OnReference), 3);
+}
+
+// Same reasoning one level down: the policy is its own IDL enum, and it is
+// the payload of union case 3, so a renumbering here selects a different hop
+// of the path rather than failing.
+TCN_SQE_TEST(reference_policy_ordinals_match_the_idl_declaration_order)
+{
+    CHECK_INT_EQ(static_cast<int>(ReferencePolicy::First), 0);
+    CHECK_INT_EQ(static_cast<int>(ReferencePolicy::Fastest), 1);
+    CHECK_INT_EQ(static_cast<int>(ReferencePolicy::Slowest), 2);
+}
+
+// The trigger a composed relation should be asking for. `on_any` fires once
+// per input, so its rate is the sum of its inputs' -- and a reused derived
+// edge carries that inflation downstream.
+TCN_SQE_TEST(a_reference_trigger_defaults_to_the_first_hop_and_carries_its_policy)
+{
+    const StreamTrigger first = StreamTrigger::on_reference();
+    CHECK(first.kind() == TriggerKind::OnReference);
+    CHECK(first.policy() == ReferencePolicy::First);
+    CHECK_STR_EQ(first.kind_name(), "SRG_TRIGGER_ON_REFERENCE");
+    CHECK_STR_EQ(first.policy_name(), "SRG_REF_FIRST");
+
+    const StreamTrigger slowest = StreamTrigger::on_reference(ReferencePolicy::Slowest);
+    CHECK(slowest.policy() == ReferencePolicy::Slowest);
+    CHECK_STR_EQ(slowest.policy_name(), "SRG_REF_SLOWEST");
+
+    // Two policies are two different requests: the engine picks a different
+    // hop, so the stream is composed off a different sensor's clock.
+    CHECK(first != slowest);
+    CHECK(first == StreamTrigger::on_reference(ReferencePolicy::First));
+    CHECK(first != StreamTrigger::on_any());
 }
 
 // Exact equality, not an epsilon. 30 Hz and 30.000001 Hz are different streams

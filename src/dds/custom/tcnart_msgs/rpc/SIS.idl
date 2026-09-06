@@ -127,16 +127,38 @@ module tcnart_msgs {
         string node;                    // SRNode.name within it
     };
 
+    // Which dynamic hop of a compiled path drives an SRG_TRIGGER_ON_REFERENCE
+    // stream. Ordinals are the wire encoding; append only.
+    enum SRReferencePolicy {
+        SRG_REF_FIRST,                  // the hop closest to the observer -- first in
+                                        // path order, the request naming its path as
+                                        // "target located in observer"
+        SRG_REF_FASTEST,                // the hop with the highest declared frame_rate
+        SRG_REF_SLOWEST                 // the hop with the lowest declared non-zero rate
+    };
+
     enum SRStreamTriggerKind {
-        SRG_TRIGGER_FIXED_RATE,         // a timer; sample at "now"
+        SRG_TRIGGER_FIXED_RATE,         // a timer; sample at "now" less the system latency
         SRG_TRIGGER_ON_STREAM,          // a named stream; sample at its stamp
-        SRG_TRIGGER_ON_ANY              // any input on the path; sample at the arriving stamp
+        SRG_TRIGGER_ON_ANY,             // any input on the path; sample at the arriving stamp
+        SRG_TRIGGER_ON_REFERENCE        // one hop of the path; sample at its stamp
     };
 
     // When a relation stream is evaluated, and therefore at which instant every
-    // edge on the path is sampled. The three differ in more than rate: a fixed
-    // rate extrapolates every edge to the present, while a stream trigger
-    // interpolates the others to the master's timestamp.
+    // edge on the path is sampled. They differ in more than rate: a fixed rate
+    // extrapolates every edge to the present, while the others interpolate the
+    // rest of the path to one arriving sample's timestamp.
+    //
+    // SRG_TRIGGER_ON_REFERENCE is the one to send for a composed relation, and
+    // is what the engine's own clients default to. SRG_TRIGGER_ON_ANY fires
+    // once per input, so a path's output rate is the *sum* of its inputs'
+    // rates -- and since a derived edge is itself an input to whatever reuses
+    // it, that compounds down a chain: on a six-joint arm whose every sensor
+    // runs at 30 Hz, three chained relations published 90, 150 and 180 Hz.
+    //
+    // One relation is one stream, shared by every requester, so two clients
+    // asking for the same relation with different triggers is refused. Pick
+    // one and use it across the deployment.
     union SRStreamTrigger switch(SRStreamTriggerKind) {
     case SRG_TRIGGER_FIXED_RATE:
         double hz;
@@ -144,6 +166,8 @@ module tcnart_msgs {
         string topic;
     case SRG_TRIGGER_ON_ANY:
         boolean unused;
+    case SRG_TRIGGER_ON_REFERENCE:
+        SRReferencePolicy policy;
     };
 
     // Whether the engine should keep looking for a better route once this
