@@ -35,17 +35,44 @@ namespace sqe {
 /// order for the same reason `Status`'s are.
 enum class TriggerKind : std::int32_t
 {
-    FixedRate = 0,  ///< a timer; sample at "now"
-    OnStream = 1,   ///< a named stream; sample at its stamp
-    OnAny = 2,      ///< any input on the path; sample at the arriving stamp
+    FixedRate = 0,   ///< a timer; sample at "now" less the system latency
+    OnStream = 1,    ///< a named stream; sample at its stamp
+    OnAny = 2,       ///< any input on the path; sample at the arriving stamp
+    OnReference = 3, ///< one hop of the path; sample at its stamp
+};
+
+/// `SRReferencePolicy`: which dynamic hop of a compiled path drives an
+/// `OnReference` stream. Ordinals pinned to the IDL's declaration order.
+enum class ReferencePolicy : std::int32_t
+{
+    /// The hop closest to the **observer** — first in path order, the request
+    /// naming its path as "target located in observer".
+    First = 0,
+    /// The hop with the highest declared `frame_rate`. A hop declaring none
+    /// is never chosen while any declared one exists.
+    Fastest = 1,
+    /// The hop with the lowest declared non-zero `frame_rate`, so the
+    /// composed relation is never published faster than its slowest input.
+    Slowest = 2,
 };
 
 /// When a relation stream is evaluated.
 ///
-/// A closed set with three named constructors and no default: a
+/// A closed set with named constructors and no default: a
 /// default-constructed trigger would be a fixed rate of zero hertz, which is
 /// a request the engine rejects and a value nothing in a call site draws the
 /// eye to.
+///
+/// **Prefer `on_reference()` for a composed relation.** `on_any()` fires once
+/// per input, so the stream's output rate is the *sum* of its inputs' rates —
+/// and because a derived edge is itself an input to whatever reuses it, that
+/// compounds down a chain: on a six-joint arm whose every sensor runs at
+/// 30 Hz, three chained relations published 90, 150 and 180 Hz. A reference
+/// trigger publishes at its one reference hop's rate, with that hop's stamps.
+///
+/// One relation is one stream shared by every requester, so two clients
+/// asking for the same relation with different triggers is refused by the
+/// engine. Pick one and use it across the deployment.
 class StreamTrigger
 {
 public:
@@ -66,8 +93,16 @@ public:
         return Result<StreamTrigger>::ok(StreamTrigger(TriggerKind::OnStream, 0.0, std::string(topic)));
     }
 
-    /// Evaluated on any input on the path.
+    /// Evaluated on any input on the path — see this class's own note on why
+    /// this is rarely what a composed relation wants.
     static StreamTrigger on_any() { return StreamTrigger(TriggerKind::OnAny, 0.0, std::string()); }
+
+    /// Evaluated on one hop of the path, chosen by `policy`, at that hop's
+    /// stamp; every other edge is interpolated to it.
+    static StreamTrigger on_reference(ReferencePolicy policy = ReferencePolicy::First)
+    {
+        return StreamTrigger(TriggerKind::OnReference, 0.0, std::string(), policy);
+    }
 
     TriggerKind kind() const noexcept { return kind_; }
 
@@ -80,6 +115,9 @@ public:
     /// Meaningful only when `kind() == OnStream`; empty otherwise.
     const std::string& topic() const noexcept { return topic_; }
 
+    /// Meaningful only when `kind() == OnReference`; `First` otherwise.
+    ReferencePolicy policy() const noexcept { return policy_; }
+
     /// Exact equality, including on the `double`.
     ///
     /// Not an epsilon. "The same terms" here means "the same request", and two
@@ -91,9 +129,10 @@ public:
         if (a.kind_ != b.kind_) { return false; }
         switch (a.kind_)
         {
-            case TriggerKind::FixedRate: return a.hz_ == b.hz_;
-            case TriggerKind::OnStream:  return a.topic_ == b.topic_;
-            case TriggerKind::OnAny:     return true;
+            case TriggerKind::FixedRate:   return a.hz_ == b.hz_;
+            case TriggerKind::OnStream:    return a.topic_ == b.topic_;
+            case TriggerKind::OnAny:       return true;
+            case TriggerKind::OnReference: return a.policy_ == b.policy_;
         }
         return false;
     }
@@ -104,20 +143,36 @@ public:
     {
         switch (kind_)
         {
-            case TriggerKind::FixedRate: return "SRG_TRIGGER_FIXED_RATE";
-            case TriggerKind::OnStream:  return "SRG_TRIGGER_ON_STREAM";
-            case TriggerKind::OnAny:     return "SRG_TRIGGER_ON_ANY";
+            case TriggerKind::FixedRate:   return "SRG_TRIGGER_FIXED_RATE";
+            case TriggerKind::OnStream:    return "SRG_TRIGGER_ON_STREAM";
+            case TriggerKind::OnAny:       return "SRG_TRIGGER_ON_ANY";
+            case TriggerKind::OnReference: return "SRG_TRIGGER_ON_REFERENCE";
         }
         return "SRG_TRIGGER_UNKNOWN";
     }
 
+    /// The wire spelling of the reference policy, for a log line. Never null,
+    /// and meaningful only when `kind() == OnReference`.
+    const char* policy_name() const noexcept
+    {
+        switch (policy_)
+        {
+            case ReferencePolicy::First:   return "SRG_REF_FIRST";
+            case ReferencePolicy::Fastest: return "SRG_REF_FASTEST";
+            case ReferencePolicy::Slowest: return "SRG_REF_SLOWEST";
+        }
+        return "SRG_REF_UNKNOWN";
+    }
+
 private:
-    StreamTrigger(TriggerKind k, double hz, std::string topic) noexcept
-        : kind_(k), hz_(hz), topic_(std::move(topic)) {}
+    StreamTrigger(TriggerKind k, double hz, std::string topic,
+                  ReferencePolicy policy = ReferencePolicy::First) noexcept
+        : kind_(k), hz_(hz), topic_(std::move(topic)), policy_(policy) {}
 
     TriggerKind kind_;
     double hz_;
     std::string topic_;
+    ReferencePolicy policy_;
 };
 
 /// `SISFrameRef`: a node within an owning graph.
