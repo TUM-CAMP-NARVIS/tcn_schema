@@ -110,6 +110,21 @@ module tcnart_msgs {
             // Opaque, application-defined.
             string custom_data;
 
+            // --- B65: for people, not for the engine ------------------------
+            //
+            // `name` is an identifier and is constrained to be one. These two
+            // are free text, both optional, and nothing behaves differently
+            // when they are empty -- a reader falls back to `name`.
+            //
+            // They exist because the graph is read by people now: a
+            // calibration tool listing candidates, or any visualisation, has
+            // to show something better than tcn/loc/ch/room::art_body_3.
+            // Stuffing a label into `custom_data` would make it a convention
+            // rather than a field -- unsearchable, unvalidated, and different
+            // in every writer.
+            string display_name;              // "Left wall marker 3"
+            string description;               // how it was surveyed, by whom, when
+
         };
 
         // --- edges -------------------------------------------------------------
@@ -263,6 +278,13 @@ module tcnart_msgs {
             // consumer propagating uncertainty through a chain actually needs.
             // Appended, because CDR is positional.
             sequence<double, 21> covariance;
+
+            // --- B65 -------------------------------------------------------
+            // Free text about *this* calibration run: which landmarks, whose
+            // survey, what the operator noticed. `method` names an algorithm
+            // and is matched on; this is never matched on and is for whoever
+            // reads the edge in six months.
+            string description;
         };
 
         struct SREdge {
@@ -334,6 +356,14 @@ module tcnart_msgs {
             // in PoseTracking.idl for the ones this project defines.
             uint32 stream_item_id;
 
+            // --- B65 -------------------------------------------------------
+            // See SRNode's own note. `name` here is a relation's identity
+            // within its fragment; these are what an operator reads when the
+            // tool offers "absolute orientation between the room and the
+            // ceiling tracker".
+            string display_name;              // "Room to ceiling tracker"
+            string description;               // free text: method, date, who
+
         };
 
         // --- graph -------------------------------------------------------------
@@ -346,6 +376,11 @@ module tcnart_msgs {
             sequence<SRNode> nodes;
             sequence<SREdge> edges;
 
+            // --- B65 -------------------------------------------------------
+            // A fragment's own label. `name` is the client identifier and is
+            // routed on; this is what a person calls the thing.
+            string display_name;              // "Ceiling ART system"
+            string description;
         };
 
         // --- views: the graph as the engine holds it --------------------------
