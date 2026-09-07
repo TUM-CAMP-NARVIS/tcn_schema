@@ -123,12 +123,105 @@ module tcnart_msgs {
           SRG_EDGE_STATIC_UNCALIBRATED, // declared; value not yet measured, not traversable
           SRG_EDGE_STATIC_CALIBRATED,   // fixed, and measured; carries provenance
           SRG_EDGE_DYNAMIC,             // supplied live by a tracker
-          SRG_EDGE_DYNAMIC_INFERRED     // derived from other edges, not measured directly
+          SRG_EDGE_DYNAMIC_INFERRED,    // derived from other edges, not measured directly
+
+          // A projection into an image plane: camera -> image_plane, where the
+          // image plane is its own node. Appended, since 0..4 are taken.
+          //
+          // Its own temporal value rather than a flag because it changes what a
+          // path *is*: a projection may only be a path's LAST hop, and after it
+          // the composed value is a 2D image point, not a transform. There is
+          // no inverse -- inverting one would invent the depth it discarded --
+          // so a path never walks it backwards either.
+          //
+          // A projection whose intrinsics change (a zoom lens) is this too. The
+          // camera *moving* is the ordinary pose edge before it, not this.
+          SRG_EDGE_PROJECTION
+        };
+
+        // A pose and how well it is known.
+        //
+        // `covariance` is 0 or 21 doubles: the upper triangle of the 6x6,
+        // row-major, ordered (tx, ty, tz, rx, ry, rz) -- translation first --
+        // with m^2 on the translational block and rad^2 on the rotational one.
+        // Empty means "not stated", which is different from a zero covariance
+        // meaning "known exactly".
+        //
+        // The triangle rather than all 36 makes an asymmetric matrix
+        // unrepresentable, which is the failure that otherwise surfaces as a
+        // Cholesky decomposition failing far from whatever produced it. Same
+        // packing as every other covariance in this schema (see
+        // RigidTransformMapItem::pose_covariance): one packing, one unpacking,
+        // one place to get it wrong.
+        //
+        // The convention is stated here because it is not inferable from the
+        // type: a 6x6 says nothing about which three of its axes are the
+        // translation.
+        struct SRPose6DWithCovariance {
+            RigidTransform pose;
+            sequence<double, 21> covariance;
+        };
+
+        // A translation and its 3x3, packed as 0 or 6 doubles -- the upper
+        // triangle, row-major, in m^2.
+        struct SRTranslation3DWithCovariance {
+            Vector3 translation;
+            sequence<double, 6> covariance;
+        };
+
+        // A camera's internal geometry. Intrinsics ONLY -- the camera's
+        // extrinsics are the ordinary pose edge BEFORE the projection edge, so
+        // a camera that moves is a dynamic pose edge like any tracked thing and
+        // needs no second mechanism. Extrinsic calibration writes the pose
+        // edge, intrinsic calibration writes this, and neither can drift from
+        // the other because there is only one copy of each fact.
+        struct SRIntrinsics {
+            double fx; double fy;
+            double cx; double cy;
+
+            // Which model the coefficients belong to. An empty string is an
+            // ideal pinhole -- stated, not defaulted, so "nobody calibrated
+            // this lens" and "this lens is rectilinear" stay distinguishable.
+            //
+            // "opencv_radtan" is Brown-Conrady, which is what OpenCV, Kalibr,
+            // COLMAP and every ART/NDI calibration report emit for an ordinary
+            // lens under three different names.
+            string distortion_model;          // "" | "opencv_radtan" | "opencv_fisheye"
+
+            // Coefficients in the model's own order: radtan is k1 k2 p1 p2 [k3]
+            // (OpenCV's distCoeffs order), fisheye is k1..k4. A length the model
+            // does not expect reads as "not stated" rather than being
+            // truncated, for the reason a wrong-length covariance does.
+            sequence<double, 8> distortion;
+
+            // Pixels; 0 means unknown, which is what "nothing bounds-checks
+            // this" is.
+            uint32 image_w; uint32 image_h;
+        };
+
+        // A point in an image plane, in pixels. The result of a projection,
+        // never a declared relation: nothing composes onto it, because the
+        // projection that produced it discarded the depth a further hop needs.
+        struct SRPoint2D {
+            double u; double v;
+
+            // How well (u, v) is known: 0 or 3 doubles, the upper triangle of
+            // the 2x2 in row-major order, in px^2. Empty means "not stated".
+            sequence<double, 3> covariance;
         };
 
         enum SRTransformType {
           SRG_TRANSFORM_POSE6D,
-          SRG_TRANSFORM_TRANSLATION3D
+          SRG_TRANSFORM_TRANSLATION3D,
+
+          // Each of the following is APPENDED, never inserted. CDR is
+          // positional and a union's discriminant is its first four bytes, so
+          // renumbering an existing case makes an un-rebuilt publisher misread
+          // rather than fail.
+          SRG_TRANSFORM_POSE6D_COV,
+          SRG_TRANSFORM_TRANSLATION3D_COV,
+          SRG_TRANSFORM_PROJECTION,
+          SRG_TRANSFORM_POINT2D
         };
 
         union SRTransform switch(SRTransformType) {
@@ -136,12 +229,40 @@ module tcnart_msgs {
             RigidTransform pose6d;
         case SRG_TRANSFORM_TRANSLATION3D:
             Vector3 translation3d;
+
+        // A pose and how well it is known. A separate case rather than a field
+        // appended to SRG_TRANSFORM_POSE6D, because appending to an existing
+        // case makes an un-rebuilt publisher misread rather than fail.
+        case SRG_TRANSFORM_POSE6D_COV:
+            SRPose6DWithCovariance pose6d_cov;
+
+        case SRG_TRANSFORM_TRANSLATION3D_COV:
+            SRTranslation3DWithCovariance translation3d_cov;
+
+        // The intrinsics of a projection edge. No pose -- see SRIntrinsics.
+        case SRG_TRANSFORM_PROJECTION:
+            SRIntrinsics projection;
+
+        // A composed result, carried where a transform would otherwise be:
+        // what a path ending in a projection resolves to.
+        case SRG_TRANSFORM_POINT2D:
+            SRPoint2D point2d;
         };
 
         struct SRCalibration {
             string method;                    // free-form: "hand-eye", "aruco-board", ...
             double residual;                  // RMS error in metres; negative if not reported
             builtin_interfaces::msg::Time computed_at;
+
+            // The full uncertainty of the calibrated edge, of which `residual`
+            // is one scalar summary: 0 or 21 doubles, upper triangle of the
+            // 6x6, row-major, (tx, ty, tz, rx, ry, rz), m^2/rad^2.
+            //
+            // Both are kept. `residual` is what a human reads first and is what
+            // this schema has always promised; the covariance is what a
+            // consumer propagating uncertainty through a chain actually needs.
+            // Appended, because CDR is positional.
+            sequence<double, 21> covariance;
         };
 
         struct SREdge {
