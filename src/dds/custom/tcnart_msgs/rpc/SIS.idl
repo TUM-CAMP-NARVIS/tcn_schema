@@ -506,16 +506,33 @@ module tcnart_msgs {
                                 //   by that node's degree
         SIS_GQ_SEARCH,          // a filter within one of the two anchors above.
                                 //   See the filter fields on the request
-        SIS_GQ_PATH             // RESERVED, and not implemented. A path read
-                                //   that means anything has to answer *which*
-                                //   predicate it walked -- the shape predicate
-                                //   a pending stream probes with, or the
-                                //   walkability one that refuses uncalibrated
-                                //   edges -- and neither is a plain traversal.
-                                //   Answering it honestly means loading a
-                                //   region, which is the read above refuses.
-                                //   Declared last so the three that ship keep
-                                //   their ordinals when it arrives
+        SIS_GQ_PATH             // B64: the relations connecting two frames.
+                                //   Was reserved-and-refused, on the grounds
+                                //   that a path read has to answer *which*
+                                //   predicate it walked and a plain traversal
+                                //   answers none of them. Resolved rather than
+                                //   dropped: the REQUEST now names the
+                                //   predicate (`predicate`, below), so the
+                                //   answer is to one question, and the walk is
+                                //   bounded by `radius` rather than being the
+                                //   whole-graph read this service refuses
+    };
+
+    // B64. Which rule a path read walks by. A path is only meaningful with
+    // respect to one of these, and a caller comparing a path against what a
+    // relation stream did needs to ask for the same one.
+    //
+    // These mirror the engine's own predicates exactly -- there is no fourth,
+    // looser rule reachable from here.
+    enum SISPathPredicate {
+        SIS_PP_WALKABLE,        // the default: refuses uncalibrated relations,
+                                //   which is what a running stream composes by
+        SIS_PP_CONNECTABLE,     // the relaxed shape rule a PENDING stream is
+                                //   probed with: is there a route at all, once
+                                //   the missing measurements arrive?
+        SIS_PP_WALKABLE_STATIC  // walkable, and refusing anything that moves.
+                                //   What a calibration asks when it needs a
+                                //   relation to hold still
     };
 
     // One request type and one key for all four kinds, not four of each.
@@ -630,6 +647,26 @@ module tcnart_msgs {
         // introduces no second alphabet.
         string name_prefix;
 
+        // --- B64 ----------------------------------------------------------
+        // Read only for SIS_GQ_PATH; ignored, not refused, by every other
+        // kind.
+
+        // Which rule to walk by. This field is what un-reserved SIS_GQ_PATH:
+        // a path read that does not say which predicate it used produces an
+        // answer that disagrees with a stream start using the other one, and
+        // the disagreement reads as an engine bug.
+        SISPathPredicate predicate;
+
+        // Hops from either named frame that the walk may consider. 0 asks for
+        // the engine's default; the engine's own cap is a ceiling this may
+        // only lower.
+        //
+        // This is the other half of the old refusal. A path read over "the
+        // graph" is the unbounded read this service exists not to serve; a
+        // path read within a stated radius is bounded before it starts, and
+        // the reply says whether the radius stopped it.
+        uint32 radius;
+
     };
 
     enum SISGraphQueryStatus {
@@ -674,6 +711,178 @@ module tcnart_msgs {
 
         // Human-readable; may be empty. On UNAVAILABLE this is where a rate
         // limit says so, and on REJECTED it is where a missing anchor does.
+        string detail;
+
+        // --- B64 ----------------------------------------------------------
+        // SIS_GQ_PATH only. The relations connecting `from` to `to` under
+        // `predicate`, in walk order, by declared name. Empty when there is
+        // no such path -- which is an SIS_GQ_OK answer, not a rejection:
+        // "these frames are not connected" is a true and useful reply.
+        //
+        // `nodes` and `edges` above carry the same path as views, for a caller
+        // that wants the values rather than the route.
+        sequence<string> path;
+
+        // SIS_GQ_PATH only. True when the walk stopped at `radius` with the
+        // target still unreached -- so an empty `path` means "not within the
+        // radius you asked for" rather than "not connected". Two different
+        // answers, and a caller that cannot tell them apart will widen the
+        // radius forever or give up too early.
+        boolean radius_exhausted;
+    };
+
+    // ======================================================================
+    // B63: pattern query -- "how could this edge be produced?"
+    // ======================================================================
+    //
+    // Sent to {client_id}/sis/pattern/query.
+    //
+    // A NEW KEY, and not a fifth SISGraphQueryKind. The request above argues
+    // for one key on the grounds that four keys mean four rate-limit buckets,
+    // and that argument is respected rather than overturned: this key shares
+    // the graph read's bucket, because it is the same cost against the same
+    // database. What it does not share is the reply SHAPE -- a pattern
+    // instance is bound roles, bound path segments, an expansion kind and a
+    // measurement count, none of which belongs in a reply otherwise made of
+    // nodes and edges.
+    //
+    // The model is Pustka, Huber, Bauer & Klinker, "Spatial Relationship
+    // Patterns": a pattern is a small graph over roles, some edges inputs
+    // that must exist and some outputs its algorithm produces, applied only
+    // in an EXPANDED form -- several instances at one instant, or one
+    // instance over several instants.
+
+    // How a pattern was expanded to fit the graph. A pattern is never applied
+    // unexpanded, so there is no third value meaning "as declared".
+    enum SRPatternExpansion {
+        SIS_PX_SPACE,           // several instances at one instant: three
+                                //   markers on a rigid body, seen together
+        SIS_PX_TIME             // one instance at several instants: one marker
+                                //   moved through the volume. Preferred where
+                                //   both are possible -- integrating over time
+                                //   is more accurate than one snapshot
+    };
+
+    // One role of the pattern, bound to a real frame.
+    struct SISPatternRole {
+        string role;            // the pattern's own name for it: "camera"
+        SISFrameRef frame;      // what it was bound to
+    };
+
+    // One hop of a bound input.
+    //
+    // Self-contained on purpose: everything needed to subscribe to this hop
+    // and to place it in a pipeline, so a caller never has to ask again. A
+    // calibration tool composes these itself rather than asking the engine for
+    // a relation stream, because a correspondence relates k measurements at
+    // ONE instant and two streams have two independent triggers.
+    struct SISPatternSegment {
+        string relation;                // the declared relation name
+        SISFrameRef from;
+        SISFrameRef to;
+        boolean inverted;               // walked against its declared direction
+        boolean dynamic;
+        string stream_topic;            // non-empty exactly when dynamic
+        uint32 stream_item_id;
+        tcnart_msgs::msg::SRTransform transform;  // the static value, or a seed
+        boolean computed;               // derived from other edges rather than
+                                        //   measured. Usable, and ranked below
+                                        //   a raw hop: a computed value was
+                                        //   already interpolated once, at its
+                                        //   own producer's instants
+    };
+
+    // One input of the pattern, bound to a concrete realisation.
+    struct SISPatternInput {
+        string role_from;
+        string role_to;
+
+        // The relations realising this input, in order. One entry is a single
+        // declared edge; more is a composed path, and composing it is the
+        // caller's -- which is what the basic inversion and concatenation
+        // patterns are, applied implicitly.
+        sequence<SISPatternSegment> segments;
+
+        SISFrameRef observer;
+        SISFrameRef target;
+
+        // Slowest declared rate along this input's path, in Hz; 0 when no hop
+        // declares one.
+        //
+        // What a session picks its REFERENCE INPUT by. A correspondence spans
+        // several inputs and needs one instant; the reference supplies it and
+        // the others are interpolated to it. The slowest is the safe default:
+        // interpolating a 200 Hz stream to 30 Hz instants spans at most 5 ms,
+        // while the reverse spans up to 33 ms, and interpolating toward the
+        // sparser signal is always the larger invention.
+        double frame_rate;
+    };
+
+    struct SISPatternInstance {
+        string pattern;                 // catalogue name: "hand_eye"
+        string method;                  // the estimator this needs
+        sequence<SISPatternRole> roles;
+        sequence<SISPatternInput> inputs;
+
+        SRPatternExpansion expansion;
+
+        // For SIS_PX_SPACE: the duplicates FOUND in the graph, one entry per
+        // instance, each naming its own binding of the expandable role. Empty
+        // for SIS_PX_TIME, where the edges are the same on every measurement.
+        //
+        // Found, not assumed: three point correspondences for absolute
+        // orientation are three nodes each observed by both frames, and a
+        // graph holding one marker supports no space expansion however often
+        // it is asked.
+        sequence<SISPatternRole> space_instances;
+
+        uint32 min_measurements;        // what the estimator needs
+        uint32 max_measurements;        // 0 when unbounded
+
+        // The engine's own ordering, ascending, best first: computed hops
+        // dominate, then hop count, then any stated covariance.
+        //
+        // AN OPINION, NOT AN AUTHORITY. Which of several solutions is best is
+        // left open by the paper this implements, and is left open here.
+        double cost;
+    };
+
+    struct SISPatternQueryRequest {
+
+        // The edge to be produced. Both frames must exist; the edge need not,
+        // and normally does not -- that is the point.
+        SISFrameRef from;
+        SISFrameRef to;
+
+        // What kind of relation is wanted. Patterns are matched against their
+        // OUTPUTS: a caller does not choose a method, it states a result, and
+        // the methods that produce that result are what come back.
+        tcnart_msgs::msg::SRTransformType wanted;
+
+        // Hops from either named frame. 0 asks for the engine's default.
+        uint32 radius;
+
+        // Empty considers every pattern the engine knows.
+        sequence<string> only_patterns;
+
+        // 0 asks for the engine's default.
+        uint32 max_candidates;
+    };
+
+    struct SISPatternQueryReply {
+        // The graph read's vocabulary, reused: the refusals are identical --
+        // rate limited, unknown frame, malformed request -- and a second enum
+        // saying the same things in different words would be one more thing to
+        // keep in step.
+        SISGraphQueryStatus status;
+
+        // Ordered best-first by SISPatternInstance.cost. EMPTY IS AN ANSWER,
+        // and an SIS_GQ_OK one: "nothing in this graph produces that edge" is
+        // what an under-instrumented setup looks like, and it is the reply
+        // that tells an operator to add a landmark or a marker rather than to
+        // retry.
+        sequence<SISPatternInstance> instances;
+
         string detail;
     };
 
