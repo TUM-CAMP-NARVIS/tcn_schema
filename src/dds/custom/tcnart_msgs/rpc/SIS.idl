@@ -790,6 +790,32 @@ module tcnart_msgs {
                                         //   a raw hop: a computed value was
                                         //   already interpolated once, at its
                                         //   own producer's instants
+
+        // --- B68 -----------------------------------------------------------
+        // What a subscriber needs to read this hop the way the engine reads
+        // it, and cannot obtain for itself.
+        //
+        // Both come from the stream's descriptor, and a descriptor is
+        // published ONCE. A consumer that joins later never sees one: there is
+        // nothing to subscribe to and nothing to query. The engine read it at
+        // adoption and is the only party still holding it, so a reply that
+        // omitted these left a caller with no way to get them at all.
+        //
+        // sensor_latency_ns: nanoseconds between the measurement and the
+        // header stamp. A sample stamped T was measured at T - latency, and
+        // the engine subtracts it on ingest. A consumer that skipped it would
+        // interpolate every hop to instants that disagree with every engine
+        // stream by a constant -- invisible while everything is still, which
+        // is why a discrete calibration survived without this, and wrong the
+        // moment anything moves. 0 means unstated.
+        //
+        // frame_rate: this hop's declared rate in Hz, 0 when unstated. Rolled
+        // up per input into SISPatternInput::frame_rate, which is what a
+        // session picks its reference input by; without it every session fell
+        // back to its FIRST input rather than its slowest, and interpolating
+        // toward the sparser signal is always the larger invention.
+        int64 sensor_latency_ns;
+        double frame_rate;
     };
 
     // One input of the pattern, bound to a concrete realisation.
@@ -818,6 +844,52 @@ module tcnart_msgs {
         double frame_rate;
     };
 
+    // --- B67 ---------------------------------------------------------------
+    // One duplicate's realisation of one input, in a space expansion.
+    //
+    // A space expansion IS its duplicates. Absolute orientation over three
+    // surveyed landmarks is three correspondences at one instant, one per
+    // landmark, and a consumer needs a pipeline per landmark per input to
+    // evaluate them.
+    //
+    // 0.6.0 carried the duplicated ROLES and nothing else, which the matcher
+    // had already resolved to paths and then discarded. A consumer could
+    // compile only the base binding, so a session over three landmarks would
+    // have been a calibration from one of them -- determined, plausible, and
+    // wrong. A tool that noticed refused the candidate outright, which is
+    // correct and is not what anyone wants.
+    //
+    // FLAT, AND TAGGED BY DUPLICATE, rather than a sequence of inputs nested
+    // inside a sequence of duplicates. Two reasons, and the second is a hard
+    // one:
+    //
+    //  - it keeps space_instances meaning what it meant, so this is an
+    //    APPEND rather than a change in the middle of SISPatternInstance;
+    //  - a fourth level of nested unbounded sequences (reply -> instances ->
+    //    duplicates -> inputs -> segments) overflows the uint32 the IDL
+    //    generator computes a worst-case CDR size into. That is not a style
+    //    preference; the generated code does not compile.
+    struct SISPatternExpansionInput {
+        // Which duplicate this input belongs to: an index into
+        // SISPatternInstance::space_instances.
+        //
+        // One index and not a set of role bindings, because exactly one role
+        // of a pattern is expandable -- a matcher that met two would have to
+        // pair their duplicates, and no catalogue entry asks for that. So each
+        // entry of space_instances IS one duplicate, and indexing it is
+        // unambiguous.
+        uint32 instance;
+
+        // Which of the pattern's inputs this realises: an index into
+        // SISPatternInstance::inputs. Only the correspondence inputs appear
+        // here; the others are shared across every duplicate and are already
+        // bound once on the instance.
+        uint32 input;
+
+        // This duplicate's own path for that input.
+        SISPatternInput binding;
+    };
+
     struct SISPatternInstance {
         string pattern;                 // catalogue name: "hand_eye"
         string method;                  // the estimator this needs
@@ -827,13 +899,17 @@ module tcnart_msgs {
         SRPatternExpansion expansion;
 
         // For SIS_PX_SPACE: the duplicates FOUND in the graph, one entry per
-        // instance, each naming its own binding of the expandable role. Empty
+        // duplicate, each naming its own binding of the expandable role. Empty
         // for SIS_PX_TIME, where the edges are the same on every measurement.
         //
         // Found, not assumed: three point correspondences for absolute
         // orientation are three nodes each observed by both frames, and a
         // graph holding one marker supports no space expansion however often
         // it is asked.
+        //
+        // These NAME the duplicates; space_inputs below is what makes them
+        // runnable. Both are required for a space expansion and a reply
+        // carrying only the first is one a consumer must refuse (B67).
         sequence<SISPatternRole> space_instances;
 
         uint32 min_measurements;        // what the estimator needs
@@ -845,6 +921,18 @@ module tcnart_msgs {
         // AN OPINION, NOT AN AUTHORITY. Which of several solutions is best is
         // left open by the paper this implements, and is left open here.
         double cost;
+
+        // --- B67 -----------------------------------------------------------
+        // Every duplicate's own path for every correspondence input, tagged by
+        // which duplicate and which input it realises.
+        //
+        // Empty for SIS_PX_TIME. For SIS_PX_SPACE this is what makes the
+        // expansion runnable: space_instances names the duplicates and this
+        // says how to evaluate each one. A consumer that finds space_instances
+        // non-empty and this empty is talking to a pre-0.7.0 engine and should
+        // refuse the candidate rather than estimate from the base binding
+        // alone -- see SISPatternExpansionInput.
+        sequence<SISPatternExpansionInput> space_inputs;
     };
 
     struct SISPatternQueryRequest {
