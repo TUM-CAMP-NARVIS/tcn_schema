@@ -76,6 +76,19 @@ module tcnart_msgs {
     struct TargetTrackingMessage {
 
       std_msgs::msg::Header header;
+
+      // A common offset in front of every target below.
+      //
+      // NOT APPLIED BY THE SPATIAL QUERY ENGINE. The SQE reads each target's
+      // pose exactly as published and ignores this field; every relation
+      // stream, derived edge, and stored value it computes is in the frame the
+      // targets are given in. It is identity in every publisher we ship, and
+      // the engine warns once per topic when it is not.
+      //
+      // Prefer expressing a static offset as an edge in front of the tracker
+      // in the spatial relationship graph, where it is visible, calibratable,
+      // and composed by the ordinary path machinery. A non-identity value here
+      // is silently dropped by the SQE rather than honoured.
       RigidTransform target_origin;
       sequence<Target> targets;
       uint32 status_flags;              // TRACKER_STATUS_* bits

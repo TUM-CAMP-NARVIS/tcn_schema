@@ -364,6 +364,37 @@ module tcnart_msgs {
             string display_name;              // "Room to ceiling tracker"
             string description;               // free text: method, date, who
 
+            // --- B66 -------------------------------------------------------
+            // Survives fragment retraction, exactly as SRNode::pinned does for
+            // a node.
+            //
+            // Without this a relation is destroyed at the moment nobody wants
+            // it destroyed. A fragment's retraction deletes every relation
+            // whose two endpoints it links, once no other fragment still
+            // declares it -- so a tool that writes a calibrated edge and then
+            // leaves takes the calibration with it. Pinning the *endpoints*
+            // does not help and in fact guarantees the deletion: linking both
+            // nodes is precisely what brings the relation into the "wholly
+            // within this fragment's nodes" test that removes it.
+            //
+            // The case this exists for is external measurement. A surveyed
+            // landmark is two things -- a frame, and a position -- and only
+            // the frame could be made durable before this field. A survey
+            // pushed by a tool that then exits left behind pinned nodes with
+            // nothing saying where any of them were: a graph that looks like
+            // it holds landmarks and has lost every position. Same for a
+            // calibration, a hand-measured mount, a value from a CAD model.
+            //
+            // The engine never sets this; it only honours it, so no tool needs
+            // the engine's permission to keep its own data. That is SRNode's
+            // rule and it is repeated here deliberately -- the two flags mean
+            // the same thing and are read by the same sweep.
+            //
+            // Appended last, and false by convention: every peer written
+            // before this field sends false, which is exactly today's
+            // behaviour.
+            boolean pinned;
+
         };
 
         // --- graph -------------------------------------------------------------
