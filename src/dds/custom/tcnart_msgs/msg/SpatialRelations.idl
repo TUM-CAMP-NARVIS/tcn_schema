@@ -347,9 +347,18 @@ module tcnart_msgs {
             // and N entries is N*N writes and each buffer keeps whichever
             // arrived last. Silently.
             //
-            // Appended last, and optional by convention: 0 means "unset", which
-            // is what a single-entry tracker sends and what every peer written
-            // before this field sends. Those keep today's behaviour exactly.
+            // Optional by convention: a peer that names no entry leaves this
+            // 0 and `stream_item_bound` false, which is what a single-entry
+            // tracker sends and what every peer written before either field
+            // sends. Those keep today's behaviour exactly.
+            //
+            // This is NOT the last field. It once was; `display_name`,
+            // `description`, `pinned` and `stream_item_bound` were appended
+            // after it. Nothing here may be inserted above them.
+            //
+            // Read this WITH `stream_item_bound` below. On its own it cannot
+            // say whether an entry was named, because 0 is a real entry -- see
+            // that field's note (B72).
             //
             // The values are a contract between a publisher and the engine and
             // belong to neither, so they are named: see the XR_POSE_* constants
@@ -394,6 +403,31 @@ module tcnart_msgs {
             // before this field sends false, which is exactly today's
             // behaviour.
             boolean pinned;
+
+            // --- B72 -------------------------------------------------------
+            // Whether `stream_item_id` above binds this relation to one entry.
+            //
+            // The id alone cannot say. 0 was doing double duty -- "entry 0"
+            // and "no entry named, take any" -- and those are different
+            // things. Entry ids here are marker ids, and 0 is the first id
+            // every ArUco dictionary hands out, so the one marker most likely
+            // to exist was the one that could not say it existed: the engine
+            // read `stream_item_id != 0`, found 0, and fed that relation every
+            // entry on its topic. On a single-marker stream nothing went
+            // wrong, which is why it survived.
+            //
+            // The engine now skips an entry only when this is true and the id
+            // differs. A relation naming a concrete entry MUST set this --
+            // entry 0 or not.
+            //
+            // Appended last, and false by convention: a peer written before
+            // this field sends a short message that defaults it to false,
+            // which is the old "unset" meaning, so a peer that never named an
+            // entry sees no change. The one combination whose meaning changed
+            // is a non-zero id with this left false: that used to mean "bound
+            // to that entry" and now means "unbound, take any entry". Nothing
+            // rejects it, so a peer that names entries must be rebuilt.
+            boolean stream_item_bound;
 
         };
 

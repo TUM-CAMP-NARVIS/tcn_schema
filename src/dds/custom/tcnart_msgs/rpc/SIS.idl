@@ -783,7 +783,9 @@ module tcnart_msgs {
         boolean inverted;               // walked against its declared direction
         boolean dynamic;
         string stream_topic;            // non-empty exactly when dynamic
-        uint32 stream_item_id;
+        uint32 stream_item_id;          // meaningful only with
+                                        //   stream_item_bound, at the end of
+                                        //   this struct
         tcnart_msgs::msg::SRTransform transform;  // the static value, or a seed
         boolean computed;               // derived from other edges rather than
                                         //   measured. Usable, and ranked below
@@ -816,6 +818,23 @@ module tcnart_msgs {
         // toward the sparser signal is always the larger invention.
         int64 sensor_latency_ns;
         double frame_rate;
+
+        // --- B72 ---------------------------------------------------------
+        // Whether `stream_item_id` above binds this hop to one entry. The
+        // same fact SREdge::stream_item_bound carries, and it has to travel
+        // with the segment because a caller composing hops itself never sees
+        // the edge -- the calibration tool builds its whole rig from these
+        // and nothing else.
+        //
+        // Inferring it from a non-zero id does not work, and this field
+        // exists because that was tried: entry 0 is a real entry, so `!= 0`
+        // treats a hop bound to marker 0 as unbound and hands it every entry
+        // on the topic. A caller routing entries itself must route on this
+        // flag; treating unbound as "entry 0" drops every other entry on a
+        // multi-entry topic.
+        //
+        // Appended last, for the reason SREdge::stream_item_bound documents.
+        boolean stream_item_bound;
     };
 
     // One input of the pattern, bound to a concrete realisation.
