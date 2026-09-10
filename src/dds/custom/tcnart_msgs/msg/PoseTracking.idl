@@ -39,7 +39,11 @@ module tcnart_msgs {
     // publisher and the engine and belongs to neither, so it is named here --
     // beside the message it indexes, as TRACKER_STATUS_* is named beside the
     // one it annotates. It is also what a relation's SREdge.stream_item_id
-    // names, which is how the engine knows which entry feeds which relation.
+    // names, which is how the engine knows which entry feeds which relation --
+    // together with SREdge.stream_item_bound, which is what says the id was
+    // named at all (B72). One of these keys is not required: any key space the
+    // publisher and its relations agree on works, and a marker tracker uses
+    // the dictionary's own ids.
     //
     // Constants rather than an enum: the generator this schema is built with
     // rejects explicit enumerator values, and the values are the whole point --
@@ -52,7 +56,17 @@ module tcnart_msgs {
     //
     // See docs/internals/xr-pose-streams.md in the engine repository.
 
-    const uint32 XR_POSE_UNSET = 0;            // the absent value; a single-entry tracker
+    // Reserved in *this* key space, and only here. XR pose keys are an
+    // enumeration this project defines, so nothing is forced to use 0 and
+    // leaving it unassigned costs nothing.
+    //
+    // **It is not a general rule that entry 0 means "unset".** Entry ids in
+    // other key spaces are not from this list -- an ArUco marker id is the
+    // dictionary's, and 0 is the first id it hands out -- so a reader
+    // generalising this constant would conclude that the most common marker in
+    // a scene cannot be named. Whether an entry was named at all is carried by
+    // SREdge.stream_item_bound (B72), never inferred from the id.
+    const uint32 XR_POSE_UNSET = 0;            // unassigned in the XR key space
 
     const uint32 XR_POSE_HMD = 1;              // the headset's own viewpoint
 
