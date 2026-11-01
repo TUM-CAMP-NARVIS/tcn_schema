@@ -16,6 +16,15 @@ same types as before. A component is affected only when it starts using a 0.9.0
 verb, and the one rule to keep while doing so is in A2: never put a
 `PVT_UINT32` / `PVT_UINT64` value into a reply a 0.8.0 peer may read.
 
+**When you do rebuild against 0.9.0:** code that `switch`es over
+`ParameterValueType` (e.g. on `ParameterValue::_d()`) without a `default` gets
+two unhandled enumerators, which is an error under `-Wswitch -Werror`; handle
+them or add a `default`. (`ParameterAccess` and `ParameterSetStatus` are new,
+so no existing switch covers them.) With `WITH_DDS=ON` the generated XTypes
+TypeObject of `ParameterValueType` / `ParameterValue` (and of every type that
+contains them) changes, so DDS type matching between 0.8.0 and 0.9.0
+participants sees different types; the CDR-over-Zenoh path is unaffected.
+
 Origin: holoscan-tcn-applications `docs/migration/28-tcn-schema-proposal.md`
 (A1–A5, corrections B1–B8) and its design 29, the parameter-control UI (A6, A7).
 
@@ -169,6 +178,10 @@ Hence the rule, for every server:
 - **accept** `PVT_INT32` / `PVT_INT64` for an unsigned field from older clients,
   range-checking the value (negative or too large: reject).
 
+**Who must rebuild:** a server that starts sending the unsigned cases, and every
+client that should read them (CDR or JSON) — it must handle discriminators 7
+and 8. A peer that never sees them needs nothing.
+
 `parameters/get` gives a 0.9.0 client no way to say it understands unsigned
 cases; a client that wants exact unsigned values reads them from
 `parameters/describe` (`default_value`, bounds) and `ParameterChanged`, or
@@ -212,6 +225,9 @@ holds only the keys that changed, with their new values; `generation` is the
 same counter as `ParameterDescriptor.generation`. A UI subscribes instead of
 polling and re-reads with `parameters/get` if it sees a generation gap.
 
+**Who must rebuild:** a server that publishes it, a client that subscribes. Since
+`value` may carry `PVT_UINT*` cases, only 0.9.0 clients should subscribe.
+
 ## A5 — dataflow graph (optional)
 
 ```idl
@@ -224,6 +240,9 @@ struct GraphReply { string graph_json; string schema; RPCResponseStatus status; 
 partitions, tunables, streams). The graph stays JSON inside CDR because it is
 nested and app-specific. Optional: a client shows an app without the verb from
 its services list alone.
+
+**Who must rebuild:** a server that adds the verb in CDR, a client that reads the
+CDR form. JSON-only peers need no rebuild (see the JSON exception below).
 
 ## A6 — process info and liveliness
 
@@ -260,6 +279,10 @@ The convention:
 This settles proposal item B8 (one RPC-root convention) without changing the
 presence message: the root is the token key and `rpc_root`.
 
+**Who must rebuild:** a server that declares the token and serves `info`, a
+client that reads the CDR `ProcessInfoReply`. The token itself carries no
+payload, so a client that only watches liveliness needs no 0.9.0 types.
+
 ## A7 — stream announcements
 
 ```idl
@@ -278,6 +301,9 @@ struct StreamAnnouncementReply { sequence<StreamAnnouncement> streams; RPCRespon
 its sender when it starts. `role` and `mode` use the same values as the
 `streams` entries of `tcn.plan_graph.v1`. A client uses it to offer a preview
 without knowing the pipeline's configuration.
+
+**Who must rebuild:** a server that serves the verb, a client that reads the CDR
+reply.
 
 ---
 
@@ -303,17 +329,23 @@ defined here; it agrees with the 0.8.0 layout for every type they share:
 - **Integers** are JSON numbers. `uint64` / `int64` above 2^53 lose precision
   in JavaScript readers (the web frontend); C++ (rapidjson, nlohmann) and Python
   keep them exact.
-- **Extra keys** are allowed; readers ignore keys they do not know. The
-  holoscan `info` verb, for example, adds `"schema": "tcn.params.info.v1"`.
+- **Extra keys** are allowed; readers ignore keys they do not know.
+- **A `"schema"` tag** may sit at the top level of a reply, next to `"status"`,
+  naming the JSON document's version. The `info` reply carries
+  `"schema": "tcn.params.info.v1"`.
 
-Example, a `ProcessInfoReply`:
+The `info` reply is the canonical nested form of `ProcessInfoReply` plus the
+top-level tag — `{"value": {app, node, host, pid, started_at, version,
+plan_hash, generation, rpc_root}, "status": <code>, "schema":
+"tcn.params.info.v1"}`:
 
 ```json
 {"value": {"app": "stereo_depth", "node": "", "host": "capture01", "pid": 4242,
            "started_at": "2026-11-01T09:00:00Z", "version": "v1.4.0-12-gabc123",
            "plan_hash": "9f2c...", "generation": 3,
            "rpc_root": "tcn/loc/holoscan/stereo_depth/rpc"},
- "status": 0}
+ "status": 0,
+ "schema": "tcn.params.info.v1"}
 ```
 
 ### Known exceptions
@@ -321,12 +353,11 @@ Example, a `ProcessInfoReply`:
 - **`ServiceInfoReply` / `ComponentInfoReply` (0.8.0, unchanged):** the JSON
   form flattens `schema.parameters` to a top-level `"parameters"` array. It
   stays for compatibility.
-- **`GraphReply` in holoscan (predates 0.9.0):** holoscan's `graph` verb
-  replies JSON as `{"graph": <the document as an object>, "status": <code>}`,
-  not `{"graph_json": "<the document as a string>", ...}`. A reader of the JSON
-  form accepts both: an object under `"graph"`, or a string under
-  `"graph_json"` to parse. *(Whether holoscan switches to the canonical form is
-  open; see holoscan design 29.)*
+- **`GraphReply` JSON (settled):** the JSON form of the `graph` verb is
+  `{"graph": <the document as an object>, "schema": "<document schema>",
+  "status": <code>}` — the document embedded as an object, not as a
+  `"graph_json"` string. Only the CDR form uses `GraphReply` with
+  `graph_json`. Holoscan serves it this way.
 
 ---
 
@@ -346,13 +377,15 @@ repository.
    `libs/pcpd_zenoh/include/pcpd_zenoh/json_cdr_serialization.h` for every new
    type a server sends: `ParameterDescriptor(Reply|List)`, `EnumEntry`,
    `ParameterSetResult`, `ParameterSetReply`, `ParameterChanged`,
-   `ProcessInfo(Reply)`, `StreamAnnouncement(Reply)`, `GraphReply`; and the
+   `ProcessInfo(Reply)` (with the top-level `"schema"` tag),
+   `StreamAnnouncement(Reply)`, `GraphReply` (in its settled JSON form); and the
    `PVT_UINT32` / `PVT_UINT64` cases in `typeMap<ParameterValue>` (serialize and
    deserialize switches, `json_cdr_serialization.h:1191`ff).
-3. **Fix while adopting (B2):** `ServiceController::query_handler` and
-   `process_request` (`service_controller.cpp:101`, `:186`) call
-   `query.get_payload()->get()` and `query.get_encoding().value()` without
-   checking either is present. A query with no payload (the slang viewer's
+3. **Fix while adopting (B2):** `ServiceController::process_request`
+   (`service_controller.cpp`) passes `query.get_payload()->get()` and
+   `query.get_encoding().value().get()` to the handler without checking either
+   is present (call site `:186`); `query_handler` (`:101`) only reaches its
+   error replies afterwards. A query with no payload (the slang viewer's
    reads, a bare `z_get`) then fails. Treat a missing payload as `NullRequest`
    / an empty `StringListRequest`, and a missing encoding as CDR.
 4. **Fix while adopting (B4):** the JSON reader of `GenericParameterReply`
@@ -460,11 +493,13 @@ nearby lines.
    `<P>/str/service/<name>/parameters`.
 6. **Token and `info` (A6).** Declare the `<P>/rpc` token in
    `ParameterService::start` next to the queryable; serve `info` in
-   `Impl::on_query` (`parameter_service.cpp:320`), JSON and CDR.
+   `Impl::on_query` (`parameter_service.cpp:320`), CDR `ProcessInfoReply` and
+   JSON in its canonical nested form with `"schema": "tcn.params.info.v1"`.
 7. **`streams` (A7).** Serve the process-wide announcement registry
    (`tcn::streams::announce`, design 29 D29.8).
 8. **`graph` (A5).** Already served (`graph_reply`, `parameter_service.cpp:46`),
-   JSON only. Add the CDR form as `GraphReply`; see the JSON exception above.
+   JSON only, as `{"graph", "status"}`. Add `"schema": "tcn.plan_graph.v1"`
+   (the settled JSON form above), and the CDR form as `GraphReply`.
 
 ---
 
@@ -570,9 +605,34 @@ itself.
 - [ ] `ParameterChanged` published
 - [ ] `graph` also as CDR `GraphReply`
 
-**Every client** (slang viewer, web frontend, Python clients, `ParamClient`/`tcn-params`, C++ `params_client`/UI)
-- [ ] B1 (slang viewer): IDL type ordinals
-- [ ] describe → fallback `describe`; `set_ex` → fallback `set`
-- [ ] `ParameterChanged` subscription, polling as fallback
-- [ ] discovery by liveliness + `info`, presence as fallback
-- [ ] types 7 and 8 decoded (JSON and CDR)
+**Slang viewer** (`ZenohPropertyClient`, `PropertyEditorWidget`)
+- [ ] B1: `ParamType` uses the IDL ordinals; add 7 and 8
+- [ ] `describeService` / `describeComponent`: `parameters/describe` → fallback `describe`
+- [ ] set: `parameters/set_ex` → fallback `parameters/set`; show per-key messages
+- [ ] `ParameterChanged` subscription instead of the manual refresh
+
+**ArteKMed web frontend** (`packages/zenoh-client`)
+- [ ] `parameters/describe` → fallback `describe`
+- [ ] `parameters/set_ex` → fallback `parameters/set`
+- [ ] types 7 and 8 in JSON; `uint64` above 2^53 treated as inexact
+
+**ArteKMed Python clients** (`artekmed_python_client`, `artekmed_zenoh_python_client`)
+- [ ] pycdr2 mirrors: new enums and structs; `PvtUint32 = 7`, `PvtUint64 = 8`
+- [ ] check `ParameterValue` is a discriminated union on the wire (not verified)
+- [ ] describe / set_ex with fallbacks where these clients set parameters
+
+**Holoscan `ParamClient` / `tcn-params`**
+- [ ] `describe_all`: `parameters/describe` → fallback `describe` + `describe_ext`
+- [ ] `set*`: `parameters/set_ex` → fallback `parameters/set`; per-key results in `tcn-params set`
+- [ ] `watch`: `ParameterChanged` subscription, polling as fallback
+- [ ] `info()`, `streams()`; types 7 and 8 in `from_wire` / `to_wire_value`
+
+**Holoscan C++ `libs/params_client` / parameter-control UI**
+- [ ] discovery by liveliness `**/rpc` with history + `info`; presence as fallback (*presence only*)
+- [ ] describe / set_ex with fallbacks
+- [ ] `ParameterChanged` subscription, 1 Hz polling as fallback
+- [ ] `graph` and `streams` read, both optional
+- [ ] types 7 and 8 decoded
+
+**holohub-tcn `tcn_ui`**
+- [ ] nothing for 0.9.0 (local example backend, no wire client); follow the client rules when it is wired to Zenoh
