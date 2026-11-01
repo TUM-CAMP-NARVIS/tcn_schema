@@ -121,7 +121,10 @@ module tcnart_msgs {
       PVT_FLOAT,
       PVT_DOUBLE,
       PVT_BOOL,
-      PVT_STRUCT
+      PVT_STRUCT,
+      // 0.9.0, appended: the ordinals above are unchanged.
+      PVT_UINT32,
+      PVT_UINT64
     };
 
     struct Parameter;
@@ -153,6 +156,11 @@ module tcnart_msgs {
         boolean bool_value;
     case PVT_STRUCT:
         ParameterList struct_value;
+    // 0.9.0, appended.
+    case PVT_UINT32:
+        uint32 uint32_value;
+    case PVT_UINT64:
+        uint64 uint64_value;
     };
 
     struct ParameterSchema {
@@ -180,6 +188,99 @@ module tcnart_msgs {
         ParameterListSchema schema;
         RPCResponseStatus status;
     };
+
+    // ------------------------------------------------------------------
+    // 0.9.0: parameter-protocol extensions. All additive; nothing above
+    // changed position. See MIGRATION-0.9.0.md for the verbs and the
+    // canonical JSON mapping.
+    // ------------------------------------------------------------------
+
+    // A1. Rich parameter descriptor, served by `parameters/describe`
+    // (request: StringListRequest of keys, empty = all).
+
+    /// How a parameter can be changed.
+    enum ParameterAccess {
+      PA_READ_WRITE_LIVE,      // set takes effect while running (next compute / next frame)
+      PA_READ_WRITE_RESTART,   // set accepted, applies after a restart / recompile
+      PA_READ_ONLY             // get only
+    };
+
+    /// One allowed enum value: the label as shown and sent (PVT_STRING),
+    /// and the underlying integer value.
+    struct EnumEntry {
+        string label;
+        int64 value;
+    };
+
+    /// Full description of one parameter. ParameterSchema stays as the
+    /// compact form.
+    ///
+    /// minimum / maximum / step are optional. `@optional` is not used: with
+    /// fast-cdr 2.0.0 and the DDS_CDR (XCDR1) encoding every peer uses, an
+    /// optional member does not round-trip. Each is a plain member with a
+    /// `has_*` flag before it; when the flag is false the value is
+    /// meaningless (default-constructed) and must be ignored.
+    struct ParameterDescriptor {
+        string key;
+        ParameterValueType value_type;
+        ParameterAccess access;
+        string description;                 // one line, may be empty
+        string unit;                        // SI or display unit ("m", "ms", "px", ""), may be empty
+        boolean has_minimum;
+        ParameterValue minimum;             // inclusive; same type as value_type
+        boolean has_maximum;
+        ParameterValue maximum;             // inclusive
+        boolean has_step;
+        ParameterValue step;                // UI hint; absent = continuous
+        sequence<EnumEntry> enum_entries;   // non-empty for enums (value_type PVT_STRING)
+        sequence<ParameterValue> valid_entries;  // other discrete sets (0.8.0 parity)
+        ParameterValue default_value;
+        uint64 generation;                  // server-side change counter of the current value
+    };
+
+    struct ParameterDescriptorList {
+        sequence<ParameterDescriptor> parameters;
+    };
+
+    struct ParameterDescriptorReply {
+        ParameterDescriptorList value;
+        RPCResponseStatus status;
+    };
+
+    // A3. Per-key set results, served by `parameters/set_ex`
+    // (request: GenericParameterRequest). `parameters/set` (NullReply) stays.
+
+    enum ParameterSetStatus {
+      PSS_APPLIED,          // in effect
+      PSS_UNCHANGED,        // equal to the current value
+      PSS_PENDING,          // accepted, not yet in effect within the server's wait
+      PSS_OUT_OF_RANGE,
+      PSS_TYPE_MISMATCH,
+      PSS_UNKNOWN_KEY,
+      PSS_READ_ONLY,
+      PSS_REJECTED          // other; see message
+    };
+
+    struct ParameterSetResult {
+        string key;
+        ParameterSetStatus status;
+        string message;
+    };
+
+    struct ParameterSetReply {
+        sequence<ParameterSetResult> results;
+        RPCResponseStatus status;   // SUCCESS only if every key is APPLIED or UNCHANGED
+    };
+
+    // A4. Change notification, published on
+    // `<prefix>/str/service/<name>/parameters` whenever a value takes effect.
+
+    struct ParameterChanged {
+        string service;
+        ParameterList value;   // keys that changed, with their new values
+        uint64 generation;
+    };
+
 
   };
 };
