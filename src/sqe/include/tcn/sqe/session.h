@@ -30,13 +30,14 @@ namespace sqe {
 enum class RequestMode
 {
     /// A one-way put. The daemon does not answer it, and "published" is the
-    /// strongest thing the return value may be read to mean (B27).
+    /// strongest thing the return value may be read to mean (B27). Since B73
+    /// only `SISLeaveRequest` is one.
     Publish,
-    /// A query with exactly one reply.
+    /// A query with exactly one reply, of the type the registration names.
     Query,
 };
 
-/// Which key a request type goes to, and whether it is answered.
+/// Which key a request type goes to, whether it is answered, and with what.
 ///
 /// **No primary definition, on purpose**, the same discipline as `WireType`:
 /// a request type nobody registered does not compile, rather than being
@@ -44,21 +45,51 @@ enum class RequestMode
 /// to key is the thing worth making unforgeable — a `SISLeaveRequest` put on
 /// the join key decodes cleanly at the daemon, means the opposite of what was
 /// intended, and is answered by nothing.
+///
+/// `Reply` is the third half of the same pairing, added with B73. Before it,
+/// `query_request` deduced the reply type from whatever the caller passed, so
+/// a join could be asked for a `SISRelationStreamReply`: the declared-type
+/// check then refused the engine's (correct) `SISMutationReply` at run time,
+/// as `WrongDeclaredType`, and the caller saw a protocol error for a mistake
+/// that was entirely its own. Now it does not compile. `void` for a `Publish`,
+/// and only for a `Publish` -- the static_assert in the macro holds that.
 template <class T>
 struct RequestKey;
 
-#define TCN_SQE_REGISTER_REQUEST_KEY(TYPE, SUFFIX, MODE)          \
-    template <>                                                   \
-    struct RequestKey<TYPE>                                       \
-    {                                                             \
-        static constexpr std::string_view suffix = SUFFIX;        \
-        static constexpr RequestMode mode = MODE;                 \
+#define TCN_SQE_REGISTER_REQUEST_KEY(TYPE, SUFFIX, MODE, REPLY)                       \
+    template <>                                                                       \
+    struct RequestKey<TYPE>                                                           \
+    {                                                                                 \
+        static constexpr std::string_view suffix = SUFFIX;                            \
+        static constexpr RequestMode mode = MODE;                                     \
+        using Reply = REPLY;                                                          \
+        static_assert((MODE == RequestMode::Publish) == std::is_void<REPLY>::value,   \
+                      "a Publish has no reply type and a Query must name one");       \
     }
 
-TCN_SQE_REGISTER_REQUEST_KEY(::tcnart_msgs::rpc::SISJoinRequest,       keys::kJoin,       RequestMode::Publish);
-TCN_SQE_REGISTER_REQUEST_KEY(::tcnart_msgs::rpc::SISLeaveRequest,      keys::kLeave,      RequestMode::Publish);
-TCN_SQE_REGISTER_REQUEST_KEY(::tcnart_msgs::rpc::SISNodeUpdateRequest, keys::kNodeUpdate, RequestMode::Publish);
-TCN_SQE_REGISTER_REQUEST_KEY(::tcnart_msgs::rpc::SISNodeRemoveRequest, keys::kNodeRemove, RequestMode::Publish);
+// Every mutation is a `Query` since B73, answered with SISMutationReply.
+// `SIS_MU_ACCEPTED` means *stored*: a `stream/start` sent after the reply sees
+// the fragment, which is the race B73 exists to close -- a client that put its
+// join and started a stream at once could have the start resolved against a
+// graph that did not hold its fragment yet, and be told NO_PATH or
+// UNKNOWN_FRAME for frames it had just declared. A join is all or nothing:
+// any refused node or edge, or an origin not among the nodes, is REJECTED with
+// every reason in `detail`, and nothing is stored.
+//
+// A `put` on any of these keys is ignored by the engine, and logged once per
+// key as a peer built against an older protocol. So a Publish left in this
+// table is not a degraded mode, it is a client that never joins.
+TCN_SQE_REGISTER_REQUEST_KEY(::tcnart_msgs::rpc::SISJoinRequest,       keys::kJoin,       RequestMode::Query,
+                             ::tcnart_msgs::rpc::SISMutationReply);
+// The deliberate exception, and it stays one: withdrawing the liveliness token
+// reaches the identical departure with no query behind it to answer, and one
+// route answering while the other cannot is worse than neither.
+TCN_SQE_REGISTER_REQUEST_KEY(::tcnart_msgs::rpc::SISLeaveRequest,      keys::kLeave,      RequestMode::Publish,
+                             void);
+TCN_SQE_REGISTER_REQUEST_KEY(::tcnart_msgs::rpc::SISNodeUpdateRequest, keys::kNodeUpdate, RequestMode::Query,
+                             ::tcnart_msgs::rpc::SISMutationReply);
+TCN_SQE_REGISTER_REQUEST_KEY(::tcnart_msgs::rpc::SISNodeRemoveRequest, keys::kNodeRemove, RequestMode::Query,
+                             ::tcnart_msgs::rpc::SISMutationReply);
 // A `Query`, not a `Publish`, since B47. `/sis/relation/update` stopped being a
 // subscriber and became a queryable: a `put` on that key now reaches **nothing
 // at all**, with no error on either side. It answers `SISMutationReply`, and
@@ -69,15 +100,32 @@ TCN_SQE_REGISTER_REQUEST_KEY(::tcnart_msgs::rpc::SISNodeRemoveRequest, keys::kNo
 // after this table was written. That is the drift this library exists to
 // prevent, arriving from the one direction it cannot check for itself: nothing
 // here compiles against the engine. When a key changes mode, this table is the
-// second place to change and the easy one to miss.
-TCN_SQE_REGISTER_REQUEST_KEY(::tcnart_msgs::rpc::SISEdgeUpdateRequest, keys::kEdgeUpdate, RequestMode::Query);
-TCN_SQE_REGISTER_REQUEST_KEY(::tcnart_msgs::rpc::SISEdgeRemoveRequest, keys::kEdgeRemove, RequestMode::Publish);
-TCN_SQE_REGISTER_REQUEST_KEY(::tcnart_msgs::rpc::SISRelationStreamStartRequest, keys::kStreamStart, RequestMode::Query);
-TCN_SQE_REGISTER_REQUEST_KEY(::tcnart_msgs::rpc::SISRelationStreamStopRequest,  keys::kStreamStop,  RequestMode::Query);
+// second place to change and the easy one to miss. (B73 moved four more, in
+// the same tcn_schema release that changed the engine, for that reason.)
+TCN_SQE_REGISTER_REQUEST_KEY(::tcnart_msgs::rpc::SISEdgeUpdateRequest, keys::kEdgeUpdate, RequestMode::Query,
+                             ::tcnart_msgs::rpc::SISMutationReply);
+TCN_SQE_REGISTER_REQUEST_KEY(::tcnart_msgs::rpc::SISEdgeRemoveRequest, keys::kEdgeRemove, RequestMode::Query,
+                             ::tcnart_msgs::rpc::SISMutationReply);
+TCN_SQE_REGISTER_REQUEST_KEY(::tcnart_msgs::rpc::SISRelationStreamStartRequest, keys::kStreamStart, RequestMode::Query,
+                             ::tcnart_msgs::rpc::SISRelationStreamReply);
+TCN_SQE_REGISTER_REQUEST_KEY(::tcnart_msgs::rpc::SISRelationStreamStopRequest,  keys::kStreamStop,  RequestMode::Query,
+                             ::tcnart_msgs::rpc::SISRelationStreamReply);
 // The read. `Query` for the obvious reason and one less obvious: a read
 // answered by a subscriber would have nowhere to put SIS_GQ_TRUNCATED or a
 // cursor, so paging could not exist at all.
-TCN_SQE_REGISTER_REQUEST_KEY(::tcnart_msgs::rpc::SISGraphQueryRequest, keys::kGraphQuery, RequestMode::Query);
+TCN_SQE_REGISTER_REQUEST_KEY(::tcnart_msgs::rpc::SISGraphQueryRequest, keys::kGraphQuery, RequestMode::Query,
+                             ::tcnart_msgs::rpc::SISGraphQueryReply);
+// The pattern read (B63). Its reply reuses SISGraphQueryStatus and opens with
+// it, so a SISGraphQueryReply would decode from a pattern reply's bytes; the
+// `Reply` below and the declared-type check are what keep the two apart.
+TCN_SQE_REGISTER_REQUEST_KEY(::tcnart_msgs::rpc::SISPatternQueryRequest, keys::kPatternQuery, RequestMode::Query,
+                             ::tcnart_msgs::rpc::SISPatternQueryReply);
+// The target registry (B78): a read with its own reply, and a write answered
+// like every other write.
+TCN_SQE_REGISTER_REQUEST_KEY(::tcnart_msgs::rpc::SISTargetQueryRequest, keys::kTargetQuery, RequestMode::Query,
+                             ::tcnart_msgs::rpc::SISTargetQueryReply);
+TCN_SQE_REGISTER_REQUEST_KEY(::tcnart_msgs::rpc::SISTargetMutationRequest, keys::kTargetUpdate, RequestMode::Query,
+                             ::tcnart_msgs::rpc::SISMutationReply);
 
 namespace detail {
 
@@ -252,7 +300,8 @@ public:
     ///
     /// Success means **published**, never accepted. The daemon does not answer
     /// these, and no return value of this function can be read to say it did
-    /// (B27).
+    /// (B27). Since B73 that is only `SISLeaveRequest`; every mutation is a
+    /// query and goes through `query_request`, where "accepted" can be read.
     template <class Req>
     Result<void> publish_request(const Req& req)
     {
@@ -273,6 +322,13 @@ public:
     /// Send a request and decode its reply, refusing a reply that declares a
     /// type other than the one asked for.
     ///
+    /// `Reply` must be the type `RequestKey<Req>` registers -- a mismatch is a
+    /// compile error, not a `WrongDeclaredType` at run time. For a mutation
+    /// that is `SISMutationReply`; a transport success with any status other
+    /// than `SIS_MU_ACCEPTED` is still a refusal, and this function does not
+    /// read the status for the caller, because it cannot name the generated
+    /// enum's accessors.
+    ///
     /// The declared-type check is not optional and not a warning. CDR is not
     /// self-describing: a payload of the wrong type may decode into `Reply`
     /// cleanly and mean something else entirely, and one consumer's query
@@ -285,6 +341,9 @@ public:
         static_assert(detail::has_codec_shape<Codec, Reply>::value, "Codec cannot decode this reply");
         static_assert(RequestKey<Req>::mode == RequestMode::Query,
                       "this request is not answered; use publish_request");
+        static_assert(std::is_same<Reply, typename RequestKey<Req>::Reply>::value,
+                      "this is not the reply type this request is answered with; "
+                      "see RequestKey<Req>::Reply");
 
         std::vector<std::uint8_t> bytes;
         const Result<void> enc = Codec::encode(req, bytes);

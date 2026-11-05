@@ -66,9 +66,28 @@ namespace sqe {
 ///   * B40 and B42 concern the engine's own example clients and CLI.
 inline constexpr int kContractBLevel = 35;
 
+/// The **revision**: the highest entry in the engine's
+/// `compatibility-breaks.md` whose wire shape this header describes -- its
+/// keys, request modes, reply types, registered type names and encoding
+/// annotation. 78 as of tcn_schema 0.9.0 (B73 mutations as queries, B74 engine
+/// presence, B76 the versioned annotation, B77 clock domains, B78 the target
+/// registry).
+///
+/// A different question from `kContractBLevel`, and deliberately a separate
+/// number rather than a bump of that one. The floor says what this library
+/// *does* for a client, and it cannot pass 35 because B36 is implemented in
+/// `sqe_session`, not here; raising it to 78 would claim, among other things,
+/// that this component watches the engine's liveliness token, which it cannot
+/// -- it opens no session. The revision says what it *describes*: a consumer
+/// that asserts `kProtocolBLevel >= 73` is asserting that `publish_request`
+/// will refuse to compile on a join, which is a fact about the table in
+/// session.h and holds whether or not the floor ever moves.
+inline constexpr int kProtocolBLevel = 78;
+
 }  // namespace sqe
 }  // namespace tcn
 
 #define TCN_SQE_CONTRACT_B_LEVEL 35
+#define TCN_SQE_PROTOCOL_B_LEVEL 78
 
 #endif  // TCN_SQE_CONTRACT_H

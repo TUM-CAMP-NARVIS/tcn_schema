@@ -17,6 +17,8 @@
 
 #include <cstdint>
 #include <string>
+#include <type_traits>
+#include <utility>
 #include <vector>
 
 #include "tcn/sqe/handle.h"
@@ -42,6 +44,61 @@ class SISNodeUpdateRequest
 {
 public:
     std::string name;
+};
+
+class SISNodeRemoveRequest
+{
+public:
+    std::string name;
+};
+
+class SISEdgeRemoveRequest
+{
+public:
+    std::string name;
+};
+
+/// The reply every mutation is answered with since B73, with B74's two
+/// trailing fields. Decodable by `StubCodec` (see `stub_decode`), so a test can
+/// assert that the reply a session hands back is the one the engine sent, not
+/// merely that the call succeeded.
+class SISMutationReply
+{
+public:
+    std::int32_t status_ = -1;
+    std::string detail_;
+    std::string engine_id_;
+    std::uint64_t engine_epoch_ = 0;
+
+    std::int32_t status() const { return status_; }
+    const std::string& detail() const { return detail_; }
+    const std::string& engine_id() const { return engine_id_; }
+    std::uint64_t engine_epoch() const { return engine_epoch_; }
+
+    /// Stub wire form: one status byte, eight little-endian epoch bytes, then
+    /// the engine id. Nothing like CDR, and it does not need to be.
+    static std::vector<std::uint8_t> stub_encode(std::uint8_t status, std::uint64_t epoch,
+                                                 const std::string& engine_id)
+    {
+        std::vector<std::uint8_t> out;
+        out.push_back(status);
+        for (int i = 0; i < 8; ++i) { out.push_back(static_cast<std::uint8_t>(epoch >> (8 * i))); }
+        out.insert(out.end(), engine_id.begin(), engine_id.end());
+        return out;
+    }
+
+    bool stub_decode(::tcn::sqe::BytesView b)
+    {
+        if (b.size < 9) { return false; }
+        status_ = b.data[0];
+        engine_epoch_ = 0;
+        for (int i = 0; i < 8; ++i)
+        {
+            engine_epoch_ |= static_cast<std::uint64_t>(b.data[1 + i]) << (8 * i);
+        }
+        engine_id_.assign(reinterpret_cast<const char*>(b.data + 9), b.size - 9);
+        return true;
+    }
 };
 
 class SISEdgeUpdateRequest
@@ -108,6 +165,43 @@ public:
     const std::string& detail() const { return detail_; }
 };
 
+/// The pattern read (B63) and the registry (B78). Fields the tests touch only.
+class SISPatternQueryRequest
+{
+public:
+    std::uint32_t radius = 0;
+};
+
+class SISPatternQueryReply
+{
+public:
+    std::int32_t status_ = 0;
+    std::string detail_;
+};
+
+class SISTargetQueryRequest
+{
+public:
+    std::int32_t kind = 0;
+    std::string system;
+    std::string key;
+    std::string name;
+};
+
+class SISTargetQueryReply
+{
+public:
+    std::int32_t status_ = 0;
+    std::string detail_;
+};
+
+class SISTargetMutationRequest
+{
+public:
+    std::int32_t kind = 0;
+    std::string name;
+};
+
 }  // namespace rpc
 }  // namespace tcnart_msgs
 
@@ -137,11 +231,27 @@ struct StubCodec
     }
 
     template <class T>
-    static Result<void> decode(BytesView, T&)
+    static Result<void> decode(BytesView b, T& out)
     {
         if (decode_fails) { return Result<void>::fail(Error::DecodeFailed); }
+        if constexpr (has_stub_decode<T>::value)
+        {
+            if (!out.stub_decode(b)) { return Result<void>::fail(Error::DecodeFailed); }
+        }
+        else
+        {
+            (void)b;
+            (void)out;
+        }
         return Result<void>::ok();
     }
+
+private:
+    template <class T, class = void>
+    struct has_stub_decode : std::false_type {};
+    template <class T>
+    struct has_stub_decode<T, std::void_t<decltype(std::declval<T&>().stub_decode(std::declval<BytesView>()))>>
+        : std::true_type {};
 };
 
 inline bool StubCodec::encode_fails = false;

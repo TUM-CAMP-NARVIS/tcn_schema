@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: internal
 //
-// Key construction. Nine keys, and the client id that is allowed to build them.
+// Key construction. Thirteen keys, and the client id that is allowed to build them.
 #include <string>
 #include <type_traits>
 
@@ -32,7 +32,7 @@ TCN_SQE_TEST(client_id_is_validated_by_the_fragment_rule_not_the_identifier_rule
     CHECK_ERR(ClientId::parse("tcn/l\xC3\xB8" "c"), Error::NonAscii);
 }
 
-TCN_SQE_TEST(client_id_builds_all_nine_keys)
+TCN_SQE_TEST(client_id_builds_all_thirteen_keys)
 {
     const Result<ClientId> id = ClientId::parse("tcn/loc/pcpd/cam1");
     CHECK_OK(id);
@@ -50,6 +50,9 @@ TCN_SQE_TEST(client_id_builds_all_nine_keys)
     CHECK_STR_EQ(c.stream_start_key(),  "tcn/loc/pcpd/cam1/sis/stream/start");
     CHECK_STR_EQ(c.stream_stop_key(),   "tcn/loc/pcpd/cam1/sis/stream/stop");
     CHECK_STR_EQ(c.graph_query_key(),   "tcn/loc/pcpd/cam1/sis/graph/query");
+    CHECK_STR_EQ(c.pattern_query_key(), "tcn/loc/pcpd/cam1/sis/pattern/query");
+    CHECK_STR_EQ(c.target_query_key(),  "tcn/loc/pcpd/cam1/sis/target/query");
+    CHECK_STR_EQ(c.target_update_key(), "tcn/loc/pcpd/cam1/sis/target/update");
 }
 
 TCN_SQE_TEST(the_key_suffixes_are_the_engine_s)
@@ -64,6 +67,9 @@ TCN_SQE_TEST(the_key_suffixes_are_the_engine_s)
     CHECK_STR_EQ(std::string(keys::kStreamStart), "/sis/stream/start");
     CHECK_STR_EQ(std::string(keys::kStreamStop),  "/sis/stream/stop");
     CHECK_STR_EQ(std::string(keys::kGraphQuery),  "/sis/graph/query");
+    CHECK_STR_EQ(std::string(keys::kPatternQuery), "/sis/pattern/query");
+    CHECK_STR_EQ(std::string(keys::kTargetQuery), "/sis/target/query");
+    CHECK_STR_EQ(std::string(keys::kTargetUpdate), "/sis/target/update");
 }
 
 // Every suffix begins with '/' and the id never ends with one, so no key can
@@ -80,7 +86,8 @@ TCN_SQE_TEST(no_constructed_key_can_contain_an_empty_chunk)
         id.value().node_update_key(), id.value().node_remove_key(),
         id.value().edge_update_key(), id.value().edge_remove_key(),
         id.value().stream_start_key(), id.value().stream_stop_key(),
-        id.value().graph_query_key(),
+        id.value().graph_query_key(), id.value().pattern_query_key(),
+        id.value().target_query_key(), id.value().target_update_key(),
     };
     for (const std::string& k : all)
     {

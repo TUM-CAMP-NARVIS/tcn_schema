@@ -60,7 +60,9 @@ set(TCN_SQE_MUST_NOT_COMPILE
         lease_public_stop
         lease_start_without_status
         session_wrong_request_mode
-        session_unregistered_request)
+        session_unregistered_request
+        session_publish_join
+        session_wrong_reply_type)
 
 foreach(case ${TCN_SQE_MUST_NOT_COMPILE})
   add_library(sqe_must_not_compile_${case} OBJECT EXCLUDE_FROM_ALL negative/${case}.cpp)
