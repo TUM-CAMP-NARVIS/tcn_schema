@@ -109,6 +109,14 @@ enum class Error : int {
     /// opened. A client with no token is not visible to the engine (B41), and
     /// this library will not pretend otherwise by continuing without one.
     PresenceUnavailable,
+
+    // --- wire encoding, again (B76) ---------------------------------------
+    /// The annotation carried a `tcn_schema=` parameter whose major.minor is
+    /// not this library's `kWireSchemaVersion` -- or is not a version at all.
+    /// The type name matched; the layout behind it may not. A peer built
+    /// against another minor can append a field this reader does not know, or
+    /// lack one it expects, and CDR decodes either without complaint.
+    SchemaVersionMismatch,
 };
 
 /// A static, ASCII, locale-independent description. Never null, never
@@ -145,6 +153,7 @@ inline const char* describe(Error e) noexcept
         case Error::InvalidTriggerRate:      return "trigger rate is not a positive finite value";
         case Error::EmptyTriggerTopic:       return "on-stream trigger names no topic";
         case Error::PresenceUnavailable:     return "the liveliness token could not be declared";
+        case Error::SchemaVersionMismatch:   return "encoding declares another tcn_schema version";
     }
     return "unknown error";
 }

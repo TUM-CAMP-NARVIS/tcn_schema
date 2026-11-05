@@ -148,6 +148,16 @@ inline constexpr std::string_view marker_prefix(MarkerKind kind)
 /// agree on. They are derived here and in the engine from the same two inputs;
 /// composing it any other way is how one marker becomes two nodes, one of them
 /// fed by nothing.
+///
+/// **Unless the target registry names it** (B78). A descriptor whose
+/// `StreamDescriptorMessage.marker_system` is non-empty (`"art"`,
+/// `"aruco:DICT_4X4_50"`) asks the engine to look each marker id up as the
+/// alias `(marker_system, "{id}")`; a registered one is materialized as the
+/// target's own Global node, name and uuid, and this name is not used at all.
+/// So this function gives the fallback name, not the only one: it is the
+/// node exactly when `marker_system` is empty or the id is not registered. A
+/// consumer that needs the materialized name asks the registry
+/// (`/sis/target/query`, RESOLVE) rather than guessing.
 inline std::string marker_node_name(MarkerKind kind, std::uint32_t marker_id)
 {
     const std::string_view prefix = marker_prefix(kind);

@@ -1,20 +1,32 @@
 # Migration to tcn_schema 0.9.0
 
-The parameter protocol, finished: a descriptor a generic UI can build an editor
-from, unsigned values, per-key set results, change notifications, and three
-process-level verbs — `graph`, `info` (with a liveliness token) and `streams`.
+Two parts, with different compatibility stories:
 
-**All additive.** New enums and structs, and two cases appended to
-`ParameterValueType` / `ParameterValue`. No existing struct gained, lost or
-moved a member, and every 0.8.0 ordinal is unchanged. The CDR bytes of every
-0.8.0 message are identical under 0.9.0 (checked: `GenericParameterReply` with
-one value of each 0.8.0 case, and `ServiceInfoReply`, encoded with both
-packages).
+- **Part 1 — the parameter protocol, finished** (A1–A7 below): a descriptor a
+  generic UI can build an editor from, unsigned values, per-key set results,
+  change notifications, and three process-level verbs — `graph`, `info` (with a
+  liveliness token) and `streams`. **Additive.**
+- **Part 2 — the SQE protocol, engine B73–B78** ([below](#part-2--sqe-protocol-engine-b73b78)):
+  every SIS mutation becomes a query, the engine announces its presence, the
+  encoding annotation carries the schema version, clock domains are enforced,
+  and a global target registry. **Not additive.** It changes request modes on
+  four keys, appends trailing fields to two existing structs, and changes the
+  encoding string every SQE peer writes and reads. An SQE client or tracker
+  that is not adapted stops working against a 0.9.0 engine, and the failure
+  is silent on the client side. Read Part 2 if you talk to the SQE at all.
 
-**Nothing has to be rebuilt to keep working.** The 0.8.0 verbs reply with the
-same types as before. A component is affected only when it starts using a 0.9.0
-verb, and the one rule to keep while doing so is in A2: never put a
-`PVT_UINT32` / `PVT_UINT64` value into a reply a 0.8.0 peer may read.
+**Part 1 is additive.** New enums and structs, and two cases appended to
+`ParameterValueType` / `ParameterValue`. No parameter-protocol struct gained,
+lost or moved a member, and every 0.8.0 ordinal is unchanged. The CDR bytes of
+every 0.8.0 parameter message are identical under 0.9.0 (checked:
+`GenericParameterReply` with one value of each 0.8.0 case, and
+`ServiceInfoReply`, encoded with both packages).
+
+**For Part 1, nothing has to be rebuilt to keep working.** The 0.8.0 verbs
+reply with the same types as before. A component is affected only when it
+starts using a 0.9.0 verb, and the one rule to keep while doing so is in A2:
+never put a `PVT_UINT32` / `PVT_UINT64` value into a reply a 0.8.0 peer may
+read. (This does **not** hold for SQE peers — see Part 2.)
 
 **When you do rebuild against 0.9.0:** code that `switch`es over
 `ParameterValueType` (e.g. on `ParameterValue::_d()`) without a `default` gets
@@ -29,6 +41,8 @@ Origin: holoscan-tcn-applications `docs/migration/28-tcn-schema-proposal.md`
 (A1–A5, corrections B1–B8) and its design 29, the parameter-control UI (A6, A7).
 
 ---
+
+# Part 1 — parameter protocol (A1–A7)
 
 ## Why
 
@@ -636,3 +650,366 @@ itself.
 
 **holohub-tcn `tcn_ui`**
 - [ ] nothing for 0.9.0 (local example backend, no wire client); follow the client rules when it is wired to Zenoh
+
+---
+
+# Part 2 — SQE protocol (engine B73–B78)
+
+The spatial query engine's side of 0.9.0. The B-numbers are entries in the
+engine's `docs/reference/compatibility-breaks.md` (`spatial_query_engine_rs`);
+they are unrelated to the "corrections B1–B8" of Part 1. The C++ contract
+library (`src/sqe/include/tcn/sqe/`, components `sqe_contract` /
+`sqe_session`) implements the client half of all of it, and a C++ client that
+uses it gets most of the changes below by rebuilding.
+
+## Summary
+
+| Engine | What changed on the wire | CDR / IDL impact | Un-adopted peer |
+|---|---|---|---|
+| B73 | `/sis/join`, `/sis/component/update`, `/sis/component/remove`, `/sis/relation/remove` are **queryables** answered with `SISMutationReply` (like `/sis/relation/update` since B47). A `put` on them is ignored. `/sis/leave` stays a put. | no struct change | its join is never applied; every stream it starts is NO_PATH / UNKNOWN_FRAME |
+| B74 | the engine holds a liveliness token `sqe/{engine_id}/alive/{engine_epoch}`; `SISMutationReply` names both | `SISMutationReply` **+2 trailing fields** (`engine_id`, `engine_epoch`) | cannot detect an engine restart (and so never re-starts its streams); otherwise unaffected |
+| B75 | a Zenoh delete on `{client}/cfg/desc/{device}` withdraws the device's stream: relations through it go `PENDING` until it is republished | no wire change | none — a peer that never deletes sees no change |
+| B76 | the encoding annotation is `application/cdr;<TYPE>;tcn_schema=0.9` (also `application/json;…`) | no struct change | a pre-0.9 reader using the old `check_declared_type` refuses **every** engine reply |
+| B77 | `StreamDescriptorMessage.clock_domain` is now read; `SIS_RS_CLOCK_DOMAIN_MISMATCH` is emitted | no struct change (comments only) | none, unless it declares two different domains on one path |
+| B78 | global target registry: `{client}/sis/target/query`, `{client}/sis/target/update`, `sqe/{engine_id}/targets/changed`; `StreamDescriptorMessage.marker_system` | **10 new types** (4 enums, 6 structs); `StreamDescriptorMessage` **+1 trailing field** (`marker_system`) | a descriptor publisher not rebuilt sends a payload one field short; the engine accepts it with a warning |
+| (B63) | `/sis/pattern/query`: not new in the engine, but the contract library only now names its key and types | none | — |
+
+Every appended field is appended **last**, so every existing ordinal and every
+existing field offset holds. CDR is positional, though, and that cuts both
+ways:
+
+- a reader built against 0.8.x decoding a 0.9.0 payload stops before the new
+  trailing bytes and is unaffected *by the layout* — but see B76 for why a
+  reader built on the contract library refuses the payload before decoding it;
+- a reader built against 0.9.0 decoding a 0.8.x payload runs out of bytes.
+  That is what happens to a 0.9.0 client reading a `SISMutationReply` from a
+  pre-B74 engine. The engine makes **one** exception: a
+  `StreamDescriptorMessage` exactly one empty string short is accepted as
+  `marker_system = ""` and logged, because descriptors come from every
+  tracker and refusing an un-rebuilt one would silently stop its adoption.
+
+The schema version in the annotation (B76) exists precisely because these two
+appends kept their type names: before it, nothing on the wire said which
+layout a payload had.
+
+## B73 — every SIS mutation is a query
+
+**Wire.** `/sis/join`, `/sis/component/update`, `/sis/component/remove` and
+`/sis/relation/remove` became Zenoh queryables, answered with
+`SISMutationReply` exactly as `/sis/relation/update` has been since B47.
+`/sis/target/update` (B78) is born as one. `SIS_MU_ACCEPTED` means **stored**:
+a `/sis/stream/start` sent after the reply sees the fragment. That is the race
+B73 closes — a client that put its join and immediately started a stream could
+have the start resolved against a graph that did not yet hold its fragment.
+
+A join is **all or nothing**: an origin that is not among the graph's nodes,
+or any node or edge the engine refuses, answers `SIS_MU_REJECTED` with every
+reason in `detail`, and nothing is stored. A second join from the same client
+replaces its fragment. `detail` is empty exactly when the status is ACCEPTED.
+
+`/sis/leave` stays a put and will never answer — withdrawing the liveliness
+token reaches the identical departure with no query behind it.
+
+**CDR.** No struct changed for B73 itself.
+
+**What a consumer must change.**
+- Issue the five mutations as `get`/query, with a timeout, and read the
+  `SISMutationReply`. Treat any status other than `SIS_MU_ACCEPTED` as a
+  refusal and surface `detail`.
+- Do not start a relation stream until the join's reply is ACCEPTED.
+- With the contract library: rebuild. `RequestKey` now registers these
+  requests as `RequestMode::Query` with reply type `SISMutationReply`, so
+  `publish_request(join)` **no longer compiles** — use
+  `query_request(join, reply)`. `query_request` also refuses at compile time a
+  reply type other than the registered one (it used to fail at run time as
+  `WrongDeclaredType`). The registration macro `TCN_SQE_REGISTER_REQUEST_KEY`
+  takes a fourth argument, the reply type (`void` for a publish).
+
+**How an un-adopted peer fails.** Its `put` on the join key is ignored. The
+engine logs, once per key, at `error`:
+
+> Ignored a put on '…/sis/join': '/sis/join' is a query since B73 (a `get`
+> answered with SISMutationReply). This peer was built against an older
+> protocol and must be rebuilt; nothing it sends here is applied
+
+and nothing at all on the client side. Its fragment never exists, so every
+`stream/start` it sends afterwards answers `SIS_RS_NO_PATH` or
+`SIS_RS_UNKNOWN_FRAME`, forever. A component update/remove or relation remove
+sent as a put is silently not applied in the same way.
+
+## B74 — engine presence
+
+**Wire.** The engine holds a Zenoh liveliness token on
+`sqe/{engine_id}/alive/{engine_epoch}` for as long as it runs. `engine_epoch`
+is its process start in Unix milliseconds, written in decimal. A daemon that
+finds another token under its own `engine_id` refuses to start, so two engines
+can no longer share an id.
+
+`SISMutationReply` carries both values, so a client learns which token to
+watch from its own join reply rather than from configuration:
+
+```idl
+struct SISMutationReply {
+    SISMutationStatus status;
+    string detail;          // empty exactly when ACCEPTED
+    string engine_id;       // new, 0.9.0
+    uint64 engine_epoch;    // new, 0.9.0
+};
+```
+
+A client declares a liveliness subscriber on `sqe/{engine_id}/alive/*`
+**with history** from its join reply on. The token disappearing means the
+engine is gone; a token with a different epoch means it restarted. Joined
+fragments survive a restart; **relation streams do not**, so a restart obliges
+the client to re-start every stream it holds.
+
+**CDR.** `SISMutationReply` gained two trailing fields. A 0.9.0 reader of a
+reply from a pre-B74 engine runs out of bytes (decode failure); a pre-0.9
+reader of a 0.9.0 reply ignores the extra bytes.
+
+**What a consumer must change.** Rebuild against 0.9.0 (the reply is longer).
+To use the presence: subscribe as above and compare epochs. The contract
+library supplies `engine_alive_key(engine_id, epoch)`,
+`engine_alive_pattern(engine_id)` and
+`parse_engine_alive_key(key[, engine_id]) -> std::optional<uint64_t>` in
+`tcn/sqe/topics.h`; it does not declare the subscriber (that is the
+transport's job, and the library opens no session).
+
+**How an un-adopted peer fails.** Quietly and late: it does not notice an
+engine restart, so its streams stop and it waits on them indefinitely. It
+learns nothing from `{handle}/status` either, because the engine that would
+have published there is gone.
+
+## B75 — deleting a descriptor withdraws the stream
+
+**Wire.** No struct change. A Zenoh **delete** on `{client}/cfg/desc/{device}`
+used to be skipped by the engine; it now un-adopts the device's stream. Every
+relation stream that read it — or whose target is that template device — goes
+`SIS_RS_PENDING` with `detail` naming the withdrawn descriptor and an empty
+`blocked_by`. Publishing the descriptor again resumes them under a new
+`route_epoch`. The client's fragment is untouched.
+
+**What a consumer must change.** A tracker that stops one device while staying
+joined deletes that device's descriptor key (holoscan's `SqeTrackerOp` already
+does). A relation consumer treats a `PENDING` with an empty `blocked_by` and a
+"withdrawn" detail as "the device went away", not as a calibration request.
+
+**How an un-adopted peer fails.** It does not: a peer that never deletes sees
+no change.
+
+## B76 — the schema version on the wire
+
+**Wire.** Every encoding annotation the engine writes is
+
+```
+application/cdr;<TYPE_NAME>;tcn_schema=0.9
+```
+
+(and `application/json;<TYPE_NAME>;tcn_schema=0.9`). After the type name come
+`;key=value` parameters. The rules, identical in the engine and in the C++
+contract library:
+
+- the type name is the segment between the first and second `;`, trimmed;
+- parameters are trimmed, key and value separately; an unknown parameter, or
+  one with no `=`, is ignored;
+- `tcn_schema=<major>.<minor>[.<patch>]`: major.minor must equal the reader's
+  (`0.9`), or the payload is refused. A patch level is ignored. A value that is
+  not a version (`abc`, `0.`, empty) is refused the same way — a peer that
+  wrote the parameter meant something, and the reader cannot vouch for the
+  layout;
+- an **absent** `tcn_schema` parameter is accepted, so pre-0.9 peers keep
+  working; the engine warns once per key, and the library exposes
+  `WireEncoding::has_schema_version` so a client can do the same.
+
+On a query the engine refuses a mismatched request with a typed reply; a
+mismatched put (a pose, a descriptor) is not applied.
+
+**CDR.** None. Only the annotation string changes.
+
+**What a consumer must change.**
+- Write `;tcn_schema=0.9` after the type name on everything sent to the SQE:
+  requests, poses (`Pose6DMessage`, `Pose6DMapMessage`,
+  `TargetTrackingMessage`), stream descriptors.
+- Parse annotations by the rules above. A reader that compares *everything*
+  after the first `;` with the type name — which is what the contract library
+  did before 0.9.0 — refuses every 0.9.0 payload.
+- With the contract library: rebuild. `cdr_encoding<T>()` /
+  `json_encoding<T>()` append the version; `check_declared_type<T>()` checks
+  it and fails with the new `Error::SchemaVersionMismatch`;
+  `WireEncoding::type_name` still means just the type, and gains
+  `schema_version` / `has_schema_version`. The version is
+  `tcn::sqe::kWireSchemaVersion` (`"0.9"`).
+
+**How an un-adopted peer fails.**
+- A pre-0.9 C++ reader on the old `check_declared_type` refuses **every**
+  engine reply as `WrongDeclaredType`, because the schema half now reads
+  `tcnart_msgs::rpc::SISMutationReply;tcn_schema=0.9`. Every query it makes
+  "fails" after the engine has already acted on it.
+- A reader that accepts any `application/cdr…` (some consumers' hand-written
+  query wrappers) keeps decoding — and would also decode a payload of a
+  different minor, which is what this change exists to catch.
+- A pre-0.9 *writer* keeps working (absent is accepted), at the cost of one
+  engine warning per key.
+
+## B77 — clock domains are enforced
+
+**Wire.** `StreamDescriptorMessage.clock_domain` (present since engine B5) is
+now read. Two streams are comparable exactly when their `clock_domain` strings
+are equal; empty means the default synchronized domain. A relation whose live
+inputs are stamped in two different declared domains is not composed:
+`SIS_RS_CLOCK_DOMAIN_MISMATCH`, an enumerator that has existed since the
+status enum was written, is now emitted for it, as the refusal or pending
+reason. The engine's own stream announcement carries its inputs' domain, and
+its 60 s pipeline report includes each buffer's arrival-minus-stamp offset
+(`warn` past 20 ms).
+
+**CDR.** None — comments only in `StreamDescriptor.idl` and `SIS.idl`.
+
+**What a consumer must change.** Nothing, if every tracker leaves
+`clock_domain` empty or sets it truthfully. A tracker whose stamps are not on
+the synchronized clock should now say so; a client that `switch`es over
+`SISRelationStreamStatus` should handle `SIS_RS_CLOCK_DOMAIN_MISMATCH` as a
+real outcome rather than an unreachable one.
+
+**How an un-adopted peer fails.** It does not. A client that never expected
+the status sees a stream refused (or left pending) where it used to get a
+value composed from incomparable stamps — that is the fix, not a regression.
+
+## B78 — the global target registry
+
+**Wire.** One catalogue per engine of the physical things several tracking
+systems see ("this is the probe; ART calls it body 3"). A registered target's
+`name` is used verbatim as a Global node name.
+
+| Key | Mode | Request → reply |
+|---|---|---|
+| `{client}/sis/target/query` | query | `SISTargetQueryRequest` → `SISTargetQueryReply` (RESOLVE / LIST / GET / ALL) |
+| `{client}/sis/target/update` | query | `SISTargetMutationRequest` → `SISMutationReply` (REGISTER / UPDATE / REMOVE); the engine may accept it from listed client ids only |
+| `sqe/{engine_id}/targets/changed` | publication by the engine | `SISTargetChange`, after every accepted mutation |
+
+A template marker tracker sets the new
+`StreamDescriptorMessage.marker_system` (`"art"`, `"aruco:DICT_4X4_50"`, …):
+a marker id `N` registered under `(marker_system, "N")` is materialized as the
+registered target's Global node, name and uuid, instead of
+`{prefix}__sis_marker__{N}`. Empty keeps today's behaviour.
+
+**CDR.** New types, all in `tcnart_msgs::rpc`: enums `SISTargetKind`,
+`SISTargetQueryKind`, `SISTargetQueryStatus`, `SISTargetMutationKind`; structs
+`SISTargetAlias`, `SISGlobalTarget`, `SISTargetQueryRequest`,
+`SISTargetQueryReply`, `SISTargetMutationRequest`, `SISTargetChange`.
+`StreamDescriptorMessage` gains `string marker_system`, appended last.
+
+**What a consumer must change.**
+- **Every CDR publisher of `StreamDescriptorMessage` should rebuild** against
+  0.9.0, even if it leaves `marker_system` empty. The engine tolerates the
+  short form (above), but any *other* 0.9.0 reader of descriptors — a UI, a
+  recorder — will not.
+- Using the registry is opt-in. A client that names its own Global nodes may
+  resolve `(system, key)` and declare the returned `name`; it should then
+  subscribe to `targets/changed` and re-resolve / re-join when a target it
+  uses changes.
+- With the contract library: `ClientId::target_query_key()`,
+  `target_update_key()`; `engine_targets_changed_topic(engine_id)` in
+  `topics.h`; all ten types registered in `WireType`, and both requests in
+  `RequestKey`.
+
+**How an un-adopted peer fails.** A descriptor publisher that was not rebuilt
+sends a payload one string short. The engine accepts it as `marker_system = ""`
+and logs `Descriptor on '…' predates tcn_schema 0.9.0 (no marker_system);
+accepted as an empty one` — so it keeps working, but cannot opt into
+registered names until rebuilt. Nothing else changes for a peer that ignores
+the registry.
+
+**Running it.** `sqe-daemon --targets <file.json>` loads the registry and
+rewrites the file after every change (missing file = empty registry);
+`--target-admins a,b` restricts changes. Format and semantics: the engine's
+`docs/reference/protocol.md` §9.
+
+## The pattern query key (engine B63, contract library only)
+
+The engine has answered `{client}/sis/pattern/query` since B63; the contract
+library could not reach it. 0.9.0 adds `keys::kPatternQuery`,
+`ClientId::pattern_query_key()`, `WireType` registrations for
+`SISPatternQueryRequest`, `SISPatternQueryReply` and `SRPatternExpansion`, and
+a `RequestKey` entry (query → `SISPatternQueryReply`). No wire change.
+
+## Contract library version constants
+
+- `kContractBLevel` (floor, `sqe_contract`) stays **35** and `kSessionBLevel`
+  (floor, `sqe_session`) stays **41**. They are floors — "every client
+  obligation at or below this entry is implemented here" — and B74's
+  obligation to watch the engine's token is one the library describes but
+  cannot discharge (it opens no session), so neither floor can honestly move
+  to 78.
+- New: `kProtocolBLevel = 78` / `TCN_SQE_PROTOCOL_B_LEVEL` — the highest
+  engine entry whose wire shape (keys, modes, reply types, type names,
+  annotation) the headers describe. `static_assert(tcn::sqe::kProtocolBLevel
+  >= 73)` is how a consumer pins "mutations are queries" at compile time.
+- New: `kWireSchemaVersion = "0.9"`.
+- New: `Error::SchemaVersionMismatch` (appended; no ordinal moved).
+
+## To adopt — SQE consumers
+
+### tcnart: `tcnart/sis`
+
+- Join, component update/remove, relation remove as queries; wait for
+  ACCEPTED before any `stream/start`; surface `detail` on a refusal (B73).
+- Watch `sqe/{engine_id}/alive/*` with history from the join reply; re-start
+  streams on an epoch change (B74).
+- Rebuild on the contract library (versioned annotation, B76); if any path
+  checks encodings by hand, apply the B76 parsing rules.
+- Handle `SIS_RS_CLOCK_DOMAIN_MISMATCH` (B77).
+- If it publishes descriptors: rebuild (B78 `marker_system`).
+
+### holoscan-tcn-applications: `SqeTrackerOp`, `sqe_client_cpp`
+
+- `sqe_client_cpp`: the same as tcnart — mutations as queries (B73), engine
+  presence (B74), B76 annotation on write and read. Its query wrapper's
+  "any `application/cdr;…` is acceptable" check must become the B76 check.
+- `SqeTrackerOp`: publishes poses and descriptors — versioned annotation
+  (B76), rebuild for the descriptor's `marker_system` (B78); set
+  `clock_domain` if its stamps are not on the synchronized clock (B77). Its
+  descriptor delete on device stop now takes effect (B75). Replace
+  `target_prefix + name` with `resolve(system, name)` against the registry
+  and declare the returned name (B78); watch `targets/changed`.
+
+### artekmed
+
+- Every SIS write it issues (`SISJoinRequest` and the component/relation
+  updates) as a query with a reply (B73) — today's puts are ignored by a 0.9.0
+  engine.
+- Engine presence (B74), B76 annotation on write and read, rebuild of any
+  descriptor publisher (B78).
+
+### tcn_tracking
+
+Publishes `Pose6DMessage` / `Pose6DMapMessage` / `TargetTrackingMessage` and
+`StreamDescriptorMessage`; issues no SIS requests.
+
+- Write the versioned annotation (`;tcn_schema=0.9`) on every publication.
+  Without it the engine still accepts the data but warns once per key (B76).
+- Rebuild against 0.9.0 so its descriptors carry the appended
+  `marker_system` (empty is fine). The engine accepts the old form with a
+  warning, so this can follow the engine rollout rather than gate it.
+- A device it stops at run time: delete its descriptor key (B75).
+
+## Checklist — SQE
+
+**Every SQE client** (tcnart `tcnart/sis`, holoscan `sqe_client_cpp`, artekmed)
+- [ ] join / component update / component remove / relation remove / relation update are queries; `SISMutationReply` read
+- [ ] no `stream/start` before the join is ACCEPTED
+- [ ] liveliness subscriber on `sqe/{engine_id}/alive/*` with history; streams re-started on epoch change
+- [ ] `;tcn_schema=0.9` written; incoming annotations parsed by the B76 rules
+- [ ] `SIS_RS_CLOCK_DOMAIN_MISMATCH` handled
+- [ ] a `PENDING` naming a withdrawn descriptor handled as "device gone" (B75)
+
+**Every pose / descriptor publisher** (tcn_tracking, holoscan `SqeTrackerOp`, any tracker in tcnart / artekmed)
+- [ ] rebuilt against 0.9.0 (descriptor `marker_system`)
+- [ ] `;tcn_schema=0.9` written
+- [ ] `clock_domain` set truthfully (or left empty for the synchronized clock)
+- [ ] a device stopped at run time deletes its descriptor key (B75)
+
+**Contract library users**
+- [ ] `publish_request` on a mutation replaced by `query_request(..., SISMutationReply&)`
+- [ ] any own `TCN_SQE_REGISTER_REQUEST_KEY` given its fourth (reply-type) argument
+- [ ] `Error::SchemaVersionMismatch` handled where `Error` is switched over

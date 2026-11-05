@@ -134,12 +134,14 @@ public:
     // -- 1 -------------------------------------------------------------------
     /// Put `payload` on `key`, annotated `encoding`.
     ///
-    /// Six of the eight SIS requests are one-way puts the daemon never answers
-    /// (B27), so a publish that could not also return a reply is exactly the
-    /// right shape for them: it makes "published, not accepted" the only thing
-    /// this call can mean.
+    /// Since B73 exactly one SIS request is a one-way put the daemon never
+    /// answers -- the leave (B27); every mutation became a query -- so a
+    /// publish that could not also return a reply is exactly the right shape
+    /// for it: it makes "published, not accepted" the only thing this call can
+    /// mean. It also carries whatever a consumer publishes outside the SIS
+    /// request table: poses, descriptors.
     ///
-    /// `encoding` is `application/cdr;<type>` and is derived from the message
+    /// `encoding` is `application/cdr;<type>;tcn_schema=<M.m>` and is derived from the message
     /// type by `cdr_encoding<T>()`, never spelled by a caller. An adapter must
     /// set it verbatim on the wire: the engine reads it, and an adapter that
     /// drops it into a Zenoh *attachment* instead — as one consumer does today

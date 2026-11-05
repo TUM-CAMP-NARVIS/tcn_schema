@@ -1,6 +1,8 @@
 // SPDX-License-Identifier: internal
 //
 // The engine-issued topic shapes.
+#include <cstdint>
+#include <optional>
 #include <string>
 
 #include "check.h"
@@ -36,6 +38,66 @@ TCN_SQE_TEST(the_namespace_constants_are_the_engine_s)
     CHECK_STR_EQ(std::string(kEngineNamespace), "sqe");
     CHECK_STR_EQ(std::string(kRelationFamily), "rel");
     CHECK_STR_EQ(std::string(kStatusSuffix), "/status");
+}
+
+// ---------------------------------------------------------------------------
+// Engine presence (B74) and the registry's change topic (B78)
+// ---------------------------------------------------------------------------
+
+// The epoch is the engine's process start in Unix milliseconds, in decimal.
+// Thirteen digits today; the key must carry all of them, and nothing else.
+TCN_SQE_TEST(the_engine_alive_key_and_pattern_have_the_engines_shapes)
+{
+    CHECK_STR_EQ(engine_alive_key("lab1", 1762300800123ull), "sqe/lab1/alive/1762300800123");
+    CHECK_STR_EQ(engine_alive_key("lab1", 0), "sqe/lab1/alive/0");
+    CHECK_STR_EQ(engine_alive_key("e", 18446744073709551615ull), "sqe/e/alive/18446744073709551615");
+    CHECK_STR_EQ(engine_alive_pattern("lab1"), "sqe/lab1/alive/*");
+    CHECK_STR_EQ(std::string(kEngineAliveFamily), "alive");
+}
+
+// What a liveliness subscriber hands back is parsed into the epoch, and the
+// epoch is what tells "restarted" from "still the same engine". The parse is
+// the inverse of the composition.
+TCN_SQE_TEST(an_engine_alive_key_parses_back_to_its_epoch)
+{
+    const std::optional<std::uint64_t> e = parse_engine_alive_key("sqe/lab1/alive/1762300800123");
+    CHECK(e.has_value());
+    if (e) { CHECK(*e == 1762300800123ull); }
+
+    CHECK(parse_engine_alive_key(engine_alive_key("lab1", 42), "lab1") == std::optional<std::uint64_t>(42));
+    CHECK(parse_engine_alive_key(engine_alive_key("e", 18446744073709551615ull))
+          == std::optional<std::uint64_t>(18446744073709551615ull));
+}
+
+// A subscriber on `sqe/{id}/alive/*` should see nothing else, but a parse that
+// trusted that would turn a stray key into a phantom restart. Every malformed
+// shape is nothing, not zero.
+TCN_SQE_TEST(a_key_that_is_not_an_engine_alive_key_parses_to_nothing)
+{
+    CHECK(!parse_engine_alive_key(""));
+    CHECK(!parse_engine_alive_key("sqe/lab1/alive"));
+    CHECK(!parse_engine_alive_key("sqe/lab1/alive/"));
+    CHECK(!parse_engine_alive_key("sqe/lab1/alive/*"));
+    CHECK(!parse_engine_alive_key("sqe/lab1/alive/12x"));
+    CHECK(!parse_engine_alive_key("sqe/lab1/alive/+12"));
+    CHECK(!parse_engine_alive_key("sqe/lab1/alive/-12"));
+    CHECK(!parse_engine_alive_key("sqe/lab1/alive/ 12"));
+    CHECK(!parse_engine_alive_key("sqe/lab1/alive/12/extra"));
+    CHECK(!parse_engine_alive_key("sqe/lab1/rel/12"));
+    CHECK(!parse_engine_alive_key("sqe//alive/12"));
+    CHECK(!parse_engine_alive_key("sqex/lab1/alive/12"));
+    CHECK(!parse_engine_alive_key("tcn/lab1/alive/12"));
+    CHECK(!parse_engine_alive_key("sqe/lab1/alivex/12"));
+    // One past uint64 max does not wrap to a small epoch.
+    CHECK(!parse_engine_alive_key("sqe/e/alive/18446744073709551616"));
+    // Another engine's token, when the caller asked about one engine.
+    CHECK(!parse_engine_alive_key("sqe/lab2/alive/12", "lab1"));
+    CHECK(parse_engine_alive_key("sqe/lab2/alive/12").has_value());
+}
+
+TCN_SQE_TEST(the_targets_changed_topic_has_the_engines_shape)
+{
+    CHECK_STR_EQ(engine_targets_changed_topic("lab1"), "sqe/lab1/targets/changed");
 }
 
 // ---------------------------------------------------------------------------

@@ -49,8 +49,21 @@ module tcnart_msgs {
       // A consumer interpolating across sensors subtracts this before use.
       int64 sensor_latency_ns;
 
-      // empty means the default synchronized domain
+      // Which clock the header stamps were taken on. Empty means the default
+      // synchronized domain. Read by the SQE since 0.9.0 (engine B77): a
+      // relation whose live inputs come from two different domains is
+      // refused with SIS_RS_CLOCK_DOMAIN_MISMATCH rather than composed from
+      // stamps that cannot be compared. Any non-empty string names a domain;
+      // two streams are comparable exactly when the strings are equal.
       string clock_domain;
+
+      // For a template marker tracker (a node-level SQE claim): the target
+      // registry alias system its marker ids live in, e.g. "art",
+      // "aruco:DICT_4X4_50" (0.9.0, engine B78). A marker id N registered
+      // under (marker_system, "N") becomes the registered target's Global
+      // node; otherwise, and when empty, the node stays
+      // `{prefix}__sis_marker__{N}` as before.
+      string marker_system;
 
     };
   };

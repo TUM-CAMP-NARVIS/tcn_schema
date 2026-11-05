@@ -16,8 +16,13 @@ module tcnart_msgs {
 
     // --- graph lifecycle ---------------------------------------------------
 
-    // Announce a client and its whole graph at once. Refused if the client
-    // already exists, or if the graph's origin is not among its nodes.
+    // Announce a client and its whole graph at once. A QUERY since 0.9.0
+    // (engine B73), answered with SISMutationReply once the fragment is
+    // stored: a `stream/start` sent after the reply sees it. All or nothing --
+    // a graph whose origin is not among its nodes, or with any node or edge
+    // the engine refuses, is answered SIS_MU_REJECTED with every reason in
+    // `detail`, and nothing is stored. A second join from the same client
+    // replaces its fragment.
     struct SISJoinRequest {
         tcnart_msgs::msg::SRGraph graph;
     };
@@ -28,11 +33,12 @@ module tcnart_msgs {
         string client;
     };
 
+    // A query since 0.9.0 (B73), answered with SISMutationReply.
     struct SISNodeUpdateRequest {
         tcnart_msgs::msg::SRNode node;
     };
 
-    // Refused for the graph's origin node.
+    // Refused for the graph's origin node. A query since 0.9.0 (B73).
     struct SISNodeRemoveRequest {
         string name;
     };
@@ -42,6 +48,7 @@ module tcnart_msgs {
     };
 
     // Removes exactly the named edge, not every edge between its endpoints.
+    // A query since 0.9.0 (B73).
     struct SISEdgeRemoveRequest {
         string name;
     };
@@ -69,12 +76,11 @@ module tcnart_msgs {
     // case: a rig that computed a transform and cannot tell whether the graph
     // now holds it has not finished its job.
     //
-    // This type is deliberately NOT relation-shaped. Only
-    // `/sis/relation/update` is a queryable today, because a calibration push
-    // is the mutation whose whole point is knowing the value landed. The other
-    // mutation keys are expected to follow -- each becoming a queryable in its
-    // turn -- and they must not each invent their own reply: one type now is
-    // cheaper than four reconciled later.
+    // This type is deliberately NOT relation-shaped. `/sis/relation/update`
+    // was the first queryable (B47); since 0.9.0 (B73) every mutation key is
+    // one -- join, component update/remove, relation update/remove -- and all
+    // of them answer with this one type. A `put` on any of them is ignored
+    // and logged by the engine as a peer built against an older protocol.
     // `/sis/leave` is the deliberate exception and will never answer -- a
     // withdrawn liveliness token reaches the identical departure with no query
     // behind it to answer, and one route answering while the other cannot is
@@ -116,7 +122,19 @@ module tcnart_msgs {
     // only the leading enum degrades the way the existing one already does.
     struct SISMutationReply {
         SISMutationStatus status;
-        string detail;                  // human-readable; may be empty
+        string detail;                  // empty exactly when ACCEPTED
+
+        // Which engine instance answered (0.9.0, engine B74). `engine_id` is
+        // the second chunk of every key that engine issues; `engine_epoch` is
+        // its process start in Unix milliseconds. The engine holds a Zenoh
+        // liveliness token on `sqe/{engine_id}/alive/{engine_epoch}` for as
+        // long as it runs, so a client watches `sqe/{engine_id}/alive/*` with
+        // history from its join reply on: the token disappearing means the
+        // engine is gone; a token with a different epoch means it restarted,
+        // and every relation stream must be re-started (joined fragments
+        // survive a restart; streams do not).
+        string engine_id;
+        uint64 engine_epoch;
     };
 
     // --- relation streams -------------------------------------------------
@@ -991,6 +1009,115 @@ module tcnart_msgs {
         sequence<SISPatternInstance> instances;
 
         string detail;
+    };
+
+    // --- global target registry (0.9.0, engine B78) ------------------------
+    //
+    // One catalogue per engine of the physical things several tracking
+    // systems see: "this is the probe; ART calls it body 3, NDI calls it the
+    // tool on port 2". A registered target's `name` is used verbatim as the
+    // name of a Global node, so two fragments that resolved the same target
+    // meet at one node without coordinating their configs.
+    //
+    // Two consumers:
+    //   * a template marker camera sets StreamDescriptorMessage.marker_system;
+    //     a marker id registered under (marker_system, str(id)) is
+    //     materialized as the registered target's node (name and uuid)
+    //     instead of `{prefix}__sis_marker__{id}`;
+    //   * a client that names its own nodes (concrete edge claims) resolves
+    //     (system, key) here and declares the returned `name` as its Global
+    //     node. The engine never rewrites node names inside a fragment.
+    //
+    // Not in the registry: poses, calibrations, static edges. Those are
+    // fragments or pinned nodes owned by whoever measured them.
+
+    enum SISTargetKind {
+        SIS_TK_UNSPECIFIED,
+        SIS_TK_RIGID_BODY,
+        SIS_TK_FIDUCIAL,
+        SIS_TK_BOARD,
+        SIS_TK_DEVICE
+    };
+
+    // How one tracking system identifies a target. `(system, key)` is unique
+    // across the whole registry: one alias, one target.
+    struct SISTargetAlias {
+        string system;   // namespace: "art", "ndi", "irtrack",
+                         // "aruco:DICT_4X4_50", "apriltag:36h11", ...;
+                         // installations of one kind by suffix ("art:lab1")
+        string key;      // the system's configured identity, as a string:
+                         // an ART body id ("3"), an ArUco id ("7"), a name
+        string config;   // opaque to the engine: what a tracker needs to
+                         // configure itself for this target (a ROM file name,
+                         // a target definition file). May be empty.
+    };
+
+    struct SISGlobalTarget {
+        string name;                       // the Global node name; immutable
+        tcnart_msgs::msg::UUID uuid;       // stable identity, goes into
+                                           // SRNode.uuid. All-zero in a
+                                           // REGISTER asks the engine to
+                                           // assign one.
+        SISTargetKind kind;                // informational
+        sequence<SISTargetAlias> aliases;
+        string description;
+        string custom_data;                // same convention as SRNode
+    };
+
+    enum SISTargetQueryKind {
+        SIS_TQ_RESOLVE,   // (system, key) -> the one target holding that alias
+        SIS_TQ_LIST,      // system -> every target with an alias in it
+        SIS_TQ_GET,       // name -> that target
+        SIS_TQ_ALL        // every target (the export)
+    };
+
+    // `{client_id}/sis/target/query` -- a query.
+    struct SISTargetQueryRequest {
+        SISTargetQueryKind kind;
+        string system;    // RESOLVE, LIST
+        string key;       // RESOLVE
+        string name;      // GET
+    };
+
+    enum SISTargetQueryStatus {
+        SIS_TQS_OK,         // `targets` holds the answer; empty is an answer
+                            // for LIST and ALL
+        SIS_TQS_NOT_FOUND,  // RESOLVE or GET named nothing registered
+        SIS_TQS_REJECTED    // malformed (a required field empty)
+    };
+
+    struct SISTargetQueryReply {
+        SISTargetQueryStatus status;
+        string detail;                       // empty exactly when OK
+        sequence<SISGlobalTarget> targets;
+    };
+
+    enum SISTargetMutationKind {
+        SIS_TM_REGISTER,  // a new name; refused if the name or any alias is
+                          // taken (the detail names the holder)
+        SIS_TM_UPDATE,    // replace kind, aliases, description and
+                          // custom_data of an existing name; the uuid is kept
+                          // (a non-zero uuid that differs is refused)
+        SIS_TM_REMOVE     // by `target.name`; markers materialized under it
+                          // fall back to their template names, fragments keep
+                          // their (now unregistered) nodes
+    };
+
+    // `{client_id}/sis/target/update` -- a query answered with
+    // SISMutationReply. The engine may be configured to accept mutations from
+    // listed client ids only.
+    struct SISTargetMutationRequest {
+        SISTargetMutationKind kind;
+        SISGlobalTarget target;
+    };
+
+    // Published by the engine on `sqe/{engine_id}/targets/changed` after every
+    // accepted mutation. A client that resolved names re-resolves and re-joins
+    // if a target it uses changed.
+    struct SISTargetChange {
+        boolean removed;            // true: `target` (name only is reliable)
+                                    // is no longer registered
+        SISGlobalTarget target;     // the entry after the change
     };
 
   };
