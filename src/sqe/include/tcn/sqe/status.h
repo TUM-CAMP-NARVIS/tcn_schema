@@ -33,8 +33,10 @@ enum class Status : std::int32_t
     NoPath = 2,
     /// A named client or node does not exist. Usually a typo.
     UnknownFrame = 3,
-    /// The path crosses unsynchronized clocks. Reserved; the engine does not
-    /// emit it today.
+    /// The relation's live inputs are stamped in two different declared clock
+    /// domains (`StreamDescriptorMessage.clock_domain`), so their stamps are not
+    /// comparable. Emitted since engine B77, as a start refusal or as the reason
+    /// a running stream is pending. Retrying does not help.
     ClockDomainMismatch = 4,
     /// Malformed request.
     Rejected = 5,
