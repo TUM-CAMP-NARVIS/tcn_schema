@@ -763,6 +763,13 @@ engine is gone; a token with a different epoch means it restarted. Joined
 fragments survive a restart; **relation streams do not**, so a restart obliges
 the client to re-start every stream it holds.
 
+The engine declares the token only once every queryable is serving. A client
+that knows the engine id (configured, or from an earlier reply) can therefore
+wait for the token before its first join, and never sends a query that nothing
+answers yet — such a query closes with no reply.
+A client that does not know the engine id re-sends an unanswered query until
+its own timeout instead.
+
 **CDR.** `SISMutationReply` gained two trailing fields. A 0.9.0 reader of a
 reply from a pre-B74 engine runs out of bytes (decode failure); a pre-0.9
 reader of a 0.9.0 reply ignores the extra bytes.
