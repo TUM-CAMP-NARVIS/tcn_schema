@@ -128,9 +128,10 @@ module tcnart_msgs {
         // the second chunk of every key that engine issues; `engine_epoch` is
         // its process start in Unix milliseconds. The engine holds a Zenoh
         // liveliness token on `sqe/{engine_id}/alive/{engine_epoch}` for as
-        // long as it runs, so a client watches `sqe/{engine_id}/alive/*` with
-        // history from its join reply on: the token disappearing means the
-        // engine is gone; a token with a different epoch means it restarted,
+        // long as it runs, so a client watches every epoch under
+        // `sqe/{engine_id}/alive/` with history from its join reply on: the
+        // token disappearing means the engine is gone; a token with a
+        // different epoch means it restarted,
         // and every relation stream must be re-started (joined fragments
         // survive a restart; streams do not).
         string engine_id;
