@@ -1020,3 +1020,19 @@ Publishes `Pose6DMessage` / `Pose6DMapMessage` / `TargetTrackingMessage` and
 - [ ] `publish_request` on a mutation replaced by `query_request(..., SISMutationReply&)`
 - [ ] any own `TCN_SQE_REGISTER_REQUEST_KEY` given its fourth (reply-type) argument
 - [ ] `Error::SchemaVersionMismatch` handled where `Error` is switched over
+
+## C1 — JPEG-LS images in stream descriptors
+
+**Wire.** `VideoImageCompression` gains `CompressionType_JpegLs` (5), appended after `CompressionType_Jpeg`. A
+`StreamDescriptorMessage` with it describes a video stream whose frames are each one JPEG-LS image (ISO 14495-1,
+lossless or near-lossless; CharLS writes and reads them), e.g. a 16-bit infrared stream (`image_format`
+`PixelFormat_L16`). Every frame stands alone (a keyframe). Holoscan's capture server sends IR this way when a
+senders file asks for IR on Zenoh.
+
+**CDR.** An enum value appended: no layout change.
+
+**What a consumer must change.** Nothing, unless it wants these streams: a receiver that switches over the
+compression should skip a value it does not know.
+
+**How an un-adopted peer fails.** A receiver built against the earlier IDL decodes the value as an out-of-range
+enum; ArteKMed's receivers ignore streams whose compression they do not handle.

@@ -38,7 +38,10 @@ module tcnart_msgs {
         CompressionType_Png,
         CompressionType_H26x,
         CompressionType_Zdepth,
-        CompressionType_Jpeg
+        CompressionType_Jpeg,
+        // JPEG-LS (ISO 14495-1, CharLS): lossless or near-lossless 16-bit images (IR, depth); appended in 0.9.0,
+        // receivers that do not know it skip the stream.
+        CompressionType_JpegLs
     };
 
     enum VideoH26xProfile {
