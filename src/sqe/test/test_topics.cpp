@@ -95,6 +95,13 @@ TCN_SQE_TEST(a_key_that_is_not_an_engine_alive_key_parses_to_nothing)
     CHECK(parse_engine_alive_key("sqe/lab2/alive/12").has_value());
 }
 
+TCN_SQE_TEST(the_operator_keys_have_the_engines_shape)
+{
+    CHECK_STR_EQ(engine_operator_key("camp", kOperatorInfo), "sqe/camp/op/info");
+    CHECK_STR_EQ(engine_operator_key("camp", kOperatorGraphQuery), "sqe/camp/op/graph/query");
+    CHECK_STR_EQ(engine_operator_key("camp", kOperatorChanges), "sqe/camp/op/changes");
+}
+
 TCN_SQE_TEST(the_targets_changed_topic_has_the_engines_shape)
 {
     CHECK_STR_EQ(engine_targets_changed_topic("lab1"), "sqe/lab1/targets/changed");

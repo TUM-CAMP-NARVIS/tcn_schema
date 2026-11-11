@@ -85,6 +85,18 @@ TCN_SQE_TEST(cdr_encoding_names_every_registered_type_exactly)
                  "application/cdr;tcnart_msgs::rpc::SISTargetMutationRequest;tcn_schema=0.9");
     CHECK_STR_EQ(cdr_encoding<rpc::SISTargetChange>(),
                  "application/cdr;tcnart_msgs::rpc::SISTargetChange;tcn_schema=0.9");
+    // 0.9.2: the operator surface (B82). Same major.minor, so the same
+    // annotation: the release adds types and changes none.
+    CHECK_STR_EQ(cdr_encoding<rpc::SISEngineInfoReply>(),
+                 "application/cdr;tcnart_msgs::rpc::SISEngineInfoReply;tcn_schema=0.9");
+    CHECK_STR_EQ(cdr_encoding<rpc::SISFragmentListReply>(),
+                 "application/cdr;tcnart_msgs::rpc::SISFragmentListReply;tcn_schema=0.9");
+    CHECK_STR_EQ(cdr_encoding<rpc::SISOperatorGraphQueryRequest>(),
+                 "application/cdr;tcnart_msgs::rpc::SISOperatorGraphQueryRequest;tcn_schema=0.9");
+    CHECK_STR_EQ(cdr_encoding<rpc::SISGraphChangeNotification>(),
+                 "application/cdr;tcnart_msgs::rpc::SISGraphChangeNotification;tcn_schema=0.9");
+    CHECK_STR_EQ(cdr_encoding<rpc::SISOperatorMutationRequest>(),
+                 "application/cdr;tcnart_msgs::rpc::SISOperatorMutationRequest;tcn_schema=0.9");
 }
 
 // The two replies are answers to different questions on different keys, and a
