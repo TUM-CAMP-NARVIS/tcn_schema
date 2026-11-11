@@ -14,6 +14,11 @@ Two parts, with different compatibility stories:
   encoding string every SQE peer writes and reads. An SQE client or tracker
   that is not adapted stops working against a 0.9.0 engine, and the failure
   is silent on the client side. Read Part 2 if you talk to the SQE at all.
+- **Part 2a — SQE additions after the release, engine B79–B80**
+  ([below](#part-2a--sqe-protocol-additions-after-090-engine-b79b80-2026-11-11)):
+  `CLOCK_DOMAIN_MISMATCH` as a status notification, and the route on every
+  pose sample as a zenoh attachment. **No IDL change**; behaviour a 0.9.0 SQE
+  peer sees.
 
 **Part 1 is additive.** New enums and structs, and two cases appended to
 `ParameterValueType` / `ParameterValue`. No parameter-protocol struct gained,
@@ -1020,6 +1025,77 @@ Publishes `Pose6DMessage` / `Pose6DMapMessage` / `TargetTrackingMessage` and
 - [ ] `publish_request` on a mutation replaced by `query_request(..., SISMutationReply&)`
 - [ ] any own `TCN_SQE_REGISTER_REQUEST_KEY` given its fourth (reply-type) argument
 - [ ] `Error::SchemaVersionMismatch` handled where `Error` is switched over
+
+# Part 2a — SQE protocol additions after 0.9.0 (engine B79–B80, 2026-11-11)
+
+Two changes to the SQE wire behaviour that came after this release, from the
+tcnart v3 integration (Phase 3b). **Neither changes an IDL type**, so nothing
+in this package changes and nothing needs rebuilding against it; they are
+recorded here because they change what a 0.9.0 SQE peer sees on the wire.
+Engine entries: `docs/reference/compatibility-breaks.md` B79 and B80
+(`spatial_query_engine_rs`). The C++ client implements both from
+`sqe_client_cpp` 0.3.0 (its `MIGRATION-0.3.0.md`).
+
+| Engine | What changed on the wire | CDR / IDL impact | Un-adopted peer |
+|---|---|---|---|
+| B79 | `SIS_RS_CLOCK_DOMAIN_MISMATCH` is also a **status notification** on `{handle}/status`: a running stream whose route comes to span two clock domains is parked with that status (no longer `PENDING` with the conflict only in `detail`). A parked stream republishes when the kind of park reason changes, not only `blocked_by` | none | a consumer that treats any status other than `ACTIVE` / `PENDING` as terminal drops a stream that later resumes by itself |
+| B80 | every pose sample on a relation stream's `{handle}` carries a 13-byte **zenoh attachment**: version, engine epoch, route epoch | none (an attachment, not a payload field) | none: the payload is unchanged and an attachment is ignored unless read |
+
+## B79 — `CLOCK_DOMAIN_MISMATCH` while running
+
+**Wire.** As a *reply* to `stream/start`, `SIS_RS_CLOCK_DOMAIN_MISMATCH` still
+means refused, no handle (B77). As a *status notification* it now means
+**parked**: the stream stays registered, its handle stays valid, `blocked_by`
+is empty, `detail` says which domains disagree, `route_epoch` is unchanged. It
+resumes with `SIS_RS_ACTIVE` and a new `route_epoch` once a recompile finds
+the domains in agreement. A second requester attaching to a stream parked this
+way is answered `SIS_RS_PENDING` with the handle.
+
+**What a consumer must change.** On `{handle}/status`, treat
+`CLOCK_DOMAIN_MISMATCH` like `PENDING`: keep the subscription and the handle,
+show `detail`, wait. Only `INACTIVE` ends a stream there. Code that parsed a
+`PENDING`'s `detail` to detect a clock conflict can read the status instead.
+
+**`status.h`.** The 0.9.0 tag's comment on `SIS_RS_CLOCK_DOMAIN_MISMATCH`
+still says the engine does not emit it. That was corrected on `main` (30eadce)
+after the tag; with B79 the status is emitted both as a reply (B77) and as a
+notification.
+
+**Known limit.** Re-announcing an *adopted* descriptor with a different
+`clock_domain` does not update the engine's record of it; the change takes
+effect after a withdraw (delete the descriptor key, B75) and a re-announce.
+
+## B80 — the route on every pose sample
+
+**Wire.** Every `TargetTrackingMessage` the engine publishes on a relation
+stream's `{handle}` carries a zenoh attachment, "SQE pose attachment v1",
+exactly 13 bytes:
+
+| bytes | content |
+|---|---|
+| `0` | version, `1` |
+| `1..9` | engine epoch, `u64` little-endian: the `{epoch}` of `sqe/{engine_id}/alive/{epoch}` (B74), the process start in Unix ms |
+| `9..13` | route epoch, `u32` little-endian: the `route_epoch` the stream's status notifications carry for the route that computed this sample |
+
+It exists because zenoh does not order samples across keys: on a re-route the
+first pose of the new route could arrive before the status notification
+announcing it, so a consumer resetting on `route_epoch` reset one pose late.
+
+**What a consumer must change.** Nothing. To reset exactly, compare each
+pose's (engine epoch, route epoch) with the previous pose's. **No attachment**
+means an older engine: keep using the status topic's `route_epoch`. An
+attachment with another version byte or another length is to be **ignored**,
+not treated as an error, and the pose kept.
+
+**Where it is implemented.** Engine: `sqe_core::pose_attachment`. C++:
+`sqe_client/pose_attachment.h` (zenoh-free) and
+`SqeClient::acquire_with_attachment` in `sqe_client_cpp` 0.3.0.
+
+## Checklist — SQE additions
+
+**Every SQE client**
+- [ ] `CLOCK_DOMAIN_MISMATCH` on `{handle}/status` handled as parked, not ended (B79)
+- [ ] optionally: the pose attachment read for step-exact resets; absent or unknown versions tolerated (B80)
 
 ## C1 — JPEG-LS images in stream descriptors
 
