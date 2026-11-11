@@ -1121,6 +1121,172 @@ module tcnart_msgs {
         SISGlobalTarget target;     // the entry after the change
     };
 
+    // ======================================================================
+    // B82 (0.9.2): the operator surface -- sqe/{engine_id}/op/*
+    // ======================================================================
+    //
+    // For an operator tool (the SRG frontend in tcn_web_controller): what is
+    // stored, what is connected, what changed, and edits to fragments the
+    // tool does not own. In the engine's OWN namespace rather than under a
+    // client's key, for three reasons: the questions are the operator's, not
+    // a client's (SISGraphQueryRequest refuses cross-fragment reads on a
+    // client key, by design); the key names the engine, so exactly one engine
+    // answers; and an edit never has to impersonate the owning client.
+    //
+    // Answered only for fragments inside the engine's client scope
+    // (`--client-scope`). Requests are CDR or JSON; replies mirror the
+    // request's encoding.
+    //
+    //   sqe/{engine_id}/op/info         SISEngineInfoRequest -> SISEngineInfoReply
+    //   sqe/{engine_id}/op/fragments    SISFragmentListRequest -> SISFragmentListReply
+    //   sqe/{engine_id}/op/graph/query  SISOperatorGraphQueryRequest -> SISGraphQueryReply
+    //   sqe/{engine_id}/op/update       SISOperatorMutationRequest -> SISMutationReply
+    //   sqe/{engine_id}/op/changes      SISGraphChangeNotification (published)
+    //
+    // Discover engines with a liveliness get on sqe/*/alive/*, then pick the
+    // one whose SISEngineInfoReply.client_scope is your location.
+
+    // Who is asking. An operator key carries no client id, so this is what
+    // the operator rate limit is keyed on and what the engine's log names.
+    // Free-form, e.g. "tcn-web/lab-pc3/alice".
+    struct SISOperatorRef {
+        string requester;
+    };
+
+    // --- sqe/{engine_id}/op/info ------------------------------------------
+    struct SISEngineInfoRequest {
+        SISOperatorRef who;
+    };
+
+    enum SISStoreHealth {
+        SIS_SH_OK,              // a probe read came back in time
+        SIS_SH_DEGRADED,        // it came back slowly; store_detail says how
+        SIS_SH_UNAVAILABLE      // it failed or timed out; reads and writes will too
+    };
+
+    // The bounds one class of reader is held to.
+    struct SISReadLimits {
+        uint32 max_items;          // nodes plus relations per graph-read reply
+        uint32 max_bytes;          // bytes per reply
+        uint32 reads_per_second;   // per requester
+    };
+
+    // `status` is SIS_GQ_OK, SIS_GQ_REJECTED (undecodable) or
+    // SIS_GQ_UNAVAILABLE (the operator rate limit); every other field is then
+    // zero or empty.
+    struct SISEngineInfoReply {
+        SISGraphQueryStatus status;
+        string detail;
+        string engine_id;
+        uint64 engine_epoch;       // ms since the Unix epoch; the alive key's {epoch}
+        string engine_version;
+        uint32 protocol_break;     // highest compatibility break (B<n>) implemented
+        string schema_version;     // tcn_schema release, e.g. "0.9.2"
+        string client_scope;       // the prefix served; "" = unscoped
+        SISStoreHealth store;
+        string store_detail;
+        uint32 fragments_joined;   // clients holding a liveliness token now
+        uint32 fragments_stored;   // fragments stored in scope, connected or not
+        uint32 relation_streams;   // running
+        SISReadLimits client_limits;     // {client_id}/sis/graph/query
+        SISReadLimits operator_limits;   // sqe/{engine_id}/op/graph/query
+    };
+
+    // --- sqe/{engine_id}/op/fragments -------------------------------------
+    struct SISFragmentListRequest {
+        SISOperatorRef who;
+        string prefix;             // keep ids under this prefix, by whole chunks;
+                                   //   "" = the whole scope; outside it = REJECTED
+        uint32 max_items;          // may only lower the engine's cap; 0 = default
+        string cursor;             // opaque; "" on the first page
+    };
+
+    struct SISFragmentSummary {
+        string client;             // the fragment id (the client id it joined under)
+        string origin;             // its origin node
+        boolean joined;            // the client holds its liveliness token now; a
+                                   //   stored fragment of a departed client is
+                                   //   still served until it is collected
+        int64 last_updated_ms;     // last accepted write or heartbeat
+        uint32 node_count;
+        uint32 relation_count;     // relations the fragment declares
+    };
+
+    // Ordered by `client`. SIS_GQ_TRUNCATED with a `next_cursor` when there
+    // are more pages; the statuses mean what they mean on a graph read.
+    struct SISFragmentListReply {
+        SISGraphQueryStatus status;
+        sequence<SISFragmentSummary> fragments;
+        string next_cursor;
+        string detail;
+    };
+
+    // --- sqe/{engine_id}/op/graph/query -----------------------------------
+    // The client graph read, unchanged, answered with SISGraphQueryReply.
+    // Charged to the operator's bucket (SISEngineInfoReply.operator_limits),
+    // and every anchor (`client`, `from.client`, `to.client`) must lie in the
+    // engine's scope; a global frame (empty client) always does. A snapshot
+    // is the fragment list followed by one SIS_GQ_FRAGMENT read per fragment.
+    struct SISOperatorGraphQueryRequest {
+        SISOperatorRef who;
+        SISGraphQueryRequest query;
+    };
+
+    // --- sqe/{engine_id}/op/changes (published) ---------------------------
+    enum SISGraphChangeKind {
+        SIS_GC_FRAGMENT_REPLACED,  // a join or re-join: re-read the fragment
+        SIS_GC_FRAGMENT_REMOVED,   // retracted after its client left
+        SIS_GC_CLIENT_JOINED,      // liveliness token appeared; graph unchanged
+        SIS_GC_CLIENT_LEFT,        // liveliness token gone
+        SIS_GC_NODE_CHANGED,       // `name` is the node
+        SIS_GC_NODE_REMOVED,
+        SIS_GC_RELATION_CHANGED,   // `name` is the relation; includes calibrations
+                                   //   and operator edits
+        SIS_GC_RELATION_REMOVED
+    };
+
+    // Names what changed; does not carry it -- re-read what it names.
+    // `sequence_number` is gapless within one `engine_epoch`: a gap, or a new epoch,
+    // means "re-read everything".
+    struct SISGraphChangeNotification {
+        uint64 sequence_number;
+        uint64 engine_epoch;
+        SISGraphChangeKind kind;
+        string client;             // the fragment affected
+        string name;               // node or relation name; "" for fragment kinds
+        string origin;             // the client id for a client's own write, the
+                                   //   operator's `requester` for op/update,
+                                   //   "engine" for the engine's own
+    };
+
+    // --- sqe/{engine_id}/op/update ----------------------------------------
+    enum SISOperatorMutationKind {
+        SIS_OM_NODE_UPDATE,
+        SIS_OM_NODE_REMOVE,
+        SIS_OM_EDGE_UPDATE,
+        SIS_OM_EDGE_REMOVE
+    };
+
+    // The per-client mutation payloads, reused unchanged.
+    union SISOperatorMutation switch (SISOperatorMutationKind) {
+        case SIS_OM_NODE_UPDATE: SISNodeUpdateRequest node_update;
+        case SIS_OM_NODE_REMOVE: SISNodeRemoveRequest node_remove;
+        case SIS_OM_EDGE_UPDATE: SISEdgeUpdateRequest edge_update;
+        case SIS_OM_EDGE_REMOVE: SISEdgeRemoveRequest edge_remove;
+    };
+
+    // Applies `mutation` to fragment `client` as though that client had sent
+    // it: the same validation, answered with SISMutationReply.
+    //
+    // An operator edit lasts until the owner next declares the same thing: a
+    // re-join replaces the whole fragment, and the owner's own update of the
+    // same node or relation replaces the edit. The change feed reports both.
+    struct SISOperatorMutationRequest {
+        SISOperatorRef who;
+        string client;             // the fragment to edit; must lie in scope
+        SISOperatorMutation mutation;
+    };
+
   };
 };
 

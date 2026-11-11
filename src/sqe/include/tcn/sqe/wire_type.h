@@ -68,6 +68,17 @@ class SISTargetQueryRequest;
 class SISTargetQueryReply;
 class SISTargetMutationRequest;
 class SISTargetChange;
+class SISOperatorRef;
+class SISEngineInfoRequest;
+class SISReadLimits;
+class SISEngineInfoReply;
+class SISFragmentListRequest;
+class SISFragmentSummary;
+class SISFragmentListReply;
+class SISOperatorGraphQueryRequest;
+class SISGraphChangeNotification;
+class SISOperatorMutation;
+class SISOperatorMutationRequest;
 
 enum SISRelationStreamStatus : std::uint32_t;
 enum SISReoptimisePolicy : std::uint32_t;
@@ -79,6 +90,9 @@ enum SISTargetKind : std::uint32_t;
 enum SISTargetQueryKind : std::uint32_t;
 enum SISTargetQueryStatus : std::uint32_t;
 enum SISTargetMutationKind : std::uint32_t;
+enum SISStoreHealth : std::uint32_t;
+enum SISGraphChangeKind : std::uint32_t;
+enum SISOperatorMutationKind : std::uint32_t;
 
 }  // namespace rpc
 }  // namespace tcnart_msgs
@@ -216,6 +230,23 @@ TCN_SQE_REGISTER_WIRE_TYPE(::tcnart_msgs::rpc::SISTargetQueryReply,      "tcnart
 TCN_SQE_REGISTER_WIRE_TYPE(::tcnart_msgs::rpc::SISTargetMutationKind,    "tcnart_msgs::rpc::SISTargetMutationKind");
 TCN_SQE_REGISTER_WIRE_TYPE(::tcnart_msgs::rpc::SISTargetMutationRequest, "tcnart_msgs::rpc::SISTargetMutationRequest");
 TCN_SQE_REGISTER_WIRE_TYPE(::tcnart_msgs::rpc::SISTargetChange,          "tcnart_msgs::rpc::SISTargetChange");
+// The operator surface (B82, 0.9.2): sqe/{engine_id}/op/* (topics.h). The
+// graph read there answers the ordinary SISGraphQueryReply, the update the
+// ordinary SISMutationReply.
+TCN_SQE_REGISTER_WIRE_TYPE(::tcnart_msgs::rpc::SISOperatorRef,               "tcnart_msgs::rpc::SISOperatorRef");
+TCN_SQE_REGISTER_WIRE_TYPE(::tcnart_msgs::rpc::SISEngineInfoRequest,         "tcnart_msgs::rpc::SISEngineInfoRequest");
+TCN_SQE_REGISTER_WIRE_TYPE(::tcnart_msgs::rpc::SISStoreHealth,               "tcnart_msgs::rpc::SISStoreHealth");
+TCN_SQE_REGISTER_WIRE_TYPE(::tcnart_msgs::rpc::SISReadLimits,                "tcnart_msgs::rpc::SISReadLimits");
+TCN_SQE_REGISTER_WIRE_TYPE(::tcnart_msgs::rpc::SISEngineInfoReply,           "tcnart_msgs::rpc::SISEngineInfoReply");
+TCN_SQE_REGISTER_WIRE_TYPE(::tcnart_msgs::rpc::SISFragmentListRequest,       "tcnart_msgs::rpc::SISFragmentListRequest");
+TCN_SQE_REGISTER_WIRE_TYPE(::tcnart_msgs::rpc::SISFragmentSummary,           "tcnart_msgs::rpc::SISFragmentSummary");
+TCN_SQE_REGISTER_WIRE_TYPE(::tcnart_msgs::rpc::SISFragmentListReply,         "tcnart_msgs::rpc::SISFragmentListReply");
+TCN_SQE_REGISTER_WIRE_TYPE(::tcnart_msgs::rpc::SISOperatorGraphQueryRequest, "tcnart_msgs::rpc::SISOperatorGraphQueryRequest");
+TCN_SQE_REGISTER_WIRE_TYPE(::tcnart_msgs::rpc::SISGraphChangeKind,           "tcnart_msgs::rpc::SISGraphChangeKind");
+TCN_SQE_REGISTER_WIRE_TYPE(::tcnart_msgs::rpc::SISGraphChangeNotification,   "tcnart_msgs::rpc::SISGraphChangeNotification");
+TCN_SQE_REGISTER_WIRE_TYPE(::tcnart_msgs::rpc::SISOperatorMutationKind,      "tcnart_msgs::rpc::SISOperatorMutationKind");
+TCN_SQE_REGISTER_WIRE_TYPE(::tcnart_msgs::rpc::SISOperatorMutation,          "tcnart_msgs::rpc::SISOperatorMutation");
+TCN_SQE_REGISTER_WIRE_TYPE(::tcnart_msgs::rpc::SISOperatorMutationRequest,   "tcnart_msgs::rpc::SISOperatorMutationRequest");
 
 namespace detail {
 

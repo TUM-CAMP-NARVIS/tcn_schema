@@ -188,6 +188,34 @@ inline std::string engine_targets_changed_topic(std::string_view engine_id)
     return detail::engine_key(engine_id, kTargetsChangedSuffix);
 }
 
+// ---------------------------------------------------------------------------
+// The operator surface (B82, 0.9.2)
+// ---------------------------------------------------------------------------
+
+/// The middle segment of every operator key.
+inline constexpr std::string_view kOperatorFamily = "op";
+/// `SISEngineInfoRequest` -> `SISEngineInfoReply`.
+inline constexpr std::string_view kOperatorInfo = "info";
+/// `SISFragmentListRequest` -> `SISFragmentListReply`.
+inline constexpr std::string_view kOperatorFragments = "fragments";
+/// `SISOperatorGraphQueryRequest` -> `SISGraphQueryReply`.
+inline constexpr std::string_view kOperatorGraphQuery = "graph/query";
+/// `SISOperatorMutationRequest` -> `SISMutationReply`.
+inline constexpr std::string_view kOperatorUpdate = "update";
+/// `SISGraphChangeNotification`, published.
+inline constexpr std::string_view kOperatorChanges = "changes";
+
+/// `sqe/{engine_id}/op/{suffix}`, for one of the `kOperator*` suffixes.
+inline std::string engine_operator_key(std::string_view engine_id, std::string_view suffix)
+{
+    std::string tail;
+    tail.reserve(kOperatorFamily.size() + 1 + suffix.size());
+    tail.append(kOperatorFamily.data(), kOperatorFamily.size());
+    tail += '/';
+    tail.append(suffix.data(), suffix.size());
+    return detail::engine_key(engine_id, tail);
+}
+
 // There is deliberately no `engine_descriptor_topic` here. The IDL says to
 // treat the descriptor key as opaque and read it from the reply, and the reply
 // carries only the data topic — so the library does not bless a derivation the
