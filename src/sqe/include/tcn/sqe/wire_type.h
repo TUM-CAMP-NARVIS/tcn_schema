@@ -79,6 +79,16 @@ class SISOperatorGraphQueryRequest;
 class SISGraphChangeNotification;
 class SISOperatorMutation;
 class SISOperatorMutationRequest;
+class SISPlanDynamicOp;
+class SISPlanCoordSwapOp;
+class SISPlanOp;
+class SISPlanInstance;
+class SISPlanInput;
+class SISPlanHop;
+class SISTranslationPlan;
+class SISExplainRequest;
+class SISPlanLive;
+class SISExplainReply;
 
 enum SISRelationStreamStatus : std::uint32_t;
 enum SISReoptimisePolicy : std::uint32_t;
@@ -93,6 +103,9 @@ enum SISTargetMutationKind : std::uint32_t;
 enum SISStoreHealth : std::uint32_t;
 enum SISGraphChangeKind : std::uint32_t;
 enum SISOperatorMutationKind : std::uint32_t;
+enum SISPlanOpKind : std::uint32_t;
+enum SISPlanInputSource : std::uint32_t;
+enum SISExplainKind : std::uint32_t;
 
 }  // namespace rpc
 }  // namespace tcnart_msgs
@@ -247,6 +260,20 @@ TCN_SQE_REGISTER_WIRE_TYPE(::tcnart_msgs::rpc::SISGraphChangeNotification,   "tc
 TCN_SQE_REGISTER_WIRE_TYPE(::tcnart_msgs::rpc::SISOperatorMutationKind,      "tcnart_msgs::rpc::SISOperatorMutationKind");
 TCN_SQE_REGISTER_WIRE_TYPE(::tcnart_msgs::rpc::SISOperatorMutation,          "tcnart_msgs::rpc::SISOperatorMutation");
 TCN_SQE_REGISTER_WIRE_TYPE(::tcnart_msgs::rpc::SISOperatorMutationRequest,   "tcnart_msgs::rpc::SISOperatorMutationRequest");
+// Explain (B89, 0.9.3): sqe/{engine_id}/op/explain (topics.h).
+TCN_SQE_REGISTER_WIRE_TYPE(::tcnart_msgs::rpc::SISPlanOpKind,                "tcnart_msgs::rpc::SISPlanOpKind");
+TCN_SQE_REGISTER_WIRE_TYPE(::tcnart_msgs::rpc::SISPlanDynamicOp,             "tcnart_msgs::rpc::SISPlanDynamicOp");
+TCN_SQE_REGISTER_WIRE_TYPE(::tcnart_msgs::rpc::SISPlanCoordSwapOp,           "tcnart_msgs::rpc::SISPlanCoordSwapOp");
+TCN_SQE_REGISTER_WIRE_TYPE(::tcnart_msgs::rpc::SISPlanOp,                    "tcnart_msgs::rpc::SISPlanOp");
+TCN_SQE_REGISTER_WIRE_TYPE(::tcnart_msgs::rpc::SISPlanInstance,              "tcnart_msgs::rpc::SISPlanInstance");
+TCN_SQE_REGISTER_WIRE_TYPE(::tcnart_msgs::rpc::SISPlanInputSource,           "tcnart_msgs::rpc::SISPlanInputSource");
+TCN_SQE_REGISTER_WIRE_TYPE(::tcnart_msgs::rpc::SISPlanInput,                 "tcnart_msgs::rpc::SISPlanInput");
+TCN_SQE_REGISTER_WIRE_TYPE(::tcnart_msgs::rpc::SISPlanHop,                   "tcnart_msgs::rpc::SISPlanHop");
+TCN_SQE_REGISTER_WIRE_TYPE(::tcnart_msgs::rpc::SISTranslationPlan,           "tcnart_msgs::rpc::SISTranslationPlan");
+TCN_SQE_REGISTER_WIRE_TYPE(::tcnart_msgs::rpc::SISExplainKind,               "tcnart_msgs::rpc::SISExplainKind");
+TCN_SQE_REGISTER_WIRE_TYPE(::tcnart_msgs::rpc::SISExplainRequest,            "tcnart_msgs::rpc::SISExplainRequest");
+TCN_SQE_REGISTER_WIRE_TYPE(::tcnart_msgs::rpc::SISPlanLive,                  "tcnart_msgs::rpc::SISPlanLive");
+TCN_SQE_REGISTER_WIRE_TYPE(::tcnart_msgs::rpc::SISExplainReply,              "tcnart_msgs::rpc::SISExplainReply");
 
 namespace detail {
 

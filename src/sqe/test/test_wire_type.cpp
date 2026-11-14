@@ -97,6 +97,13 @@ TCN_SQE_TEST(cdr_encoding_names_every_registered_type_exactly)
                  "application/cdr;tcnart_msgs::rpc::SISGraphChangeNotification;tcn_schema=0.9");
     CHECK_STR_EQ(cdr_encoding<rpc::SISOperatorMutationRequest>(),
                  "application/cdr;tcnart_msgs::rpc::SISOperatorMutationRequest;tcn_schema=0.9");
+    // 0.9.3: explain (B89). Additive again, so the annotation is unchanged.
+    CHECK_STR_EQ(cdr_encoding<rpc::SISExplainRequest>(),
+                 "application/cdr;tcnart_msgs::rpc::SISExplainRequest;tcn_schema=0.9");
+    CHECK_STR_EQ(cdr_encoding<rpc::SISExplainReply>(),
+                 "application/cdr;tcnart_msgs::rpc::SISExplainReply;tcn_schema=0.9");
+    CHECK_STR_EQ(cdr_encoding<rpc::SISTranslationPlan>(),
+                 "application/cdr;tcnart_msgs::rpc::SISTranslationPlan;tcn_schema=0.9");
 }
 
 // The two replies are answers to different questions on different keys, and a
