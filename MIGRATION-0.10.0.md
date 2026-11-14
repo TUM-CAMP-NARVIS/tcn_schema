@@ -5,8 +5,9 @@
 The encoding annotation is now `;tcn_schema=0.10`. B76 compares major.minor across the whole release, so a 0.10
 engine refuses **every** 0.9-annotated message, and a 0.9 peer refuses every 0.10 reply. That includes sensor pose
 streams, descriptors, joins and mutations from peers that never start a stream. The refusal is loud on both sides:
-the engine logs "declares another tcn_schema version" once per key, and a client's `check_declared_type` fails with
-`SchemaVersionMismatch`. Nothing decodes silently wrong.
+the engine answers a query `REJECTED` with "payload declares tcn_schema 0.9 but this engine reads 0.10.x; …" and logs
+a pose stream once per topic as "Rejecting payloads on '<topic>': …", and a client's `check_declared_type` fails with
+`SchemaVersionMismatch` ("encoding declares another tcn_schema version"). Nothing decodes silently wrong.
 
 What changed is one feature, the evaluation mode of a relation stream (engine B90, the local-translation design's
 phase 3), plus an engine epoch where route epochs travel.
