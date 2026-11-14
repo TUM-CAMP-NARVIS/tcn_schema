@@ -186,7 +186,7 @@ TCN_SQE_TEST(a_published_request_names_its_own_key_and_its_own_type)
 
     CHECK_STR_EQ(t.published[0].key, "tcn/loc/pcpd/hl2-01/sis/leave");
     CHECK_STR_EQ(t.published[0].encoding,
-                 "application/cdr;tcnart_msgs::rpc::SISLeaveRequest;tcn_schema=0.9");
+                 "application/cdr;tcnart_msgs::rpc::SISLeaveRequest;tcn_schema=0.10");
     CHECK_INT_EQ(t.published[0].payload.size(), 4);
     CHECK_INT_EQ(t.queried.size(), 0);
 }
@@ -239,7 +239,7 @@ QueryReply reply_bytes(const char* encoding)
 
 QueryReply mutation_reply(std::uint8_t status, std::uint64_t epoch, const std::string& engine_id,
                           const char* encoding =
-                              "application/cdr;tcnart_msgs::rpc::SISMutationReply;tcn_schema=0.9")
+                              "application/cdr;tcnart_msgs::rpc::SISMutationReply;tcn_schema=0.10")
 {
     QueryReply r;
     r.encoding = encoding;
@@ -277,7 +277,7 @@ TCN_SQE_TEST(a_join_goes_out_as_a_query_and_returns_the_decoded_reply)
     if (t.queried.empty()) { return; }
     CHECK_STR_EQ(t.queried[0].key, "tcn/loc/pcpd/hl2-01/sis/join");
     CHECK_STR_EQ(t.queried[0].encoding,
-                 "application/cdr;tcnart_msgs::rpc::SISJoinRequest;tcn_schema=0.9");
+                 "application/cdr;tcnart_msgs::rpc::SISJoinRequest;tcn_schema=0.10");
     CHECK_INT_EQ(t.queried[0].timeout_ms, kDefaultQueryTimeoutMs);
 
     CHECK_INT_EQ(reply.status(), 0);
@@ -335,7 +335,7 @@ TCN_SQE_TEST(every_mutation_request_is_a_query_to_its_own_key)
     CHECK_STR_EQ(t.queried[4].key, "tcn/loc/pcpd/hl2-01/sis/target/update");
     CHECK_STR_EQ(t.queried[5].key, "tcn/loc/pcpd/hl2-01/sis/join");
     CHECK_STR_EQ(t.queried[4].encoding,
-                 "application/cdr;tcnart_msgs::rpc::SISTargetMutationRequest;tcn_schema=0.9");
+                 "application/cdr;tcnart_msgs::rpc::SISTargetMutationRequest;tcn_schema=0.10");
 }
 
 // A mutation reply from an engine built against another tcn_schema minor is
@@ -373,9 +373,9 @@ TCN_SQE_TEST(the_pattern_and_target_reads_go_to_their_own_keys)
     if (!s) { return; }
 
     t.scripted_replies.push_back(
-        reply_bytes("application/cdr;tcnart_msgs::rpc::SISPatternQueryReply;tcn_schema=0.9"));
+        reply_bytes("application/cdr;tcnart_msgs::rpc::SISPatternQueryReply;tcn_schema=0.10"));
     t.scripted_replies.push_back(
-        reply_bytes("application/cdr;tcnart_msgs::rpc::SISTargetQueryReply;tcn_schema=0.9"));
+        reply_bytes("application/cdr;tcnart_msgs::rpc::SISTargetQueryReply;tcn_schema=0.10"));
 
     rpc::SISPatternQueryRequest pattern;
     rpc::SISPatternQueryReply pattern_reply;
@@ -389,15 +389,15 @@ TCN_SQE_TEST(the_pattern_and_target_reads_go_to_their_own_keys)
     if (t.queried.size() != 2) { return; }
     CHECK_STR_EQ(t.queried[0].key, "tcn/loc/pcpd/hl2-01/sis/pattern/query");
     CHECK_STR_EQ(t.queried[0].encoding,
-                 "application/cdr;tcnart_msgs::rpc::SISPatternQueryRequest;tcn_schema=0.9");
+                 "application/cdr;tcnart_msgs::rpc::SISPatternQueryRequest;tcn_schema=0.10");
     CHECK_STR_EQ(t.queried[1].key, "tcn/loc/pcpd/hl2-01/sis/target/query");
     CHECK_STR_EQ(t.queried[1].encoding,
-                 "application/cdr;tcnart_msgs::rpc::SISTargetQueryRequest;tcn_schema=0.9");
+                 "application/cdr;tcnart_msgs::rpc::SISTargetQueryRequest;tcn_schema=0.10");
 
     // A graph reply is not a pattern reply, though both open with
     // SISGraphQueryStatus and either decodes from the other's bytes.
     t.scripted_replies.push_back(
-        reply_bytes("application/cdr;tcnart_msgs::rpc::SISGraphQueryReply;tcn_schema=0.9"));
+        reply_bytes("application/cdr;tcnart_msgs::rpc::SISGraphQueryReply;tcn_schema=0.10"));
     CHECK_ERR(s.value().query_request(pattern, pattern_reply), Error::WrongDeclaredType);
 }
 
@@ -418,7 +418,7 @@ TCN_SQE_TEST(a_query_goes_to_the_stream_key_with_a_timeout_above_the_engines_res
     if (t.queried.empty()) { return; }
     CHECK_STR_EQ(t.queried[0].key, "tcn/loc/pcpd/hl2-01/sis/stream/start");
     CHECK_STR_EQ(t.queried[0].encoding,
-                 "application/cdr;tcnart_msgs::rpc::SISRelationStreamStartRequest;tcn_schema=0.9");
+                 "application/cdr;tcnart_msgs::rpc::SISRelationStreamStartRequest;tcn_schema=0.10");
 
     // The engine's resolve bound is 30 s. A 5 s timeout -- one consumer's
     // wrapper default -- gives up on a request the engine will still answer, by
@@ -450,7 +450,7 @@ TCN_SQE_TEST(the_graph_read_goes_to_its_own_key_and_names_its_own_type)
     if (t.queried.empty()) { return; }
     CHECK_STR_EQ(t.queried[0].key, "tcn/loc/pcpd/hl2-01/sis/graph/query");
     CHECK_STR_EQ(t.queried[0].encoding,
-                 "application/cdr;tcnart_msgs::rpc::SISGraphQueryRequest;tcn_schema=0.9");
+                 "application/cdr;tcnart_msgs::rpc::SISGraphQueryRequest;tcn_schema=0.10");
 
     // A read is answered, so it must not have gone out as a publish -- the
     // failure that would leave a caller waiting on a key nothing replies to.

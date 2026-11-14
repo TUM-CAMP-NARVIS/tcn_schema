@@ -9,7 +9,7 @@ class TcnSchemaConan(ConanFile):
     python_requires_extend = "camp_common.CampCMakeBase"
 
     name = "tcn_schema"
-    version = "0.9.3"
+    version = "0.10.0"
 
     description = "HL2Comm via Zenoh with Ros2 Serialization Compatible Schemata"
     url = "https://github.com/TUM-CAMP-NARVIS/tcn_schema"

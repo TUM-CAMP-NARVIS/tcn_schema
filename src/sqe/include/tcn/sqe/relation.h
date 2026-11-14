@@ -223,6 +223,25 @@ private:
 /// not a number this library invented.
 inline constexpr double kDefaultFreshnessBias = 0.0;
 
+/// Where a relation stream is evaluated (tcn_schema 0.10.0, engine B90): the
+/// ordinals of `SISEvaluationMode`.
+///
+/// - `Engine`: the engine composes the relation and publishes it (what every
+///   stream did before 0.10.0).
+/// - `Local`: the engine routes and publishes the plan; the client composes the
+///   relation itself from the plan's inputs (sqe-local). The engine runs no
+///   pipeline, subscribes no input and publishes no derived edge for it.
+/// - `Both`: the engine publishes the relation **and** the plan.
+///
+/// Part of a stream's terms, like the trigger and the bias: two acquires of one
+/// relation in different modes conflict.
+enum class EvaluationMode : std::uint32_t
+{
+    Engine = 0,
+    Local = 1,
+    Both = 2,
+};
+
 /// `SISRelationStreamStartRequest`, validated.
 ///
 /// There is one constructor and it validates. `freshness_bias` is refused
@@ -235,7 +254,8 @@ public:
     static Result<RelationStreamRequest> make(FrameRef observer,
                                               FrameRef target,
                                               StreamTrigger trigger,
-                                              double freshness_bias = kDefaultFreshnessBias)
+                                              double freshness_bias = kDefaultFreshnessBias,
+                                              EvaluationMode evaluation = EvaluationMode::Engine)
     {
         // Positive test again: NaN fails it.
         if (!(freshness_bias >= 0.0 && freshness_bias <= 1.0))
@@ -244,18 +264,19 @@ public:
         }
         return Result<RelationStreamRequest>::ok(
             RelationStreamRequest(std::move(observer), std::move(target),
-                                  std::move(trigger), freshness_bias));
+                                  std::move(trigger), freshness_bias, evaluation));
     }
 
     const FrameRef& observer() const noexcept { return observer_; }
     const FrameRef& target() const noexcept { return target_; }
     const StreamTrigger& trigger() const noexcept { return trigger_; }
     double freshness_bias() const noexcept { return bias_; }
+    EvaluationMode evaluation() const noexcept { return evaluation_; }
 
     /// The two frames, and nothing else.
     ///
     /// This is what "the same relation" means, and it deliberately excludes the
-    /// trigger and the bias. `RelationLeaseTable` keys its request memo on this
+    /// trigger, the bias and the evaluation mode. `RelationLeaseTable` keys its request memo on this
     /// so that a second acquire for the same relation on *different* terms is
     /// caught locally as `Error::ConflictingLease` rather than sent to the
     /// engine, which answers it `Rejected` with no way for the caller to tell
@@ -282,17 +303,18 @@ public:
     /// The terms two acquires of the same relation must agree on.
     bool same_terms_as(const RelationStreamRequest& o) const noexcept
     {
-        return trigger_ == o.trigger_ && bias_ == o.bias_;
+        return trigger_ == o.trigger_ && bias_ == o.bias_ && evaluation_ == o.evaluation_;
     }
 
 private:
-    RelationStreamRequest(FrameRef o, FrameRef t, StreamTrigger tr, double b) noexcept
-        : observer_(std::move(o)), target_(std::move(t)), trigger_(std::move(tr)), bias_(b) {}
+    RelationStreamRequest(FrameRef o, FrameRef t, StreamTrigger tr, double b, EvaluationMode e) noexcept
+        : observer_(std::move(o)), target_(std::move(t)), trigger_(std::move(tr)), bias_(b), evaluation_(e) {}
 
     FrameRef observer_;
     FrameRef target_;
     StreamTrigger trigger_;
     double bias_;
+    EvaluationMode evaluation_;
 };
 
 }  // namespace sqe

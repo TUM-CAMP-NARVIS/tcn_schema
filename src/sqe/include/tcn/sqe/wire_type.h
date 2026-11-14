@@ -103,6 +103,7 @@ enum SISTargetMutationKind : std::uint32_t;
 enum SISStoreHealth : std::uint32_t;
 enum SISGraphChangeKind : std::uint32_t;
 enum SISOperatorMutationKind : std::uint32_t;
+enum SISEvaluationMode : std::uint32_t;
 enum SISPlanOpKind : std::uint32_t;
 enum SISPlanInputSource : std::uint32_t;
 enum SISExplainKind : std::uint32_t;
@@ -128,7 +129,7 @@ inline constexpr char kEncodingSeparator = ';';
 /// (B76).
 ///
 /// Appended to every annotation this library produces as
-/// `;tcn_schema=0.9`, and compared against the one a peer declares. Only
+/// `;tcn_schema=0.10`, and compared against the one a peer declares. Only
 /// major.minor: a patch release of tcn_schema changes no wire layout by the
 /// repository's own versioning rule, so a patch difference is not a reason to
 /// refuse a payload, and a reader that compared it would refuse peers for a
@@ -140,7 +141,7 @@ inline constexpr char kEncodingSeparator = ';';
 /// CDR decodes a short payload into a long struct, or a long one into a short
 /// struct, without an error on either side -- the name matched and the
 /// meaning did not.
-inline constexpr std::string_view kWireSchemaVersion = "0.9";
+inline constexpr std::string_view kWireSchemaVersion = "0.10";
 
 /// The parameter that carries it. Matched exactly (after trimming): the
 /// engine does the same, and a case-folded key would be a second spelling the
@@ -261,6 +262,7 @@ TCN_SQE_REGISTER_WIRE_TYPE(::tcnart_msgs::rpc::SISOperatorMutationKind,      "tc
 TCN_SQE_REGISTER_WIRE_TYPE(::tcnart_msgs::rpc::SISOperatorMutation,          "tcnart_msgs::rpc::SISOperatorMutation");
 TCN_SQE_REGISTER_WIRE_TYPE(::tcnart_msgs::rpc::SISOperatorMutationRequest,   "tcnart_msgs::rpc::SISOperatorMutationRequest");
 // Explain (B89, 0.9.3): sqe/{engine_id}/op/explain (topics.h).
+TCN_SQE_REGISTER_WIRE_TYPE(::tcnart_msgs::rpc::SISEvaluationMode,           "tcnart_msgs::rpc::SISEvaluationMode");
 TCN_SQE_REGISTER_WIRE_TYPE(::tcnart_msgs::rpc::SISPlanOpKind,                "tcnart_msgs::rpc::SISPlanOpKind");
 TCN_SQE_REGISTER_WIRE_TYPE(::tcnart_msgs::rpc::SISPlanDynamicOp,             "tcnart_msgs::rpc::SISPlanDynamicOp");
 TCN_SQE_REGISTER_WIRE_TYPE(::tcnart_msgs::rpc::SISPlanCoordSwapOp,           "tcnart_msgs::rpc::SISPlanCoordSwapOp");
@@ -364,7 +366,7 @@ inline bool schema_version_matches(std::string_view v, std::string_view want) no
 
 }  // namespace detail
 
-/// `application/cdr;{TYPE_NAME};tcn_schema=0.9` for `T`.
+/// `application/cdr;{TYPE_NAME};tcn_schema=0.10` for `T`.
 ///
 /// The caller passes a type, not a string, so payload and annotation cannot
 /// disagree -- and since B76, neither can the release the payload's layout
@@ -375,7 +377,7 @@ inline std::string cdr_encoding()
     return detail::join_encoding(kCdrMediaType, WireType<T>::name);
 }
 
-/// `application/json;{TYPE_NAME};tcn_schema=0.9` for `T`.
+/// `application/json;{TYPE_NAME};tcn_schema=0.10` for `T`.
 template <class T>
 inline std::string json_encoding()
 {
