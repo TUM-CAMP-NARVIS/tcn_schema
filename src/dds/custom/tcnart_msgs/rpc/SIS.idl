@@ -1287,6 +1287,168 @@ module tcnart_msgs {
         SISOperatorMutation mutation;
     };
 
+    // =====================================================================
+    // B89 (0.9.3): explain -- how a relation is computed
+    // =====================================================================
+    //
+    //   sqe/{engine_id}/op/explain     SISExplainRequest -> SISExplainReply
+    //
+    // Open to every client, like the other op/* reads, and answered only
+    // inside the engine's client scope. Charged to the operator bucket of
+    // `who.requester` (SISEngineInfoReply.operator_limits).
+    //
+    // A plan is the route the engine compiled for a relation, written down:
+    // per materialized target an ordered chain of operations, the live inputs
+    // the chain samples, and per hop where its value comes from. Composing the
+    // ops left to right, with every DYNAMIC op replaced by its input's sample
+    // at one instant, is exactly what the engine publishes for that instant.
+
+    // Which operation a SISPlanOp is. Ordinals are the wire encoding; append only.
+    enum SISPlanOpKind {
+        SIS_PO_STATIC,          // a fixed transform, already aligned to the walk
+        SIS_PO_DYNAMIC,         // a live input, sampled at the instant
+        SIS_PO_COORD_SWAP,      // a change of axis convention
+        SIS_PO_PROJECT          // terminal: into an image plane
+    };
+
+    struct SISPlanDynamicOp {
+        uint32 input;           // index into SISTranslationPlan.inputs
+        boolean inverted;       // compose the sample's inverse (the hop was walked backwards)
+    };
+
+    struct SISPlanCoordSwapOp {
+        tcnart_msgs::msg::CoordinateSystem from_coord;
+        tcnart_msgs::msg::CoordinateSystem to_coord;
+    };
+
+    // STATIC carries SRG_TRANSFORM_POSE6D, _TRANSLATION3D or their _COV
+    // variants; the covariance is the edge's stated (systematic) one, already
+    // conjugated when the hop was walked backwards.
+    union SISPlanOp switch (SISPlanOpKind) {
+        case SIS_PO_STATIC:     tcnart_msgs::msg::SRTransform static_transform;
+        case SIS_PO_DYNAMIC:    SISPlanDynamicOp dynamic;
+        case SIS_PO_COORD_SWAP: SISPlanCoordSwapOp coord_swap;
+        case SIS_PO_PROJECT:    tcnart_msgs::msg::SRIntrinsics project;
+    };
+
+    // One target's chain. A plain relation has one, `materialized_id` 0; a
+    // template target ("every marker this camera sees") has one per
+    // materialized marker, keyed by the marker's id.
+    struct SISPlanInstance {
+        uint32 materialized_id;
+        sequence<SISPlanOp> ops;
+    };
+
+    // Where a live input's samples come from. Ordinals are the wire encoding.
+    enum SISPlanInputSource {
+        SIS_PI_TRACKER,         // a sensor's pose stream
+        SIS_PI_ENGINE_STREAM,   // another relation stream's output (a derived edge)
+        SIS_PI_UNBOUND          // no adopted topic feeds this input right now
+    };
+
+    // Everything the engine's ingest knows about one live input: what to
+    // subscribe to, how to read it, and how to correct its stamps.
+    struct SISPlanInput {
+        string topic;                   // the key the samples arrive on; "" when unbound
+        string schema;                  // the declared payload type, e.g.
+                                        //   "tcnart_msgs::msg::Pose6DMapMessage"
+        tcnart_msgs::msg::CoordinateSystem device_coord;   // the publisher's convention;
+                                        //   ingest swaps each pose into the engine's
+        boolean entry_bound;            // read only the entry `entry_id` ...
+        uint32 entry_id;                // ... of a multi-entry payload; else any entry
+                                        //   naming `target`
+        int64 sensor_latency_ns;        // subtracted from every stamp (override, else
+                                        //   declared, else 0)
+        uint32 frame_rate;              // declared Hz, 0 = none
+        string clock_domain;            // "" = the default synchronized domain
+        SISPlanInputSource source;
+        string buffer_client;           // the edge this input feeds: its declaring
+        string device;                  //   fragment, observing device and observed
+        string target;                  //   node (one buffer per edge, not per topic)
+    };
+
+    // One hop of a route, in path order from the observer to the target.
+    // The provenance a plan's ops were built from, and what explain is for.
+    struct SISPlanHop {
+        uint32 instance;                // index into SISTranslationPlan.instances
+        SISFrameRef from;               // the frame this hop starts at (client "" = global)
+        SISFrameRef to;
+        string edge_name;               // the relation as declared (SREdge.name)
+        tcnart_msgs::msg::SREdgeTemporalType temporal_type;
+        boolean derived;                // another stream's output, published as an edge
+        boolean walked_inverted;        // declared to -> from, walked from -> to
+        double weight;                  // the pathfinder's cost for this hop
+        sequence<string> derived_from;  // a derived hop: the relations it composes
+        int32 input;                    // a live hop: index into inputs; -1 for a fixed one
+        sequence<double, 21> covariance;   // a fixed hop's stated covariance, packed as in
+                                           //   SRPose6DWithCovariance; empty = not stated
+    };
+
+    struct SISTranslationPlan {
+        uint16 plan_version;            // 1. A reader refuses a version it does not know.
+        string output_topic;            // the stream it belongs to; "" for a dry run
+        uint32 route_epoch;             // the stream's route_epoch; 0 for a dry run
+        tcnart_msgs::msg::CoordinateSystem target_coord;   // the output convention
+        sequence<SISPlanInstance> instances;
+        sequence<SISPlanInput> inputs;  // indexed by SISPlanDynamicOp.input
+        int32 reference_input;          // the input an ON_REFERENCE trigger fires on; -1 = none
+        sequence<string> correlated_via;   // relations two hops share: the propagated
+                                           //   covariance is optimistic (too tight)
+        string clock_domain;            // the inputs' common domain
+        double path_weight;             // the route's summed weight
+        sequence<SISPlanHop> hops;
+        sequence<string> route_notes;   // why this route, in words; not for parsing
+    };
+
+    // What to explain. Ordinals are the wire encoding; append only.
+    enum SISExplainKind {
+        SIS_EX_RELATION,        // dry run: compile observer/target now, start nothing
+        SIS_EX_STREAM           // the running stream `handle`: the route it is on
+    };
+
+    struct SISExplainRequest {
+        SISOperatorRef who;
+        SISExplainKind kind;
+        // SIS_EX_RELATION: the relation, as a SISRelationStreamStartRequest
+        // would name it. The same frames, trigger and bias compile the same
+        // route a start would.
+        SISFrameRef observer;
+        SISFrameRef target;
+        SRStreamTrigger trigger;
+        double freshness_bias;
+        // SIS_EX_STREAM: the handle a SISRelationStreamReply issued.
+        string handle;
+    };
+
+    // What the engine knows about a running stream's inputs right now.
+    // Empty for a dry run.
+    struct SISPlanLive {
+        boolean running;                // a pipeline is evaluating this stream here
+        sequence<int64> input_newest_ns;   // per input: newest buffered stamp (ns), 0 = none
+        string last_hole;               // why the last tick had no value; "" = none yet
+        uint64 published;               // messages published since the pipeline started
+    };
+
+    // `status` says whether the question was answered:
+    //   SIS_GQ_OK            answered; `relation` says what the relation is
+    //   SIS_GQ_UNKNOWN_FRAME SIS_EX_STREAM: no stream has that handle
+    //   SIS_GQ_REJECTED      undecodable, or a frame outside the client scope
+    //   SIS_GQ_UNAVAILABLE   the operator rate limit, or the graph read failed
+    // `relation` is what a start would be answered (dry run) or what the
+    // stream is (stream): SIS_RS_ACTIVE with a plan, or SIS_RS_NO_PATH /
+    // SIS_RS_PENDING / SIS_RS_UNKNOWN_FRAME / SIS_RS_CLOCK_DOMAIN_MISMATCH
+    // with `relation_detail` and, when pending, `blocked_by` -- and then an
+    // empty plan.
+    struct SISExplainReply {
+        SISGraphQueryStatus status;
+        string detail;
+        SISRelationStreamStatus relation;
+        string relation_detail;
+        sequence<SISBlockingRelation> blocked_by;
+        SISTranslationPlan plan;
+        SISPlanLive live;
+    };
+
   };
 };
 
