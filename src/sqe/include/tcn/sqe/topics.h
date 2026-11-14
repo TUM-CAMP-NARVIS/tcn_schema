@@ -21,6 +21,8 @@ inline constexpr std::string_view kEngineNamespace = "sqe";
 inline constexpr std::string_view kRelationFamily = "rel";
 /// Appended to an output topic to get its status key.
 inline constexpr std::string_view kStatusSuffix = "/status";
+/// `{output_topic}/plan`: a LOCAL or BOTH stream's plan (B90, 0.10.0).
+inline constexpr std::string_view kPlanSuffix = "/plan";
 /// The middle segment of the engine's own liveliness token (B74).
 inline constexpr std::string_view kEngineAliveFamily = "alive";
 /// The key family the registry announces its changes under (B78).
@@ -76,6 +78,17 @@ inline std::string engine_relation_topic(std::string_view engine_id, std::string
     out.append(kRelationFamily.data(), kRelationFamily.size());
     out += '/';
     out.append(handle.data(), handle.size());
+    return out;
+}
+
+/// `{output_topic}/plan` -- where a LOCAL or BOTH stream's plan is published,
+/// and answered to a get with the last one (B90, 0.10.0).
+inline std::string plan_topic_for(std::string_view output_topic)
+{
+    std::string out;
+    out.reserve(output_topic.size() + kPlanSuffix.size());
+    out.append(output_topic.data(), output_topic.size());
+    out.append(kPlanSuffix.data(), kPlanSuffix.size());
     return out;
 }
 

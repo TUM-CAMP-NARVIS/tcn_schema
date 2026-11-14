@@ -225,3 +225,16 @@ TCN_SQE_TEST(same_terms_compares_the_trigger_and_the_bias_independently)
     CHECK(!base.same_terms_as(same_trigger_other_bias));
     CHECK(!base.same_terms_as(other_trigger_same_bias));
 }
+
+// B90 (0.10.0): the evaluation mode is a term too, and Engine is the default.
+TCN_SQE_TEST(same_terms_compares_the_evaluation_mode)
+{
+    const RelationStreamRequest engine =
+        RelationStreamRequest::make(frame("a", "x"), frame("b", "y"), hz(30.0), 1.0).value();
+    const RelationStreamRequest local =
+        RelationStreamRequest::make(frame("a", "x"), frame("b", "y"), hz(30.0), 1.0, EvaluationMode::Local).value();
+    CHECK(engine.evaluation() == EvaluationMode::Engine);
+    CHECK(local.evaluation() == EvaluationMode::Local);
+    CHECK(engine.relation() == local.relation());
+    CHECK(!engine.same_terms_as(local));
+}

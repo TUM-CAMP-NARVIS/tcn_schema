@@ -21,6 +21,7 @@ TCN_SQE_TEST(an_engine_issued_relation_topic_has_the_documented_shape)
 TCN_SQE_TEST(a_status_topic_is_the_output_topic_plus_slash_status)
 {
     CHECK_STR_EQ(status_topic_for("sqe/lab1/rel/h42"), "sqe/lab1/rel/h42/status");
+    CHECK_STR_EQ(plan_topic_for("sqe/lab1/rel/h42"), "sqe/lab1/rel/h42/plan");
     CHECK_STR_EQ(status_topic_for("hmd/rel/marker_7"), "hmd/rel/marker_7/status");
     CHECK_STR_EQ(engine_relation_status_topic("lab1", "h42"), "sqe/lab1/rel/h42/status");
 }
