@@ -11,6 +11,15 @@ cmake --preset conan-debug
 cmake --build ./build/Debug --config Debug
 ```
 
+### conversation_msgs: the voice-client protocol
+
+`src/dds/custom/conversation_msgs/` is the realtime conversational pipeline's protocol (its IDL, formerly module
+`nv::voice::v1`): `conversation_msgs::msg` (common, control, audio, stt, llm, tts, metrics) and
+`conversation_msgs::rpc` (discovery, `AppServerInfo`). Type names, field names and order and enum order are the
+pipeline's. **These types travel as plain CDR**: OMG CDR v1 little-endian *without* the 4-byte encapsulation
+header, zenoh encoding `application/cdr`; every other package keeps the encapsulation. Since 0.10.2
+([MIGRATION-0.10.2.md](MIGRATION-0.10.2.md)).
+
 ### The SQE wire contract
 
 `src/dds/custom/tcnart_msgs/rpc/SIS.idl` holds the spatial query engine's (SQE, spatial_query_engine_rs) message

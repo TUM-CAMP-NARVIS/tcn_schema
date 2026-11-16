@@ -1,0 +1,38 @@
+#ifndef CONVERSATION_MSGS_RPC_DISCOVERY_IDL
+#define CONVERSATION_MSGS_RPC_DISCOVERY_IDL
+
+#include "conversation_msgs/msg/common.idl"
+
+module conversation_msgs {
+module rpc {
+
+  struct AppServerInfo {
+    conversation_msgs::msg::MessageHeader header;
+    string display_name;
+    string topic_prefix;
+    string environment;
+    string message_encoding;
+    string session_id;
+
+    conversation_msgs::msg::AudioFormat uplink_format;
+    conversation_msgs::msg::AudioFormat expected_stt_format;
+    conversation_msgs::msg::AudioFormat expected_tts_format;
+    conversation_msgs::msg::AudioFormat downlink_format;
+    unsigned long recommended_playback_prebuffer_ms;
+
+    string stt_backend;
+    string llm_backend;
+    string tts_backend;
+    string language_hint;
+    string voice_hint;
+
+    boolean allow_barge_in;
+    boolean enable_partial_stt;
+    boolean enable_partial_llm;
+    boolean enable_partial_tts;
+  };
+
+};
+};
+
+#endif

@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.18)
-project(tcn_schema VERSION 0.10.0 LANGUAGES CXX)
+project(tcn_schema VERSION 0.10.2 LANGUAGES CXX)
 
 
 option(WITH_DDS "Compile with DDS Implementation" OFF)
@@ -44,6 +44,7 @@ add_subdirectory(src/dds/custom/tcnart_msgs)
 add_subdirectory(src/dds/custom/pcpd_msgs)
 add_subdirectory(src/dds/custom/device_hl2_msgs)
 add_subdirectory(src/dds/custom/device_orbbec_msgs)
+add_subdirectory(src/dds/custom/conversation_msgs)
 
 # The SQE contract core. Header-only and dependency-free, so it adds nothing to
 # a link line; it is added last because its INTERFACE target names
