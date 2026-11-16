@@ -89,8 +89,6 @@ class SISTranslationPlan;
 class SISExplainRequest;
 class SISPlanLive;
 class SISExplainReply;
-class SISTransactionLogRequest;
-class SISTransactionLogReply;
 
 enum SISRelationStreamStatus : std::uint32_t;
 enum SISReoptimisePolicy : std::uint32_t;
@@ -106,7 +104,6 @@ enum SISStoreHealth : std::uint32_t;
 enum SISGraphChangeKind : std::uint32_t;
 enum SISOperatorMutationKind : std::uint32_t;
 enum SISEvaluationMode : std::uint32_t;
-enum SISTransactionLogAction : std::uint32_t;
 enum SISPlanOpKind : std::uint32_t;
 enum SISPlanInputSource : std::uint32_t;
 enum SISExplainKind : std::uint32_t;
@@ -279,10 +276,6 @@ TCN_SQE_REGISTER_WIRE_TYPE(::tcnart_msgs::rpc::SISExplainKind,               "tc
 TCN_SQE_REGISTER_WIRE_TYPE(::tcnart_msgs::rpc::SISExplainRequest,            "tcnart_msgs::rpc::SISExplainRequest");
 TCN_SQE_REGISTER_WIRE_TYPE(::tcnart_msgs::rpc::SISPlanLive,                  "tcnart_msgs::rpc::SISPlanLive");
 TCN_SQE_REGISTER_WIRE_TYPE(::tcnart_msgs::rpc::SISExplainReply,              "tcnart_msgs::rpc::SISExplainReply");
-// Transaction log (B92, 0.10.1): sqe/{engine_id}/op/txlog (topics.h).
-TCN_SQE_REGISTER_WIRE_TYPE(::tcnart_msgs::rpc::SISTransactionLogAction,      "tcnart_msgs::rpc::SISTransactionLogAction");
-TCN_SQE_REGISTER_WIRE_TYPE(::tcnart_msgs::rpc::SISTransactionLogRequest,     "tcnart_msgs::rpc::SISTransactionLogRequest");
-TCN_SQE_REGISTER_WIRE_TYPE(::tcnart_msgs::rpc::SISTransactionLogReply,       "tcnart_msgs::rpc::SISTransactionLogReply");
 
 namespace detail {
 

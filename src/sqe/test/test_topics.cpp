@@ -102,7 +102,6 @@ TCN_SQE_TEST(the_operator_keys_have_the_engines_shape)
     CHECK_STR_EQ(engine_operator_key("camp", kOperatorGraphQuery), "sqe/camp/op/graph/query");
     CHECK_STR_EQ(engine_operator_key("camp", kOperatorChanges), "sqe/camp/op/changes");
     CHECK_STR_EQ(engine_operator_key("camp", kOperatorExplain), "sqe/camp/op/explain");
-    CHECK_STR_EQ(engine_operator_key("camp", kOperatorTxlog), "sqe/camp/op/txlog");
 }
 
 TCN_SQE_TEST(the_targets_changed_topic_has_the_engines_shape)

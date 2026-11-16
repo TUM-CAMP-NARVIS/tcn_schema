@@ -1495,46 +1495,6 @@ module tcnart_msgs {
         SISPlanLive live;
     };
 
-    // --- Transaction log (engine B92, tcn_schema 0.10.1) -----------------
-    //
-    //   sqe/{engine_id}/op/txlog   SISTransactionLogRequest -> SISTransactionLogReply
-    //
-    // Starts, stops or reads the engine's transaction log: every structural
-    // change (fragments, relation writes with their outcome, computed
-    // relations, streams with their terms, routes and status transitions) as
-    // JSON Lines in a file on the engine's host, beginning with a snapshot.
-    // Nothing realtime. Open to every operator, inside the engine's client
-    // scope, on the operator budget. The engine logs only with
-    // --transaction-log-dir; otherwise a start is SIS_GQ_REJECTED.
-
-    // Ordinals are the wire encoding; append only.
-    enum SISTransactionLogAction {
-        SIS_TL_STATUS,          // say what is running; change nothing
-        SIS_TL_START,           // start a log labelled `label`, stopping a running one
-        SIS_TL_STOP             // stop the running log
-    };
-
-    struct SISTransactionLogRequest {
-        SISOperatorRef who;
-        SISTransactionLogAction action;
-        string label;           // SIS_TL_START: names the log; part of its file name
-    };
-
-    // The log the request leaves running, or the one it stopped. `status` is
-    // SIS_GQ_OK when the request was carried out; SIS_GQ_REJECTED (no log
-    // directory, a bad request) or SIS_GQ_UNAVAILABLE (the file could not be
-    // created) with `detail` otherwise.
-    struct SISTransactionLogReply {
-        SISGraphQueryStatus status;
-        string detail;
-        boolean active;
-        string label;
-        string file;            // on the engine's host
-        int64 started_ns;       // ns since the Unix epoch; 0 = no log
-        uint64 records;
-        uint64 dropped;   // lost because the writer could not keep up
-    };
-
   };
 };
 
