@@ -1,0 +1,57 @@
+#ifndef CONVERSATION_MSGS_MSG_AUDIO_IDL
+#define CONVERSATION_MSGS_MSG_AUDIO_IDL
+
+#include "conversation_msgs/msg/common.idl"
+
+module conversation_msgs {
+module msg {
+
+  struct AudioOpusFrame {
+    MessageHeader header;
+    StreamDirection direction;
+    AudioFormat format;
+
+    boolean end_of_utterance;
+    boolean end_of_stream;
+    boolean packet_loss_concealment_applied;
+
+    unsigned long long capture_ts_mono_ns;
+    unsigned long long first_sample_index;
+
+    sequence<octet> packet;
+  };
+
+  struct AudioPcmChunk {
+    MessageHeader header;
+    StreamDirection direction;
+    AudioFormat format;
+    PayloadKind payload_kind;
+
+    boolean end_of_utterance;
+    boolean end_of_stream;
+
+    unsigned long long capture_ts_mono_ns;
+    unsigned long long first_sample_index;
+    unsigned long sample_count_per_channel;
+
+    sequence<float> samples_f32;
+    ShmRef shm_ref;
+  };
+
+  struct VadEvent {
+    MessageHeader header;
+
+    boolean speech_active;
+    float speech_probability;
+
+    unsigned long start_ms;
+    unsigned long end_ms;
+
+    EventState state;
+    string backend;
+  };
+
+};
+};
+
+#endif

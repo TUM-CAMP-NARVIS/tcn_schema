@@ -9,7 +9,7 @@ class TcnSchemaConan(ConanFile):
     python_requires_extend = "camp_common.CampCMakeBase"
 
     name = "tcn_schema"
-    version = "0.10.1"
+    version = "0.10.2"
 
     description = "HL2Comm via Zenoh with Ros2 Serialization Compatible Schemata"
     url = "https://github.com/TUM-CAMP-NARVIS/tcn_schema"
@@ -164,3 +164,10 @@ class TcnSchemaConan(ConanFile):
         self.cpp_info.components["device_orbbec_msgs"].libs = ["tcn_schema_device_orbbec_msgs"]
         self.cpp_info.components["device_orbbec_msgs"].defines = []
         self.cpp_info.components["device_orbbec_msgs"].requires = dds_dep() + ["std_msgs", "geometry_msgs", "tcnart_msgs"]
+
+        # The conversational pipeline's voice-client protocol (0.10.2). Plain CDR on the wire (no encapsulation
+        # header, MIGRATION-0.10.2.md); depends on no other package.
+        self.cpp_info.components["conversation_msgs"].names["cmake_find_package"] = "conversation_msgs"
+        self.cpp_info.components["conversation_msgs"].libs = ["tcn_schema_conversation_msgs"]
+        self.cpp_info.components["conversation_msgs"].defines = []
+        self.cpp_info.components["conversation_msgs"].requires = dds_dep() + []
