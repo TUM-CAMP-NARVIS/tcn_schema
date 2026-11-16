@@ -219,8 +219,6 @@ inline constexpr std::string_view kOperatorUpdate = "update";
 inline constexpr std::string_view kOperatorChanges = "changes";
 /// `SISExplainRequest` -> `SISExplainReply` (B89, 0.9.3): how a relation is computed.
 inline constexpr std::string_view kOperatorExplain = "explain";
-/// `SISTransactionLogRequest` -> `SISTransactionLogReply` (B92, 0.10.1): the transaction log.
-inline constexpr std::string_view kOperatorTxlog = "txlog";
 
 /// `sqe/{engine_id}/op/{suffix}`, for one of the `kOperator*` suffixes.
 inline std::string engine_operator_key(std::string_view engine_id, std::string_view suffix)
