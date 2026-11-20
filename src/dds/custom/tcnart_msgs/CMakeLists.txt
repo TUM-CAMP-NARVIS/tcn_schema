@@ -6,6 +6,7 @@ set(TCN_MODULE_IDL
         "msg/Logging.idl"
         "msg/PoseTracking.idl"
         "msg/EyeTracking.idl"
+        "msg/Imu.idl"
         "msg/HandTracking.idl"
         "msg/XRInput.idl"
         "msg/XRRuntime.idl"

@@ -20,7 +20,9 @@ pipeline's. **These types travel as plain CDR**: OMG CDR v1 little-endian *witho
 header, zenoh encoding `application/cdr`; every other package keeps the encapsulation. Since 0.10.2
 ([MIGRATION-0.10.2.md](MIGRATION-0.10.2.md)).
 `tcnart_msgs::msg::EyeTrackingMessage` carries pupil, eye-expression and gaze-space fields and documented
-`EYE_VALID_*` bits since 0.10.3 ([MIGRATION-0.10.3.md](MIGRATION-0.10.3.md)).
+`EYE_VALID_*` bits since 0.10.3 ([MIGRATION-0.10.3.md](MIGRATION-0.10.3.md)), the scene-image gaze point since
+0.10.4; `tcnart_msgs::msg::ImuMessage` (accelerometer and gyroscope) is new in 0.10.4
+([MIGRATION-0.10.4.md](MIGRATION-0.10.4.md)).
 
 ### The SQE wire contract
 

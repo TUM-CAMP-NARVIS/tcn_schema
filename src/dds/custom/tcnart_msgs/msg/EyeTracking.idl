@@ -20,6 +20,7 @@ module tcnart_msgs {
     const uint32 EYE_VALID_RIGHT_PUPIL_POSITION = 512; // right_pupil_position
     const uint32 EYE_VALID_LEFT_EXPRESSION = 1024;     // left_squeeze, left_wide
     const uint32 EYE_VALID_RIGHT_EXPRESSION = 2048;    // right_squeeze, right_wide
+    const uint32 EYE_VALID_SCENE_POINT = 4096;         // scene_point (0.10.4)
 
     // One eye-tracker sample. Rays: origin in metres, direction a unit vector, both in gaze_space (LOCAL: the
     // header's frame_id). viewpoint: the head pose at the sample. Openness, squeeze, wide in [0,1].
@@ -49,6 +50,10 @@ module tcnart_msgs {
       float left_wide;              // [0,1]
       float right_wide;
       XRGazeSpaceType gaze_space;   // the space the rays are in (LOCAL = the header's frame_id)
+
+      // appended in 0.10.4
+      Vector2 scene_point;          // the gaze point in the image of the head-mounted scene (world-facing) camera,
+                                    // normalized [0,1], +x right, +y down (image convention); (0,0) when not valid
     };
   };
 };
