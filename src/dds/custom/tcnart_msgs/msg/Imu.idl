@@ -1,0 +1,28 @@
+#ifndef TCNART_MSG_IMU
+#define TCNART_MSG_IMU
+
+#include "tcnart_msgs/msg/Types.idl"
+#include "std_msgs/msg/Header.idl"
+
+module tcnart_msgs {
+  module msg {
+
+    // ImuMessage.valid: which fields carry data (0.10.4). A field whose bit is clear carries zeros.
+    const uint32 IMU_VALID_ACC = 1;     // acc_device_ns, acc
+    const uint32 IMU_VALID_GYRO = 2;    // gyro_device_ns, gyro
+
+    // One inertial sample (0.10.4): accelerometer and gyroscope, each with the device's own time (they may be
+    // sampled at different instants or rates; a message may carry one of them). header.stamp: the sample's time
+    // on the publisher's clock; header.frame_id: the IMU's frame.
+    struct ImuMessage {
+      std_msgs::msg::Header header;
+      int64 acc_device_ns;   // the accelerometer sample's device time (ns)
+      Vector3 acc;           // m/s^2, in frame_id
+      int64 gyro_device_ns;  // the gyroscope sample's device time (ns)
+      Vector3 gyro;          // rad/s, in frame_id
+      uint32 valid;          // IMU_VALID_* bits
+    };
+  };
+};
+
+#endif
