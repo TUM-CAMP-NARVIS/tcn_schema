@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: internal
 //
-// Round trip of tcnart_msgs::msg::PersonTrackingMessage (0.10.4, new revision) through plain CDR (XCDRv1, no
-// encapsulation header: the way the SQE/Zenoh transport carries it).
+// Round trip of tcnart_msgs::msg::PersonTrackingMessage (0.10.4, new revision) through CDR the way the Zenoh transport
+// carries it (DDS_CDR with the encapsulation header, as HTA's tcn::zenoh serde).
 #include <cmath>
 #include <cstdint>
 #include <cstdio>
@@ -32,8 +32,8 @@ static bool encode(const msg::PersonTrackingMessage& m, std::vector<char>& out)
 {
     out.assign(1 << 20, 0);
     FastBuffer fb(out.data(), out.size());
-    Cdr ser(fb, Cdr::LITTLE_ENDIANNESS, CdrVersion::XCDRv1);
-    try { ser << m; } catch (...) { return false; }
+    Cdr ser(fb, Cdr::DEFAULT_ENDIAN, CdrVersion::DDS_CDR);
+    try { ser.serialize_encapsulation(); ser << m; } catch (...) { return false; }
     out.resize(ser.get_serialized_data_length());
     return true;
 }
@@ -42,8 +42,8 @@ static bool decode(const std::vector<char>& in, msg::PersonTrackingMessage& m)
 {
     std::vector<char> copy(in);
     FastBuffer fb(copy.data(), copy.size());
-    Cdr de(fb, Cdr::LITTLE_ENDIANNESS, CdrVersion::XCDRv1);
-    try { de >> m; } catch (...) { return false; }
+    Cdr de(fb, Cdr::DEFAULT_ENDIAN, CdrVersion::DDS_CDR);
+    try { de.read_encapsulation(); de >> m; } catch (...) { return false; }
     return true;
 }
 
@@ -110,6 +110,17 @@ int main()
     CHECK(out.persons()[0].body_model() == "smpl-x");
     CHECK(out.persons()[1].state() == msg::PERSON_STATE_PREDICTED);
     CHECK(out.camera_count() == 4 && out.camera_reprojection_px().size() == 4);
+    const msg::Person& a = out.persons()[0];
+    const msg::Person& b = out.persons()[1];
+    CHECK(a.id() == 7 && a.confidence() == 0.875f && a.age_s() == 12.5 && a.last_seen_ns() == 1700000000123456789LL);
+    CHECK(a.root().x() == 1.0 && a.root().y() == -2.0 && a.root().z() == 0.9);
+    CHECK(out.up().z() == 1.0 && out.up().x() == 0.0 && out.world_frame() == "world");
+    CHECK(out.header().stamp().sec() == 1700000000 && out.header().stamp().nanosec() == 123456789);
+    CHECK(a.views()[0].camera() == 3 && a.views()[0].box()[2] == 110.f && a.views()[0].joints_used() == 15);
+    CHECK(a.role() == -1 && a.role_confidence() == 0.f);
+    CHECK(a.body_translation().y() == 0.5 && a.body_rotations().size() == 216 && a.body_shape().size() == 3);
+    CHECK(b.id() == 9 && b.joints()[5].position().y() == 0.2 * 5 && b.joints()[5].observed() == false);
+    CHECK(b.joints()[6].observed() && b.joints()[6].confidence() == 0.5f + 0.01f * 6);
     CHECK(msg::PERSON_STATE_TENTATIVE != msg::PERSON_STATE_CONFIRMED);
 
     // Empty: no persons, reserved body-model fields empty.

@@ -36,7 +36,10 @@ module tcnart_msgs {
       int64 last_seen_ns;         // capture time (ns, the header's clock) of the last frame the person was observed
       Vector3 root;               // m, in world_frame: the pelvis (mid-hip) position
       PersonJoint joints[17];     // COCO-17 order
-      float bone_lengths[16];     // m, bones in the order of tcn::body::coco_bones(); NaN until the length is frozen
+      // m, NaN until the length is frozen. Bone i joins joints (a,b), COCO-17 indices, in this order:
+      // 0:(0,1) 1:(0,2) 2:(1,3) 3:(2,4) 4:(5,6) 5:(5,7) 6:(7,9) 7:(6,8) 8:(8,10) 9:(5,11) 10:(6,12) 11:(11,12)
+      // 12:(11,13) 13:(13,15) 14:(12,14) 15:(14,16)
+      float bone_lengths[16];
       sequence<PersonCameraView, 8> views;
 
       // The role the person plays (e.g. surgeon, nurse): an id from the application's role table and the
@@ -47,11 +50,13 @@ module tcnart_msgs {
       // Reserved for a parametric body model; all empty until a model is fitted.
       string<32> body_model;                // model name, e.g. "smpl-x"; empty: none
       sequence<float, 300> body_shape;      // shape coefficients
-      sequence<float, 216> body_rotations;  // per-joint rotations (72 x 3 values of the model's rotation layout)
+      // per-joint rotations: joint count x 3 axis-angle values (SMPL 24 -> 72, SMPL-X 55 -> 165), <= 216
+      sequence<float, 216> body_rotations;
       Vector3 body_translation;             // m, in world_frame
     };
 
-    // The persons tracked in one frame group (design 65). Plain CDR, like the other tcnart_msgs tracking messages.
+    // The persons tracked in one frame group (design 65). CDR with the encapsulation header (DDS_CDR), like the
+    // other tcnart_msgs messages.
     struct PersonTrackingMessage {
 
       std_msgs::msg::Header header;   // stamp: capture time of the frame group; frame_id: unused (see world_frame)
