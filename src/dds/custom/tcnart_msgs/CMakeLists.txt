@@ -7,6 +7,7 @@ set(TCN_MODULE_IDL
         "msg/PoseTracking.idl"
         "msg/EyeTracking.idl"
         "msg/Imu.idl"
+        "msg/PersonTracking.idl"
         "msg/HandTracking.idl"
         "msg/XRInput.idl"
         "msg/XRRuntime.idl"
@@ -68,3 +69,14 @@ install(FILES ${TCN_MODULE_HDRS} DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/${TCN_M
 install(FILES ${TCN_MODULE_IDL} DESTINATION share/tcn_schema/dds/${TCN_MODULE_NAME}/msg)
 install(FILES ${TCN_MODULE_RPC_HDRS} DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/${TCN_MODULE_NAME}/rpc)
 install(FILES ${TCN_MODULE_RPC_IDL} DESTINATION share/tcn_schema/dds/${TCN_MODULE_NAME}/rpc)
+
+# Round-trip tests of the generated message types (need the generated library, hence the option).
+option(TCN_SCHEMA_BUILD_MSG_TESTS "Build the tcnart_msgs CDR round-trip tests" OFF)
+if(TCN_SCHEMA_BUILD_MSG_TESTS)
+  enable_testing()
+  add_executable(tcnart_msgs_person_tracking_test test/test_person_tracking.cpp)
+  target_link_libraries(tcnart_msgs_person_tracking_test PRIVATE ${TCN_SCHEMA_LIB_NAME}
+          tcn_schema_builtin_interfaces tcn_schema_std_msgs tcn_schema_geometry_msgs ${DDS_LIBRARIES})
+  set_target_properties(tcnart_msgs_person_tracking_test PROPERTIES CXX_STANDARD 17)
+  add_test(NAME tcnart_msgs_person_tracking COMMAND tcnart_msgs_person_tracking_test)
+endif()

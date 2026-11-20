@@ -22,7 +22,8 @@ header, zenoh encoding `application/cdr`; every other package keeps the encapsul
 `tcnart_msgs::msg::EyeTrackingMessage` carries pupil, eye-expression and gaze-space fields and documented
 `EYE_VALID_*` bits since 0.10.3 ([MIGRATION-0.10.3.md](MIGRATION-0.10.3.md)), the scene-image gaze point since
 0.10.4; `tcnart_msgs::msg::ImuMessage` (accelerometer and gyroscope) is new in 0.10.4
-([MIGRATION-0.10.4.md](MIGRATION-0.10.4.md)).
+([MIGRATION-0.10.4.md](MIGRATION-0.10.4.md)); `tcnart_msgs::msg::PersonTrackingMessage` (person
+tracks) joined 0.10.4 as a later revision.
 
 ### The SQE wire contract
 
