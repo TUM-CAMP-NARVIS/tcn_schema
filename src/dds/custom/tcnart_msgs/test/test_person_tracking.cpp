@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: internal
 //
-// Round trip of tcnart_msgs::msg::PersonTrackingMessage (0.10.4, new revisions) through CDR the way the Zenoh transport
-// carries it (DDS_CDR with the encapsulation header, as HTA's tcn::zenoh serde). Second revision (HTA design 70): the
+// Round trip of tcnart_msgs::msg::PersonTrackingMessage (0.10.5) through CDR the way the Zenoh transport
+// carries it (DDS_CDR with the encapsulation header, as HTA's tcn::zenoh serde). The avatar extension (HTA design 70): the
 // joint set, previous_id, per-joint age, ambiguous, the group number and the orientation fields.
 #include <cmath>
 #include <cstdint>

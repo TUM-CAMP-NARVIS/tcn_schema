@@ -8,6 +8,8 @@ set(TCN_MODULE_IDL
         "msg/EyeTracking.idl"
         "msg/Imu.idl"
         "msg/PersonTracking.idl"
+        "msg/HumanPose.idl"
+        "msg/TimeRef.idl"
         "msg/HandTracking.idl"
         "msg/XRInput.idl"
         "msg/XRRuntime.idl"
@@ -66,7 +68,7 @@ install(TARGETS ${TCN_SCHEMA_LIB_NAME} EXPORT ${TCN_SCHEMA_LIB_NAME}Config
 install(EXPORT ${TCN_SCHEMA_LIB_NAME}Config DESTINATION share/${TCN_SCHEMA_LIB_NAME}/cmake)
 export(TARGETS ${TCN_SCHEMA_LIB_NAME} FILE ${TCN_SCHEMA_LIB_NAME}Config.cmake)
 install(FILES ${TCN_MODULE_HDRS} DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/${TCN_MODULE_NAME}/msg)
-install(FILES ${TCN_MODULE_IDL} DESTINATION share/tcn_schema/dds/${TCN_MODULE_NAME}/msg)
+install(FILES ${TCN_MODULE_IDL} msg/JointSets.md DESTINATION share/tcn_schema/dds/${TCN_MODULE_NAME}/msg)
 install(FILES ${TCN_MODULE_RPC_HDRS} DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/${TCN_MODULE_NAME}/rpc)
 install(FILES ${TCN_MODULE_RPC_IDL} DESTINATION share/tcn_schema/dds/${TCN_MODULE_NAME}/rpc)
 
@@ -79,4 +81,9 @@ if(TCN_SCHEMA_BUILD_MSG_TESTS)
           tcn_schema_builtin_interfaces tcn_schema_std_msgs tcn_schema_geometry_msgs ${DDS_LIBRARIES})
   set_target_properties(tcnart_msgs_person_tracking_test PROPERTIES CXX_STANDARD 17)
   add_test(NAME tcnart_msgs_person_tracking COMMAND tcnart_msgs_person_tracking_test)
+  add_executable(tcnart_msgs_human_pose_test test/test_human_pose.cpp)
+  target_link_libraries(tcnart_msgs_human_pose_test PRIVATE ${TCN_SCHEMA_LIB_NAME}
+          tcn_schema_builtin_interfaces tcn_schema_std_msgs tcn_schema_geometry_msgs ${DDS_LIBRARIES})
+  set_target_properties(tcnart_msgs_human_pose_test PROPERTIES CXX_STANDARD 17)
+  add_test(NAME tcnart_msgs_human_pose COMMAND tcnart_msgs_human_pose_test)
 endif()
