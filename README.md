@@ -23,7 +23,10 @@ header, zenoh encoding `application/cdr`; every other package keeps the encapsul
 `EYE_VALID_*` bits since 0.10.3 ([MIGRATION-0.10.3.md](MIGRATION-0.10.3.md)), the scene-image gaze point since
 0.10.4; `tcnart_msgs::msg::ImuMessage` (accelerometer and gyroscope) is new in 0.10.4
 ([MIGRATION-0.10.4.md](MIGRATION-0.10.4.md)); `tcnart_msgs::msg::PersonTrackingMessage` (person
-tracks) joined 0.10.4 as a later revision.
+tracks) joined 0.10.4 as a later revision. 0.10.5 extends it for avatars (joint sets, per-joint age, `previous_id`,
+orientations) and adds tcnart's `HumanPoseMessage` and the `TimeRefRequest`/`TimeRefReply` payloads
+([MIGRATION-0.10.5.md](MIGRATION-0.10.5.md); joint sets:
+[tcnart_msgs/msg/JointSets.md](src/dds/custom/tcnart_msgs/msg/JointSets.md)).
 
 ### The SQE wire contract
 

@@ -44,3 +44,6 @@ normally empty body-model fields (`body_model`, `body_shape`, `body_rotations`, 
 Purely additive: no existing type changes; it travels like the other tcnart_msgs (CDR with the encapsulation header),
 the SQE encoding annotation stays `;tcn_schema=0.10`. It ships as a new Conan revision of 0.10.4 (no version change);
 a consumer needs the revision that contains `PersonTracking.idl`.
+
+The avatar extension of `PersonTrackingMessage` planned as a second revision shipped as 0.10.5 instead
+([MIGRATION-0.10.5.md](MIGRATION-0.10.5.md)).
