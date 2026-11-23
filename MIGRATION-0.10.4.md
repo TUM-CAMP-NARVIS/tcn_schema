@@ -44,3 +44,21 @@ normally empty body-model fields (`body_model`, `body_shape`, `body_rotations`, 
 Purely additive: no existing type changes; it travels like the other tcnart_msgs (CDR with the encapsulation header),
 the SQE encoding annotation stays `;tcn_schema=0.10`. It ships as a new Conan revision of 0.10.4 (no version change);
 a consumer needs the revision that contains `PersonTracking.idl`.
+
+### `PersonTrackingMessage`, second revision of 0.10.4 (person tracking for avatars)
+
+Extended in place for tcnart's avatars (holoscan-tcn-applications design 70; no consumer was bound to the first
+layout). Joint sets, coordinates, the clock, prediction and the descriptor's properties:
+[docs/person_joint_sets.md](docs/person_joint_sets.md).
+
+| change | field |
+|---|---|
+| added | `PersonTrackingMessage.group` (uint64: frame-group number), `joint_set` (`string<64>`: `coco17`, `halpe26`) |
+| bounded | `world_frame` → `string<128>` (the SQE node of the rig calibration's world) |
+| added | `Person.previous_id` (uint32, 0 none), `ambiguous` (boolean), `has_root_orientation`, `root_orientation` (Quaternion), `joint_rotations` (`sequence<Quaternion, 32>`), `joint_rotation_confidence` (`sequence<float, 32>`) |
+| changed | `Person.joints` `PersonJoint[17]` → `sequence<PersonJoint, 32>`, `bone_lengths` `float[16]` → `sequence<float, 32>` (joint set order) |
+| added | `PersonJoint.age_s` (float: s since the joint was last observed) |
+| removed | `body_model`, `body_shape`, `body_rotations`, `body_translation` (SMPL parameters are not sent; a fit's result goes into the rotations) |
+
+**Wire:** the CDR layout changes: readers and writers of the first revision must be updated together (the only ones
+are holoscan-tcn-applications' converters).
