@@ -16,8 +16,10 @@ bound joints at 32, so one consumer buffer fits either. A new set gets its secti
 
 - **Positions:** metres, right-handed, in the message's frame, a Global SQE node name: `world_frame` in
   `PersonTrackingMessage` (the node of the rig calibration's world, which the reconstruction's mesh uses too),
-  `header.frame_id` in `HumanPoseMessage`. `up` is the unit vector pointing up in that frame; it differs per
-  site (each site's calibration world) and is sent in every message and in the descriptor.
+  `header.frame_id` in `HumanPoseMessage`. `up` (`PersonTrackingMessage` only) is the unit vector pointing up in
+  that frame; it differs per site (each site's calibration world) and is sent in every message and in the
+  descriptor. `HumanPoseMessage` has no `up`: hosts take it from the frame (the SQE, the rig), and its rotations do
+  not depend on it.
 - **Time:** `PersonTrackingMessage.header.stamp` is the capture time of the frame group, in the same clock as the mesh
   and the camera streams of the same capture; `HumanPoseMessage.header.stamp` is the deployment clock time of the
   interpolated pose. Each stream's descriptor names its clock domain.
@@ -62,8 +64,39 @@ Bones: fixed with the first `halpe26` producer (HTA design 70, phase 5) and list
 
 Joints (20): 0 pelvis, 1 spine, 2 chest, 3 neck, 4 head, 5 head top, 6 left shoulder, 7 right shoulder, 8 left elbow,
 9 right elbow, 10 left wrist, 11 right wrist, 12 left hip, 13 right hip, 14 left knee, 15 right knee, 16 left ankle,
-17 right ankle, 18 left toe, 19 right toe. The root is the pelvis (0). Bones and the rest pose: tcnart writes them
-here (proposal, tcnart roadmap 4.6).
+17 right ankle, 18 left toe, 19 right toe. The root is the pelvis (0).
+
+Bones (19). `bone_lengths[i]` joins joints (a, b); a is the parent. The bone's rotation is the rotation of joint a.
+
+| i | 0 | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 | 10 | 11 | 12 | 13 | 14 | 15 | 16 | 17 | 18 |
+|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|
+| (a,b) | 0,1 | 1,2 | 2,3 | 3,4 | 4,5 | 3,6 | 6,8 | 8,10 | 3,7 | 7,9 | 9,11 | 0,12 | 12,14 | 14,16 | 16,18 | 0,13 | 13,15 | 15,17 | 17,19 |
+
+The bones in words:
+- pelvis → spine → chest → neck → head → head top;
+- neck → shoulder → elbow → wrist, on each side;
+- pelvis → hip → knee → ankle → toe, on each side.
+
+The neck is the mid-point of the shoulders, so the neck–shoulder bones are half the shoulder width.
+
+**Rest pose.** It is a T-pose in a canonical body frame B, right-handed: +x is the person's left, +y is up, +z is
+forward (the direction the person faces). At rest every joint's frame equals B. The rest direction of each bone in B:
+
+| bones | direction in B |
+|---|---|
+| 0-1, 1-2, 2-3, 3-4, 4-5 (spine, neck, head) | +y |
+| 3-6, 6-8, 8-10 (left shoulder and arm), 0-12 (left hip) | +x |
+| 3-7, 7-9, 9-11 (right shoulder and arm), 0-13 (right hip) | −x |
+| 12-14, 14-16, 13-15, 15-17 (legs) | −y |
+| 16-18, 17-19 (feet) | +z |
+
+**Rotations.** A joint's `rotation` q is the orientation of that joint's frame in the message's frame, so the joint's
+outgoing bone points along `q · d_rest` there. All identity rotations put the T-pose with B's axes on the frame's axes.
+A z-up frame therefore needs a non-identity base rotation, so rotations never depend on `up`.
+
+A joint with no rotation information has `HUMAN_JOINT_HAS_ROTATION` cleared, and its rotation is identity and
+ignored. Pelvis, chest and head carry rotations derived from the positions (hips, shoulders, nose and ears). Limb
+twist and feet stay without rotation until a source with rotations exists.
 
 ## Rotations
 
