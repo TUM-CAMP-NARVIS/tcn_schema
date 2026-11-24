@@ -58,7 +58,16 @@ Bones (16), `bone_lengths[i]` joins joints (a, b):
 Joints (26): 0–16 as `coco17`, then 17 head top, 18 neck, 19 hip centre, 20 left big toe, 21 right big toe, 22 left
 small toe, 23 right small toe, 24 left heel, 25 right heel. The root is the hip centre (19).
 
-Bones: fixed with the first `halpe26` producer (HTA design 70, phase 5) and listed here then.
+Bones (26), `bone_lengths[i]` joins joints (a, b): 0–15 as `coco17`, then
+
+| i | 16 | 17 | 18 | 19 | 20 | 21 | 22 | 23 | 24 | 25 |
+|---|---|---|---|---|---|---|---|---|---|---|
+| (a,b) | 17,18 | 18,19 | 11,19 | 12,19 | 15,20 | 15,22 | 15,24 | 16,21 | 16,23 | 16,25 |
+
+(head top–neck, neck–hip centre, left and right hip–hip centre, left ankle–big toe, –small toe, –heel, the same on the
+right). A `coco17` consumer reads a `halpe26` message by its first 17 joints and 16 bones. HTA's
+`PersonTrackingMessage.Person.root` stays the mid-point of the hips (11, 12) for both sets; the model's hip centre
+(19) is reported as a joint. First producer: HTA design 70 phase 5 (opt-in, `pose_tracking --joint-set halpe26`).
 
 ## `tcnart_body_v1`
 

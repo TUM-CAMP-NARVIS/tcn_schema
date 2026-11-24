@@ -55,3 +55,9 @@ The payloads of the time-reference query (`tcn/time/ref/<name>`): request `{int6
 
 Conan: `tcn_schema/0.10.5@artekmed/stable`. tcnart: refresh `v3/third_party/tcn_schema_idl` with `sync_idl.py`
 (`--version 0.10.5`) and add `HumanPoseMessage` (and the TimeRef types) to its host type list.
+
+## Later revision of 0.10.5: Halpe-26 bones (documentation only)
+
+`tcnart_msgs/msg/JointSets.md` lists the 26 `halpe26` bones (the 16 COCO-17 bones first) now that a producer exists
+(HTA design 70 phase 5). No IDL changes; the wire is the same as revision `cc712d90`.
+
