@@ -126,6 +126,12 @@ TCN_SQE_REGISTER_REQUEST_KEY(::tcnart_msgs::rpc::SISTargetQueryRequest, keys::kT
                              ::tcnart_msgs::rpc::SISTargetQueryReply);
 TCN_SQE_REGISTER_REQUEST_KEY(::tcnart_msgs::rpc::SISTargetMutationRequest, keys::kTargetUpdate, RequestMode::Query,
                              ::tcnart_msgs::rpc::SISMutationReply);
+// The relation sample (B93, 0.10.6): one value at one instant, with its own
+// reply. The engine may wait up to the request's wait_ms (capped at 5 s) for
+// data, after a graph read bounded like a start's, before it answers;
+// kDefaultQueryTimeoutMs is above both.
+TCN_SQE_REGISTER_REQUEST_KEY(::tcnart_msgs::rpc::SISRelationSampleRequest, keys::kRelationSample, RequestMode::Query,
+                             ::tcnart_msgs::rpc::SISRelationSampleReply);
 
 namespace detail {
 

@@ -91,6 +91,9 @@ class SISPlanLive;
 class SISExplainReply;
 class SISTransactionLogRequest;
 class SISTransactionLogReply;
+class SISRelationSampleRequest;
+class SISSampleInput;
+class SISRelationSampleReply;
 
 enum SISRelationStreamStatus : std::uint32_t;
 enum SISReoptimisePolicy : std::uint32_t;
@@ -107,6 +110,8 @@ enum SISGraphChangeKind : std::uint32_t;
 enum SISOperatorMutationKind : std::uint32_t;
 enum SISEvaluationMode : std::uint32_t;
 enum SISTransactionLogAction : std::uint32_t;
+enum SISRelationSampleInstant : std::uint32_t;
+enum SISRelationSampleStatus : std::uint32_t;
 enum SISPlanOpKind : std::uint32_t;
 enum SISPlanInputSource : std::uint32_t;
 enum SISExplainKind : std::uint32_t;
@@ -283,6 +288,12 @@ TCN_SQE_REGISTER_WIRE_TYPE(::tcnart_msgs::rpc::SISExplainReply,              "tc
 TCN_SQE_REGISTER_WIRE_TYPE(::tcnart_msgs::rpc::SISTransactionLogAction,      "tcnart_msgs::rpc::SISTransactionLogAction");
 TCN_SQE_REGISTER_WIRE_TYPE(::tcnart_msgs::rpc::SISTransactionLogRequest,     "tcnart_msgs::rpc::SISTransactionLogRequest");
 TCN_SQE_REGISTER_WIRE_TYPE(::tcnart_msgs::rpc::SISTransactionLogReply,       "tcnart_msgs::rpc::SISTransactionLogReply");
+// Relation sample (B93, 0.10.6): {client}/sis/relation/sample (client_id.h, session.h).
+TCN_SQE_REGISTER_WIRE_TYPE(::tcnart_msgs::rpc::SISRelationSampleInstant,     "tcnart_msgs::rpc::SISRelationSampleInstant");
+TCN_SQE_REGISTER_WIRE_TYPE(::tcnart_msgs::rpc::SISRelationSampleRequest,     "tcnart_msgs::rpc::SISRelationSampleRequest");
+TCN_SQE_REGISTER_WIRE_TYPE(::tcnart_msgs::rpc::SISRelationSampleStatus,      "tcnart_msgs::rpc::SISRelationSampleStatus");
+TCN_SQE_REGISTER_WIRE_TYPE(::tcnart_msgs::rpc::SISSampleInput,               "tcnart_msgs::rpc::SISSampleInput");
+TCN_SQE_REGISTER_WIRE_TYPE(::tcnart_msgs::rpc::SISRelationSampleReply,       "tcnart_msgs::rpc::SISRelationSampleReply");
 
 namespace detail {
 
