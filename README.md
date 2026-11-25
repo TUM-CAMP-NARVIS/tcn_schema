@@ -42,12 +42,16 @@ engine refuses every 0.9-annotated message, pose streams included, and a 0.9 pee
 
 What recent releases added:
 
+- **0.10.6** (B93, additive): the relation sample, `{client}/sis/relation/sample`
+  (`SISRelationSampleRequest` → `SISRelationSampleReply`): one value of a relation at one instant (`AT` a stamp,
+  `NOW`, `LATEST`), with no stream started.
+- **0.10.1** (B92, additive): the transaction log, `sqe/{engine_id}/op/txlog`.
 - **0.10.0** (B90): a relation stream's evaluation mode (`SISEvaluationMode`: `SIS_EV_ENGINE`, the default;
   `SIS_EV_LOCAL`, the client composes the relation from the engine's plan with `sqe_local`; `SIS_EV_BOTH`), the
   plan in the start reply and on `{handle}/plan` (`tcn::sqe::plan_topic_for`), and `engine_epoch` on status
   notifications and plans.
 - **0.9.3** (B89, additive): explain, `sqe/{engine_id}/op/explain`, and the plan types (`SISTranslationPlan`).
 
-Migration notes, newest first: [MIGRATION-0.10.0.md](MIGRATION-0.10.0.md) (with the steps for tcnart and the
+Migration notes, newest first: [MIGRATION-0.10.6.md](MIGRATION-0.10.6.md), [MIGRATION-0.10.1.md](MIGRATION-0.10.1.md), [MIGRATION-0.10.0.md](MIGRATION-0.10.0.md) (with the steps for tcnart and the
 holoscan apps), [MIGRATION-0.9.3.md](MIGRATION-0.9.3.md), and the older `MIGRATION-*.md` beside them. C++ clients
-use sqe_client_cpp (0.4.0 for tcn_schema 0.10.0), which builds on this library.
+use sqe_client_cpp (0.4.0 for tcn_schema 0.10.0; 0.6.0 adds the relation sample, for 0.10.6), which builds on this library.

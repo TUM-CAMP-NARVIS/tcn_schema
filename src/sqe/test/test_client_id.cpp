@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: internal
 //
-// Key construction. Thirteen keys, and the client id that is allowed to build them.
+// Key construction. Fourteen keys, and the client id that is allowed to build them.
 #include <string>
 #include <type_traits>
 
@@ -32,7 +32,7 @@ TCN_SQE_TEST(client_id_is_validated_by_the_fragment_rule_not_the_identifier_rule
     CHECK_ERR(ClientId::parse("tcn/l\xC3\xB8" "c"), Error::NonAscii);
 }
 
-TCN_SQE_TEST(client_id_builds_all_thirteen_keys)
+TCN_SQE_TEST(client_id_builds_all_fourteen_keys)
 {
     const Result<ClientId> id = ClientId::parse("tcn/loc/pcpd/cam1");
     CHECK_OK(id);
@@ -53,6 +53,7 @@ TCN_SQE_TEST(client_id_builds_all_thirteen_keys)
     CHECK_STR_EQ(c.pattern_query_key(), "tcn/loc/pcpd/cam1/sis/pattern/query");
     CHECK_STR_EQ(c.target_query_key(),  "tcn/loc/pcpd/cam1/sis/target/query");
     CHECK_STR_EQ(c.target_update_key(), "tcn/loc/pcpd/cam1/sis/target/update");
+    CHECK_STR_EQ(c.relation_sample_key(), "tcn/loc/pcpd/cam1/sis/relation/sample");
 }
 
 TCN_SQE_TEST(the_key_suffixes_are_the_engine_s)
@@ -70,6 +71,7 @@ TCN_SQE_TEST(the_key_suffixes_are_the_engine_s)
     CHECK_STR_EQ(std::string(keys::kPatternQuery), "/sis/pattern/query");
     CHECK_STR_EQ(std::string(keys::kTargetQuery), "/sis/target/query");
     CHECK_STR_EQ(std::string(keys::kTargetUpdate), "/sis/target/update");
+    CHECK_STR_EQ(std::string(keys::kRelationSample), "/sis/relation/sample");
 }
 
 // Every suffix begins with '/' and the id never ends with one, so no key can
@@ -88,6 +90,7 @@ TCN_SQE_TEST(no_constructed_key_can_contain_an_empty_chunk)
         id.value().stream_start_key(), id.value().stream_stop_key(),
         id.value().graph_query_key(), id.value().pattern_query_key(),
         id.value().target_query_key(), id.value().target_update_key(),
+        id.value().relation_sample_key(),
     };
     for (const std::string& k : all)
     {

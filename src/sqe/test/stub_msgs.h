@@ -202,6 +202,20 @@ public:
     std::string name;
 };
 
+/// The relation sample (B93, 0.10.6). Fields the tests touch only.
+class SISRelationSampleRequest
+{
+public:
+    std::uint32_t wait_ms = 0;
+};
+
+class SISRelationSampleReply
+{
+public:
+    std::int32_t status_ = 0;
+    std::string detail_;
+};
+
 }  // namespace rpc
 }  // namespace tcnart_msgs
 

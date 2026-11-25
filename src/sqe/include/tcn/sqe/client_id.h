@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: internal
 //
-// ClientId — a validated Zenoh key prefix, and the thirteen keys built from it.
+// ClientId — a validated Zenoh key prefix, and the fourteen keys built from it.
 //
 // See docs/2026-08-31-sqe-contract-library-design.md §4.2.
 #ifndef TCN_SQE_CLIENT_ID_H
@@ -17,7 +17,7 @@
 namespace tcn {
 namespace sqe {
 
-/// The thirteen key suffixes. A client's key is `{client_id}{SUFFIX}`; every
+/// The fourteen key suffixes. A client's key is `{client_id}{SUFFIX}`; every
 /// suffix begins with `/`, which is why a client id must not end with one.
 ///
 /// Since B73 every key here that changes the graph -- join, component
@@ -58,6 +58,10 @@ inline constexpr std::string_view kTargetQuery     = "/sis/target/query";
 /// to accept it from listed client ids only, so a refusal here is not
 /// necessarily a malformed request.
 inline constexpr std::string_view kTargetUpdate    = "/sis/target/update";
+/// The relation sample (B93, 0.10.6): one value of a relation at one instant.
+/// A read, like the graph read, and charged to the same rate bucket; it starts
+/// nothing, so it has no stop.
+inline constexpr std::string_view kRelationSample  = "/sis/relation/sample";
 
 }  // namespace keys
 
@@ -93,9 +97,9 @@ public:
 
     const std::string& str() const noexcept { return id_; }
 
-    // -- the thirteen keys --------------------------------------------------
+    // -- the fourteen keys --------------------------------------------------
     //
-    // Thirteen named accessors, and no `key(std::string_view suffix)` overload.
+    // Fourteen named accessors, and no `key(std::string_view suffix)` overload.
     // That is the point: a free-form suffix parameter re-opens exactly the
     // failure a rename causes, where the publisher writes to a key nothing is
     // subscribed to and is told nothing by anything.
@@ -113,6 +117,7 @@ public:
     std::string pattern_query_key() const { return detail::concat(id_, keys::kPatternQuery); }
     std::string target_query_key() const { return detail::concat(id_, keys::kTargetQuery); }
     std::string target_update_key() const { return detail::concat(id_, keys::kTargetUpdate); }
+    std::string relation_sample_key() const { return detail::concat(id_, keys::kRelationSample); }
 
     friend bool operator==(const ClientId& a, const ClientId& b) noexcept { return a.id_ == b.id_; }
     friend bool operator!=(const ClientId& a, const ClientId& b) noexcept { return !(a == b); }

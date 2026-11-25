@@ -87,6 +87,12 @@ static_assert(RequestKey<rpc::SISTargetMutationRequest>::suffix == keys::kTarget
 static_assert(RequestKey<rpc::SISPatternQueryRequest>::mode == RequestMode::Query, "");
 static_assert(RequestKey<rpc::SISTargetQueryRequest>::mode == RequestMode::Query, "");
 static_assert(RequestKey<rpc::SISTargetMutationRequest>::mode == RequestMode::Query, "");
+
+// The relation sample added in 0.10.6 (B93): a read with its own reply.
+static_assert(RequestKey<rpc::SISRelationSampleRequest>::suffix == keys::kRelationSample, "");
+static_assert(RequestKey<rpc::SISRelationSampleRequest>::mode == RequestMode::Query, "");
+static_assert(std::is_same<RequestKey<rpc::SISRelationSampleRequest>::Reply,
+                           rpc::SISRelationSampleReply>::value, "");
 static_assert(RequestKey<rpc::SISRelationStreamStopRequest>::suffix == keys::kStreamStop, "");
 static_assert(RequestKey<rpc::SISGraphQueryRequest>::suffix == keys::kGraphQuery, "");
 // The read is answered. If this ever reads Publish again, `query_request` on it
@@ -399,6 +405,33 @@ TCN_SQE_TEST(the_pattern_and_target_reads_go_to_their_own_keys)
     t.scripted_replies.push_back(
         reply_bytes("application/cdr;tcnart_msgs::rpc::SISGraphQueryReply;tcn_schema=0.10"));
     CHECK_ERR(s.value().query_request(pattern, pattern_reply), Error::WrongDeclaredType);
+}
+
+// 0.10.6 (B93): the relation sample goes to its own key, with its own reply.
+TCN_SQE_TEST(the_relation_sample_goes_to_its_own_key)
+{
+    FakeTransport t;
+    Result<Session> s = Session::open(t, client());
+    CHECK_OK(s);
+    if (!s) { return; }
+
+    t.scripted_replies.push_back(
+        reply_bytes("application/cdr;tcnart_msgs::rpc::SISRelationSampleReply;tcn_schema=0.10"));
+
+    rpc::SISRelationSampleRequest sample;
+    rpc::SISRelationSampleReply sample_reply;
+    CHECK_OK(s.value().query_request(sample, sample_reply));
+
+    CHECK_INT_EQ(t.queried.size(), 1);
+    if (t.queried.empty()) { return; }
+    CHECK_STR_EQ(t.queried[0].key, "tcn/loc/pcpd/hl2-01/sis/relation/sample");
+    CHECK_STR_EQ(t.queried[0].encoding,
+                 "application/cdr;tcnart_msgs::rpc::SISRelationSampleRequest;tcn_schema=0.10");
+
+    // A stream reply is not a sample reply.
+    t.scripted_replies.push_back(
+        reply_bytes("application/cdr;tcnart_msgs::rpc::SISRelationStreamReply;tcn_schema=0.10"));
+    CHECK_ERR(s.value().query_request(sample, sample_reply), Error::WrongDeclaredType);
 }
 
 TCN_SQE_TEST(a_query_goes_to_the_stream_key_with_a_timeout_above_the_engines_resolve_bound)

@@ -109,6 +109,11 @@ TCN_SQE_TEST(cdr_encoding_names_every_registered_type_exactly)
                  "application/cdr;tcnart_msgs::rpc::SISTransactionLogRequest;tcn_schema=0.10");
     CHECK_STR_EQ(cdr_encoding<rpc::SISTransactionLogReply>(),
                  "application/cdr;tcnart_msgs::rpc::SISTransactionLogReply;tcn_schema=0.10");
+    // 0.10.6: the relation sample (B93). Additive, so the annotation is unchanged.
+    CHECK_STR_EQ(cdr_encoding<rpc::SISRelationSampleRequest>(),
+                 "application/cdr;tcnart_msgs::rpc::SISRelationSampleRequest;tcn_schema=0.10");
+    CHECK_STR_EQ(cdr_encoding<rpc::SISRelationSampleReply>(),
+                 "application/cdr;tcnart_msgs::rpc::SISRelationSampleReply;tcn_schema=0.10");
 }
 
 // The two replies are answers to different questions on different keys, and a
