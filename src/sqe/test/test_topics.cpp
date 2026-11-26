@@ -203,3 +203,19 @@ TCN_SQE_TEST(every_marker_node_name_is_a_legal_identifier_and_key_chunk)
         CHECK(marker_announce_key(client, "cam", name));
     }
 }
+
+// 0.10.7 (engine B94): the marker system qualifies the name, so the same id in
+// two dictionaries is two nodes.
+TCN_SQE_TEST(a_marker_node_name_is_qualified_by_its_system)
+{
+    CHECK_STR_EQ(marker_node_name(MarkerKind::ArucoMarker, 7, "aruco:DICT_4X4_50"),
+                 "_mtarucom_aruco.DICT_4X4_50___sis_marker__7");
+    CHECK_STR_EQ(marker_node_name(MarkerKind::ArucoFractal, 7, "FRACTAL_4L_6"), "_mtarucof_FRACTAL_4L_6___sis_marker__7");
+    CHECK(marker_node_name(MarkerKind::ArucoFractal, 7, "FRACTAL_4L_6") !=
+          marker_node_name(MarkerKind::ArucoFractal, 7, "FRACTAL_5L_6"));
+    CHECK_STR_EQ(marker_node_name(MarkerKind::IrTarget, 3, "art"), "_mtirt_art___sis_marker__3");
+    CHECK_STR_EQ(marker_node_name(MarkerKind::IrTarget, 3, "a b/c"), "_mtirt_a.b.c___sis_marker__3");
+    CHECK(valid_identifier(marker_node_name(MarkerKind::ArucoMarker, 7, "aruco:DICT_4X4_50")));
+    // Empty: the name of before.
+    CHECK_STR_EQ(marker_node_name(MarkerKind::ArucoMarker, 7, ""), "_mtarucom___sis_marker__7");
+}

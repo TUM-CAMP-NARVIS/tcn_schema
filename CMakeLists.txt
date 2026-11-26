@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.18)
-project(tcn_schema VERSION 0.10.6 LANGUAGES CXX)
+project(tcn_schema VERSION 0.10.7 LANGUAGES CXX)
 
 
 option(WITH_DDS "Compile with DDS Implementation" OFF)

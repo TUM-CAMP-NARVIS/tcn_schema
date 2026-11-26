@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: internal
 //
-// NodeName / LocalNodeId / GlobalNodeId — the two alphabets, kept apart.
+// NodeName / LocalNodeId / GlobalNodeId / DomainNodeId — the two alphabets, kept apart.
 //
 // See docs/2026-08-31-sqe-contract-library-design.md §4.3.
 #ifndef TCN_SQE_NODE_NAME_H
@@ -18,8 +18,8 @@
 namespace tcn {
 namespace sqe {
 
-/// The separator between a composed node id's two halves.
-inline constexpr std::string_view kNodeIdSeparator = "::";
+// kNodeIdSeparator, the `::` between a composed node id's two halves, is in
+// validate.h (0.10.7): the domain id rule there needs it too.
 
 /// A node or edge name: the **identifier** rule, whole.
 class NodeName
@@ -113,6 +113,48 @@ public:
 
 private:
     explicit GlobalNodeId(std::string id) noexcept : id_(std::move(id)) {}
+    std::string id_;
+};
+
+/// A domain node's id (0.10.7, engine B94): `@{domain}::{name}`. The domain
+/// takes the fragment rule without `::`, the name the identifier rule
+/// (`domain_node_id`, `parse_domain_node_id`).
+class DomainNodeId
+{
+public:
+    static Result<DomainNodeId> compose(std::string_view domain, const NodeName& name)
+    {
+        Result<std::string> id = domain_node_id(domain, name.str());
+        if (!id) { return Result<DomainNodeId>::fail(id.error()); }
+        return Result<DomainNodeId>::ok(DomainNodeId(std::move(id.value())));
+    }
+
+    static Result<DomainNodeId> parse(std::string_view s)
+    {
+        std::string_view d, n;
+        if (!parse_domain_node_id(s, d, n)) { return Result<DomainNodeId>::fail(Error::IllegalCharacter); }
+        return Result<DomainNodeId>::ok(DomainNodeId(std::string(s)));
+    }
+
+    const std::string& str() const noexcept { return id_; }
+    std::string_view domain() const noexcept
+    {
+        std::string_view d, n;
+        parse_domain_node_id(id_, d, n);
+        return d;
+    }
+    std::string_view name() const noexcept
+    {
+        std::string_view d, n;
+        parse_domain_node_id(id_, d, n);
+        return n;
+    }
+
+    friend bool operator==(const DomainNodeId& a, const DomainNodeId& b) noexcept { return a.id_ == b.id_; }
+    friend bool operator!=(const DomainNodeId& a, const DomainNodeId& b) noexcept { return !(a == b); }
+
+private:
+    explicit DomainNodeId(std::string id) noexcept : id_(std::move(id)) {}
     std::string id_;
 };
 

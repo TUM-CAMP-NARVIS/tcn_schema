@@ -78,3 +78,46 @@ TCN_SQE_TEST(a_global_node_id_never_takes_the_fragment_rule)
     CHECK_OK(GlobalNodeId::parse("world_origin"));
     CHECK_ERR(GlobalNodeId::parse("a/b"), Error::ContainsSlash);
 }
+
+// ---------------------------------------------------------------------------
+// 0.10.7 (engine B94): domain node ids
+// ---------------------------------------------------------------------------
+
+static_assert(!std::is_same<DomainNodeId, LocalNodeId>::value, "");
+static_assert(!std::is_same<DomainNodeId, GlobalNodeId>::value, "");
+
+TCN_SQE_TEST(a_domain_node_id_is_sigil_domain_separator_name)
+{
+    const auto id = DomainNodeId::compose("tcn/ksv1/rig01", NodeName::parse("camera01_color").value());
+    CHECK_OK(id);
+    if (!id) { return; }
+    CHECK_STR_EQ(id.value().str(), "@tcn/ksv1/rig01::camera01_color");
+    CHECK_STR_EQ(std::string(id.value().domain()), "tcn/ksv1/rig01");
+    CHECK_STR_EQ(std::string(id.value().name()), "camera01_color");
+    CHECK(DomainNodeId::parse("@tcn/ksv1/rig01::camera01_color").value() == id.value());
+}
+
+// The sigil is what keeps a domain id apart from a Local id, even when the
+// domain equals a client id: `tcn/ksv1/rig01::camera01_color` is rig01's own.
+TCN_SQE_TEST(a_domain_node_id_never_equals_a_local_node_id)
+{
+    const auto local = LocalNodeId::compose(ClientId::parse("tcn/ksv1/rig01").value(), NodeName::parse("camera01_color").value());
+    const auto domain = DomainNodeId::compose("tcn/ksv1/rig01", NodeName::parse("camera01_color").value());
+    CHECK(local.str() != domain.value().str());
+    CHECK_ERR(DomainNodeId::parse(local.str()), Error::IllegalCharacter);
+    CHECK(!LocalNodeId::parse(domain.value().str()));  // '@' is outside the fragment alphabet
+}
+
+TCN_SQE_TEST(a_domain_takes_the_fragment_rule_without_a_separator)
+{
+    const NodeName n = NodeName::parse("cam").value();
+    CHECK_ERR(DomainNodeId::compose("", n), Error::Empty);
+    CHECK_ERR(DomainNodeId::compose("/tcn/ksv1", n), Error::LeadingSlash);
+    CHECK_ERR(DomainNodeId::compose("tcn//ksv1", n), Error::EmptyChunk);
+    CHECK_ERR(DomainNodeId::compose("tcn::ksv1", n), Error::IllegalCharacter);
+    CHECK_OK(DomainNodeId::compose("tcn/ksv1:a", n));  // one ':' is a legal character
+    CHECK_ERR(domain_node_id("tcn/ksv1", "head/left"), Error::ContainsSlash);
+    CHECK(!DomainNodeId::parse("tcn/ksv1::cam"));
+    CHECK(!DomainNodeId::parse("@tcn/ksv1"));
+    CHECK(!DomainNodeId::parse("@::cam"));
+}

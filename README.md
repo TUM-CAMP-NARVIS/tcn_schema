@@ -42,6 +42,8 @@ engine refuses every 0.9-annotated message, pose streams included, and a 0.9 pee
 
 What recent releases added:
 
+- **0.10.7** (B94, additive): `SRG_SCOPE_DOMAIN`, domain nodes `@{domain}::{name}`, shared by exactly the
+  fragments that name them in one domain; contract helpers `domain_node_id`, `DomainNodeId`, `FrameRef::domain`
 - **0.10.6** (B93, additive): the relation sample, `{client}/sis/relation/sample`
   (`SISRelationSampleRequest` → `SISRelationSampleReply`): one value of a relation at one instant (`AT` a stamp,
   `NOW`, `LATEST`), with no stream started.
@@ -52,6 +54,6 @@ What recent releases added:
   notifications and plans.
 - **0.9.3** (B89, additive): explain, `sqe/{engine_id}/op/explain`, and the plan types (`SISTranslationPlan`).
 
-Migration notes, newest first: [MIGRATION-0.10.6.md](MIGRATION-0.10.6.md), [MIGRATION-0.10.1.md](MIGRATION-0.10.1.md), [MIGRATION-0.10.0.md](MIGRATION-0.10.0.md) (with the steps for tcnart and the
+Migration notes, newest first: [MIGRATION-0.10.7.md](MIGRATION-0.10.7.md), [MIGRATION-0.10.6.md](MIGRATION-0.10.6.md), [MIGRATION-0.10.1.md](MIGRATION-0.10.1.md), [MIGRATION-0.10.0.md](MIGRATION-0.10.0.md) (with the steps for tcnart and the
 holoscan apps), [MIGRATION-0.9.3.md](MIGRATION-0.9.3.md), and the older `MIGRATION-*.md` beside them. C++ clients
 use sqe_client_cpp (0.4.0 for tcn_schema 0.10.0; 0.6.0 adds the relation sample, for 0.10.6), which builds on this library.
