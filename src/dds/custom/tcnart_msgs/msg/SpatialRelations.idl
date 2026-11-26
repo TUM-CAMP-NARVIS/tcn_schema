@@ -39,10 +39,24 @@ module tcnart_msgs {
 
         // Local nodes are private to their graph and are namespaced with the
         // owner's prefix when two graphs are fused. Global nodes keep their bare
-        // name and are the only thing that joins two graphs together.
+        // name and join every graph of the engine that names them.
+        //
+        // Domain nodes (0.10.7, engine B94) join exactly the graphs that name
+        // them in the same domain: one physical thing several processes declare
+        // -- a rig's camera seen by the rig and an IR tracker -- without claiming
+        // its name engine-wide. A domain is a key-prefix-shaped string with the
+        // client-id alphabet and no "::" ("tcn/ksv1/rig01"). The node's `name`
+        // is its whole id, "@{domain}::{name}" (the contract library's
+        // domain_node_id), which is also how edges and a SISFrameRef (with an
+        // empty client) name it. Exact match: "tcn/ksv1/rig01" is not
+        // "tcn/ksv1". The engine refuses a domain outside its client scope.
+        //
+        // Ordinals are the wire encoding; append only. A reader that predates a
+        // value should treat an unknown scope as shared, not as local.
         enum SRNodeScope {
           SRG_SCOPE_LOCAL,
-          SRG_SCOPE_GLOBAL
+          SRG_SCOPE_GLOBAL,
+          SRG_SCOPE_DOMAIN
         };
 
         // --- templates ---------------------------------------------------------

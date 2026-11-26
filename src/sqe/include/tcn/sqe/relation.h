@@ -194,6 +194,23 @@ public:
         return Result<FrameRef>::ok(FrameRef(std::string(client), std::string(node)));
     }
 
+    /// A domain node (0.10.7, engine B94): no owning client, the node named by
+    /// its id `@{domain}::{name}` (`domain_node_id`). The engine resolves it in
+    /// the domain, whoever declared it.
+    static Result<FrameRef> domain(std::string_view domain, std::string_view name)
+    {
+        Result<std::string> id = domain_node_id(domain, name);
+        if (!id) { return Result<FrameRef>::fail(id.error()); }
+        return Result<FrameRef>::ok(FrameRef(std::string(), std::move(id.value())));
+    }
+
+    /// Whether this names a domain node (an empty client and a domain id).
+    bool is_domain() const noexcept
+    {
+        std::string_view d, n;
+        return client_.empty() && parse_domain_node_id(node_, d, n);
+    }
+
     const std::string& client() const noexcept { return client_; }
     const std::string& node() const noexcept { return node_; }
 

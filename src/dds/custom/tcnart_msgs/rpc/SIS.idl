@@ -787,11 +787,12 @@ module tcnart_msgs {
         // each instead of one per variant.
         sequence<tcnart_msgs::msg::SREdgeTemporalType> temporal_type;
 
-        // Which node scopes to keep, as a set. Empty keeps both.
+        // Which node scopes to keep, as a set. Empty keeps all of them.
         //
         // "Which of my nodes are shared with other fragments?" is the second
         // question a fragment author asks, and usually the answer to why their
-        // relation does not resolve: only a global node joins two graphs.
+        // relation does not resolve: only a global or a domain node joins two
+        // graphs.
         sequence<tcnart_msgs::msg::SRNodeScope> scope;
 
         // Which node types to keep, as a set. Empty keeps all of them.

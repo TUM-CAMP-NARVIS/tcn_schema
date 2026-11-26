@@ -238,3 +238,17 @@ TCN_SQE_TEST(same_terms_compares_the_evaluation_mode)
     CHECK(engine.relation() == local.relation());
     CHECK(!engine.same_terms_as(local));
 }
+
+// 0.10.7 (engine B94): a domain node is named with no client and its domain id.
+TCN_SQE_TEST(a_domain_frame_ref_has_no_client_and_the_domain_id)
+{
+    const auto f = FrameRef::domain("tcn/ksv1/rig01", "camera01_color");
+    CHECK_OK(f);
+    if (!f) { return; }
+    CHECK(f.value().client().empty());
+    CHECK_STR_EQ(f.value().node(), "@tcn/ksv1/rig01::camera01_color");
+    CHECK(f.value().is_domain());
+    CHECK(!frame("tcn/ksv1/rig01", "camera01_color").is_domain());
+    CHECK_ERR(FrameRef::domain("tcn::ksv1", "cam"), Error::IllegalCharacter);
+    CHECK_ERR(FrameRef::domain("tcn/ksv1", "a/b"), Error::ContainsSlash);
+}

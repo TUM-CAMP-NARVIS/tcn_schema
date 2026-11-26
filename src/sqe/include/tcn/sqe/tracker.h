@@ -158,12 +158,27 @@ inline constexpr std::string_view marker_prefix(MarkerKind kind)
 /// node exactly when `marker_system` is empty or the id is not registered. A
 /// consumer that needs the materialized name asks the registry
 /// (`/sis/target/query`, RESOLVE) rather than guessing.
-inline std::string marker_node_name(MarkerKind kind, std::uint32_t marker_id)
+///
+/// **0.10.7 (engine B94): qualified by the marker system.** With a non-empty
+/// `marker_system` the name is `{prefix}{system}___sis_marker__{id}`, where
+/// `{system}` is `marker_system` with every `:` and every byte outside the
+/// identifier alphabet replaced by `.`, then a `_` -- so id 7 of two
+/// dictionaries of one marker type are two nodes (`aruco:DICT_4X4_50` gives
+/// `_mtarucom_aruco.DICT_4X4_50___sis_marker__7`). Empty: the name of before.
+/// A B94 engine composes the same; an engine before it ignores the system.
+inline std::string marker_node_name(MarkerKind kind, std::uint32_t marker_id, std::string_view marker_system = {})
 {
     const std::string_view prefix = marker_prefix(kind);
     std::string out;
-    out.reserve(prefix.size() + kMarkerNodeInfix.size() + 10);
+    out.reserve(prefix.size() + marker_system.size() + 1 + kMarkerNodeInfix.size() + 10);
     out.append(prefix.data(), prefix.size());
+    if (!marker_system.empty()) {
+        for (const char ch : marker_system) {
+            const unsigned char c = static_cast<unsigned char>(ch);
+            out += (c == ':' || !is_identifier_char(c)) ? '.' : ch;
+        }
+        out += '_';
+    }
     out.append(kMarkerNodeInfix.data(), kMarkerNodeInfix.size());
     out += std::to_string(marker_id);
     return out;
