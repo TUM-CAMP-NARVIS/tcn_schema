@@ -67,6 +67,14 @@ to do. Items marked *(wire)* need the lockstep cut-over; all others can be done 
     HTA does; that is no longer needed, though keeping it does no harm.
 - **tcnart:** the shipped `share/tcn_schema/dds/tf2_msgs/action/LookupTransform.idl` now matches the layout of your
   snapshot `v3/third_party/tcn_schema_idl` (`idlgen.py check-package`).
+- **New: an IDL style guide and lint** ([docs/idl-style.md](../idl-style.md)): `python3 -I tools/idl_cli.py lint`.
+  Today's violations are in a baseline that shrinks with every plan and is empty at 0.11.0. The rules show what 0.11
+  IDL looks like:
+  - explicit `@appendable`/`@final`;
+  - every enum starts with `…_UNKNOWN`/`…_NONE`;
+  - enumerators prefixed with the enum name;
+  - include guards;
+  - PascalCase file names, unique within a package.
 - **Building tcn_schema** needs Python 3 (standard library only) at build time.
 - **Building tcn_schema:**
   - it builds in parallel again (the forced serial build is gone);

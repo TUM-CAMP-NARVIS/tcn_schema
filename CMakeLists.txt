@@ -64,6 +64,14 @@ add_custom_command(
 add_custom_target(tcn_schema_tables ALL DEPENDS "${TCN_TABLES_DIR}/types.json" "${TCN_TABLES_DIR}/enums.json")
 install(FILES "${TCN_TABLES_DIR}/types.json" "${TCN_TABLES_DIR}/enums.json" DESTINATION share/tcn_schema)
 
+if(TCN_SCHEMA_BUILD_MSG_TESTS)
+  # The IDL style rules (docs/idl-style.md) against tools/idl/lint_baseline.txt, and the Python tools' own tests.
+  add_test(NAME idl_lint COMMAND "${Python3_EXECUTABLE}" -I "${CMAKE_CURRENT_SOURCE_DIR}/tools/idl_cli.py" lint
+           --dds-root "${CMAKE_CURRENT_SOURCE_DIR}/src/dds" --baseline "${CMAKE_CURRENT_SOURCE_DIR}/tools/idl/lint_baseline.txt")
+  add_test(NAME idl_tools COMMAND "${Python3_EXECUTABLE}" -m unittest discover -s tools -p "test_*.py" -t .
+           WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}")
+endif()
+
 # generated cpp/h files need one import from fastrtps, which we provide to avoid pulling the dependency, if it should be build without
 if (NOT WITH_DDS)
   install(FILES ${CMAKE_CURRENT_SOURCE_DIR}/3rdparty/fastrtps/include/fastrtps/utils/fixed_size_string.hpp DESTINATION include/fastrtps/utils)
