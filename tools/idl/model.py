@@ -22,6 +22,7 @@ class Struct:
     members: List[Member]
     extensibility: str = "default"  # final | appendable | mutable | default
     annotations: Dict[str, str] = field(default_factory=dict)
+    span: Optional[Tuple[int, int]] = None  # text offsets in its file, leading comments and annotations included
 
 
 @dataclass
@@ -30,6 +31,7 @@ class Enum:
     enumerators: List[Tuple[str, int]]
     extensibility: str = "default"
     annotations: Dict[str, str] = field(default_factory=dict)
+    span: Optional[Tuple[int, int]] = None
 
 
 @dataclass
@@ -39,6 +41,7 @@ class Union:
     cases: List[Tuple[List[str], Member]]  # labels are enumerator names / literals, or "default"
     extensibility: str = "default"
     annotations: Dict[str, str] = field(default_factory=dict)
+    span: Optional[Tuple[int, int]] = None
 
 
 @dataclass
@@ -46,6 +49,7 @@ class Typedef:
     name: str
     type: str
     array: Optional[List[int]] = None
+    span: Optional[Tuple[int, int]] = None
 
 
 @dataclass
@@ -53,6 +57,7 @@ class Const:
     name: str
     type: str
     value: str
+    span: Optional[Tuple[int, int]] = None
 
 
 Decl = _U[Struct, Enum, Union, Typedef, Const]
@@ -67,6 +72,7 @@ class IdlFile:
     decls: List[Decl]
     family: str = "tcn"   # "ros2" | "tcn"
     forward_decls: List[str] = field(default_factory=list)  # fq names forward-declared in this file
+    forward_kinds: Dict[str, str] = field(default_factory=dict)  # fq name -> "struct" | "union"
 
 
 @dataclass

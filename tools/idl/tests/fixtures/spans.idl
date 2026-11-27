@@ -1,0 +1,14 @@
+module p {
+  module msg {
+    // a: about A
+    struct A {
+      double x;
+    };  // trailing note of A
+
+    // b: about B
+    @final struct B {
+      A a;
+    };
+    enum E { E_ONE, E_TWO };
+  };
+};
