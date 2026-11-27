@@ -1,0 +1,44 @@
+#ifndef CONVERSATION_MSGS_MSG_STT_IDL
+#define CONVERSATION_MSGS_MSG_STT_IDL
+
+#include "conversation_msgs/msg/Common.idl"
+#include "conversation_msgs/msg/Llm.idl"
+
+module conversation_msgs {
+  module msg {
+
+  struct SttRequest {
+    MessageHeader header;
+    string backend;
+    string language_hint;
+    boolean finalize_now;
+  };
+
+  struct SttPartial {
+    MessageHeader header;
+    string text;
+    float stability;
+    unsigned long start_ms;
+    unsigned long end_ms;
+    string detected_language;
+    string backend;
+    EventState state;
+  };
+
+  struct SttFinal {
+    MessageHeader header;
+    string text;
+    float confidence;
+    boolean has_confidence;
+    unsigned long start_ms;
+    unsigned long end_ms;
+    string detected_language;
+    string backend;
+    EventState state;
+    RetrievalOptions retrieval;
+  };
+
+  };
+};
+
+#endif

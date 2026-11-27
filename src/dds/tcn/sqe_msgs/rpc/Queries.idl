@@ -1,0 +1,525 @@
+// The Spatial Information Service.
+//
+// These are thin RPC envelopes over the spatial relationship graph defined in
+// sqe_msgs/msg/Graph.idl and Transforms.idl. The graph is the model; nothing here
+// re-describes it.
+
+#ifndef SQE_MSGS_RPC_QUERIES_IDL
+#define SQE_MSGS_RPC_QUERIES_IDL
+
+#include "sqe_msgs/msg/Graph.idl"
+#include "sqe_msgs/msg/Transforms.idl"
+#include "sqe_msgs/rpc/Streams.idl"
+
+module sqe_msgs {
+  module rpc {
+
+    // --- reading the graph -------------------------------------------------
+
+    // What a read may ask for.
+    //
+    // Every kind is bounded by something the asker already knows the size of.
+    // There is no kind meaning "the whole graph", and that is the point rather
+    // than an omission: the engine holds no in-memory graph, and the connected
+    // region around any seed is the transitive closure over every relation,
+    // which in a fused deployment is the entire fleet. A read of it is
+    // unbounded however small the reply that comes back is shaped.
+    enum SISGraphQueryKind {
+        SIS_GQ_FRAGMENT,        // everything one client declared. Bounded by
+                                //   that fragment's own size
+        SIS_GQ_NEIGHBOURS,      // one node and its incident relations. Bounded
+                                //   by that node's degree
+        SIS_GQ_SEARCH,          // a filter within one of the two anchors above.
+                                //   See the filter fields on the request
+        SIS_GQ_PATH             // B64: the relations connecting two frames.
+                                //   Was reserved-and-refused, on the grounds
+                                //   that a path read has to answer *which*
+                                //   predicate it walked and a plain traversal
+                                //   answers none of them. Resolved rather than
+                                //   dropped: the REQUEST now names the
+                                //   predicate (`predicate`, below), so the
+                                //   answer is to one question, and the walk is
+                                //   bounded by `radius` rather than being the
+                                //   whole-graph read this service refuses
+    };
+
+    // B64. Which rule a path read walks by. A path is only meaningful with
+    // respect to one of these, and a caller comparing a path against what a
+    // relation stream did needs to ask for the same one.
+    //
+    // These mirror the engine's own predicates exactly -- there is no fourth,
+    // looser rule reachable from here.
+    enum SISPathPredicate {
+        SIS_PP_WALKABLE,        // the default: refuses uncalibrated relations,
+                                //   which is what a running stream composes by
+        SIS_PP_CONNECTABLE,     // the relaxed shape rule a PENDING stream is
+                                //   probed with: is there a route at all, once
+                                //   the missing measurements arrive?
+        SIS_PP_WALKABLE_STATIC  // walkable, and refusing anything that moves.
+                                //   What a calibration asks when it needs a
+                                //   relation to hold still
+    };
+
+    // One request type and one key for all four kinds, not four of each.
+    //
+    // Four keys would read better and would be worse in every other way: four
+    // reply types to keep in step, four places to forget the result cap, and --
+    // decisively -- four rate-limit buckets per client instead of one, so a
+    // client respecting each limit individually could still poll at four times
+    // the intended rate. The cost of one key is its mirror image and is stated
+    // here so nobody discovers it: the item cap and the minimum interval are
+    // ONE shared budget. A client running a UI refresh and a calibration sweep
+    // is competing with itself, which is correct -- it is one client's share of
+    // one database.
+    //
+    // Which fields matter depends on `kind`; the rest are ignored, not refused.
+    struct SISGraphQueryRequest {
+
+        SISGraphQueryKind kind;
+
+        // FRAGMENT: whose fragment. SEARCH: the fragment anchor.
+        // Empty for the other kinds, and empty for a SEARCH anchored on `from`.
+        string client;
+
+        // NEIGHBOURS: the node. SEARCH: the node anchor. PATH: the observer.
+        SISFrameRef from;
+
+        // PATH: the target. Unused by every kind that ships today.
+        SISFrameRef to;
+
+        // An upper bound on nodes plus edges in one reply. 0 asks for the
+        // engine's default. This may only LOWER the engine's own cap, never
+        // raise it: a reply is additionally bounded by a byte ceiling, because
+        // an item count does not bound bytes when a field like `custom_data`
+        // is arbitrary.
+        uint32 max_items;
+
+        // Opaque; empty on a first page, otherwise the `next_cursor` of the
+        // page before. A cursor and not an offset: the graph mutates under a
+        // paginated read and there is no transaction held across pages, so an
+        // offset silently skips or repeats rows. What stability a cursor
+        // offers is the engine's to state, and it is free to change what the
+        // value is -- a client that parses one has broken the contract.
+        string cursor;
+
+        // --- search filters ------------------------------------------------
+        //
+        // Read only for SIS_GQ_SEARCH. Optional, ANDed, and applied to the
+        // anchored set -- never to the graph. An empty sequence or an empty
+        // string means *unfiltered* for that field, so a SEARCH with an anchor
+        // and no filters is "everything in this scope", which is the FRAGMENT
+        // or NEIGHBOURS read with a cap.
+        //
+        // **The anchor is mandatory and has no default.** A SEARCH carrying
+        // neither `client` nor `from` is SIS_GQ_REJECTED, and is not treated as
+        // "everywhere". This is the single most important sentence here: an
+        // unanchored search IS the whole-graph read this service refuses, and a
+        // default that widens to the graph is how one arrives without anyone
+        // deciding to add it. The anchor is also the only thing that bounds the
+        // work -- none of the properties filtered on below is indexed, so every
+        // filter is a post-filter over an already-loaded set.
+        //
+        // The search anchor is one hop. A hop bound of two from a
+        // well-connected global node is already most of the region, so a bound
+        // that appears to bound does not; there is no field for it.
+        //
+        // What is deliberately absent, each for a stated reason:
+        //
+        //   no regex, glob or substring -- unbounded, unservable by any index,
+        //     and a glob over an identifier alphabet is one `*` away from
+        //     matching everything, which is the unanchored search again;
+        //   no top-level negation -- "every edge that is NOT calibrated" reads
+        //     as a filter and behaves as a scan. Negation *inside*
+        //     `temporal_type` is fine: the set is finite, so spell the wanted
+        //     variants out;
+        //   no sort key -- sorting means materialising the whole candidate set
+        //     before the first page, which defeats the cursor and turns a
+        //     bounded read into an unbounded one with a small reply. The cursor
+        //     and a sort order are the same mechanism and there can be one;
+        //   no cross-fragment aggregation -- "every uncalibrated edge
+        //     everywhere" is a real question, and it is the operator's, not a
+        //     client's. It is unbounded, and it does not belong on a key
+        //     prefixed by one client's id.
+
+        // Which temporal types to keep, as a set. Empty keeps all of them.
+        //
+        // The reason search exists. { SRG_EDGE_STATIC_UNCALIBRATED } is the
+        // work queue an external calibration tool reads -- both ends known,
+        // their relation not yet measured -- and a set rather than one value is
+        // what makes "not usable yet" and "measured somehow" one round trip
+        // each instead of one per variant.
+        sequence<sqe_msgs::msg::SREdgeTemporalType> temporal_type;
+
+        // Which node scopes to keep, as a set. Empty keeps all of them.
+        //
+        // "Which of my nodes are shared with other fragments?" is the second
+        // question a fragment author asks, and usually the answer to why their
+        // relation does not resolve: only a global or a domain node joins two
+        // graphs.
+        sequence<sqe_msgs::msg::SRNodeScope> scope;
+
+        // Which node types to keep, as a set. Empty keeps all of them.
+        sequence<sqe_msgs::msg::SRNodeType> node_type;
+
+        // Keep names beginning with this. A prefix, and nothing more -- not a
+        // pattern, not an expression. Matched against SRNode.name and
+        // SREdge.name. Empty keeps everything.
+        //
+        // A prefix is enough because the composed names this project generates
+        // are all prefixes: a materialized marker and an engine-derived edge
+        // are each distinguishable from a client's own declaration by their
+        // leading text alone. It needs no new validation rule either -- every
+        // prefix of a valid identifier is itself a valid identifier -- so this
+        // introduces no second alphabet.
+        string name_prefix;
+
+        // --- B64 ----------------------------------------------------------
+        // Read only for SIS_GQ_PATH; ignored, not refused, by every other
+        // kind.
+
+        // Which rule to walk by. This field is what un-reserved SIS_GQ_PATH:
+        // a path read that does not say which predicate it used produces an
+        // answer that disagrees with a stream start using the other one, and
+        // the disagreement reads as an engine bug.
+        SISPathPredicate predicate;
+
+        // Hops from either named frame that the walk may consider. 0 asks for
+        // the engine's default; the engine's own cap is a ceiling this may
+        // only lower.
+        //
+        // This is the other half of the old refusal. A path read over "the
+        // graph" is the unbounded read this service exists not to serve; a
+        // path read within a stated radius is bounded before it starts, and
+        // the reply says whether the radius stopped it.
+        uint32 radius;
+
+    };
+
+    enum SISGraphQueryStatus {
+        SIS_GQ_OK,              // answered. A search matching nothing is OK
+                                //   with empty sequences, never an UNKNOWN_*:
+                                //   "no uncalibrated edges" is the SUCCESS of a
+                                //   calibration sweep -- it is what a finished
+                                //   deployment looks like -- and a tool obliged
+                                //   to treat it as an error will end up
+                                //   treating a real error as normal
+        SIS_GQ_UNKNOWN_CLIENT,  // the named fragment does not exist
+        SIS_GQ_UNKNOWN_FRAME,   // the anchored node does not exist
+        SIS_GQ_TRUNCATED,       // a page came back and `next_cursor` is not
+                                //   empty. A distinct status, not an inference
+                                //   from the cursor, so a client that ignores
+                                //   paging can still see from the status alone
+                                //   that it did not get everything
+        SIS_GQ_REJECTED,        // malformed, undecodable, or a SEARCH with no
+                                //   anchor
+        SIS_GQ_UNAVAILABLE      // the read failed, timed out, or was refused by
+                                //   the per-client rate limit. `detail` says
+                                //   which. A read is not a subscription: a
+                                //   client that polls this key is the failure
+                                //   mode this status exists to report
+    };
+
+    // `status` first, for SISMutationReply's reason.
+    //
+    // Nodes and edges rather than an SRGraph: an SRGraph names one owning
+    // client and one origin, and a reply may span fragments and has no origin
+    // at all. The two sequences are also independently paged, which a graph
+    // could not express.
+    struct SISGraphQueryReply {
+        SISGraphQueryStatus status;
+        sequence<sqe_msgs::msg::SRNodeView> nodes;
+        sequence<sqe_msgs::msg::SREdgeView> edges;
+
+        // Empty when the reply is complete. Pass it back verbatim in
+        // `SISGraphQueryRequest.cursor` for the next page, with every other
+        // field unchanged.
+        string next_cursor;
+
+        // Human-readable; may be empty. On UNAVAILABLE this is where a rate
+        // limit says so, and on REJECTED it is where a missing anchor does.
+        string detail;
+
+        // --- B64 ----------------------------------------------------------
+        // SIS_GQ_PATH only. The relations connecting `from` to `to` under
+        // `predicate`, in walk order, by declared name. Empty when there is
+        // no such path -- which is an SIS_GQ_OK answer, not a rejection:
+        // "these frames are not connected" is a true and useful reply.
+        //
+        // `nodes` and `edges` above carry the same path as views, for a caller
+        // that wants the values rather than the route.
+        sequence<string> path;
+
+        // SIS_GQ_PATH only. True when the walk stopped at `radius` with the
+        // target still unreached -- so an empty `path` means "not within the
+        // radius you asked for" rather than "not connected". Two different
+        // answers, and a caller that cannot tell them apart will widen the
+        // radius forever or give up too early.
+        boolean radius_exhausted;
+    };
+
+    // ======================================================================
+    // B63: pattern query -- "how could this edge be produced?"
+    // ======================================================================
+    //
+    // Sent to {client_id}/sis/pattern/query.
+    //
+    // A NEW KEY, and not a fifth SISGraphQueryKind. The request above argues
+    // for one key on the grounds that four keys mean four rate-limit buckets,
+    // and that argument is respected rather than overturned: this key shares
+    // the graph read's bucket, because it is the same cost against the same
+    // database. What it does not share is the reply SHAPE -- a pattern
+    // instance is bound roles, bound path segments, an expansion kind and a
+    // measurement count, none of which belongs in a reply otherwise made of
+    // nodes and edges.
+    //
+    // The model is Pustka, Huber, Bauer & Klinker, "Spatial Relationship
+    // Patterns": a pattern is a small graph over roles, some edges inputs
+    // that must exist and some outputs its algorithm produces, applied only
+    // in an EXPANDED form -- several instances at one instant, or one
+    // instance over several instants.
+
+    // How a pattern was expanded to fit the graph. A pattern is never applied
+    // unexpanded, so there is no third value meaning "as declared".
+    enum SRPatternExpansion {
+        SIS_PX_SPACE,           // several instances at one instant: three
+                                //   markers on a rigid body, seen together
+        SIS_PX_TIME             // one instance at several instants: one marker
+                                //   moved through the volume. Preferred where
+                                //   both are possible -- integrating over time
+                                //   is more accurate than one snapshot
+    };
+
+    // One role of the pattern, bound to a real frame.
+    struct SISPatternRole {
+        string role;            // the pattern's own name for it: "camera"
+        SISFrameRef frame;      // what it was bound to
+    };
+
+    // One hop of a bound input.
+    //
+    // Self-contained on purpose: everything needed to subscribe to this hop
+    // and to place it in a pipeline, so a caller never has to ask again. A
+    // calibration tool composes these itself rather than asking the engine for
+    // a relation stream, because a correspondence relates k measurements at
+    // ONE instant and two streams have two independent triggers.
+    struct SISPatternSegment {
+        string relation;                // the declared relation name
+        SISFrameRef from;
+        SISFrameRef to;
+        boolean inverted;               // walked against its declared direction
+        boolean dynamic;
+        string stream_topic;            // non-empty exactly when dynamic
+        uint32 stream_item_id;          // meaningful only with
+                                        //   stream_item_bound, at the end of
+                                        //   this struct
+        sqe_msgs::msg::SRTransform transform;  // the static value, or a seed
+        boolean computed;               // derived from other edges rather than
+                                        //   measured. Usable, and ranked below
+                                        //   a raw hop: a computed value was
+                                        //   already interpolated once, at its
+                                        //   own producer's instants
+
+        // --- B68 -----------------------------------------------------------
+        // What a subscriber needs to read this hop the way the engine reads
+        // it, and cannot obtain for itself.
+        //
+        // Both come from the stream's descriptor, and a descriptor is
+        // published ONCE. A consumer that joins later never sees one: there is
+        // nothing to subscribe to and nothing to query. The engine read it at
+        // adoption and is the only party still holding it, so a reply that
+        // omitted these left a caller with no way to get them at all.
+        //
+        // sensor_latency_ns: nanoseconds between the measurement and the
+        // header stamp. A sample stamped T was measured at T - latency, and
+        // the engine subtracts it on ingest. A consumer that skipped it would
+        // interpolate every hop to instants that disagree with every engine
+        // stream by a constant -- invisible while everything is still, which
+        // is why a discrete calibration survived without this, and wrong the
+        // moment anything moves. 0 means unstated.
+        //
+        // frame_rate: this hop's declared rate in Hz, 0 when unstated. Rolled
+        // up per input into SISPatternInput::frame_rate, which is what a
+        // session picks its reference input by; without it every session fell
+        // back to its FIRST input rather than its slowest, and interpolating
+        // toward the sparser signal is always the larger invention.
+        int64 sensor_latency_ns;
+        double frame_rate;
+
+        // --- B72 ---------------------------------------------------------
+        // Whether `stream_item_id` above binds this hop to one entry. The
+        // same fact SREdge::stream_item_bound carries, and it has to travel
+        // with the segment because a caller composing hops itself never sees
+        // the edge -- the calibration tool builds its whole rig from these
+        // and nothing else.
+        //
+        // Inferring it from a non-zero id does not work, and this field
+        // exists because that was tried: entry 0 is a real entry, so `!= 0`
+        // treats a hop bound to marker 0 as unbound and hands it every entry
+        // on the topic. A caller routing entries itself must route on this
+        // flag; treating unbound as "entry 0" drops every other entry on a
+        // multi-entry topic.
+        //
+        // Appended last, for the reason SREdge::stream_item_bound documents.
+        boolean stream_item_bound;
+    };
+
+    // One input of the pattern, bound to a concrete realisation.
+    struct SISPatternInput {
+        string role_from;
+        string role_to;
+
+        // The relations realising this input, in order. One entry is a single
+        // declared edge; more is a composed path, and composing it is the
+        // caller's -- which is what the basic inversion and concatenation
+        // patterns are, applied implicitly.
+        sequence<SISPatternSegment> segments;
+
+        SISFrameRef observer;
+        SISFrameRef target;
+
+        // Slowest declared rate along this input's path, in Hz; 0 when no hop
+        // declares one.
+        //
+        // What a session picks its REFERENCE INPUT by. A correspondence spans
+        // several inputs and needs one instant; the reference supplies it and
+        // the others are interpolated to it. The slowest is the safe default:
+        // interpolating a 200 Hz stream to 30 Hz instants spans at most 5 ms,
+        // while the reverse spans up to 33 ms, and interpolating toward the
+        // sparser signal is always the larger invention.
+        double frame_rate;
+    };
+
+    // --- B67 ---------------------------------------------------------------
+    // One duplicate's realisation of one input, in a space expansion.
+    //
+    // A space expansion IS its duplicates. Absolute orientation over three
+    // surveyed landmarks is three correspondences at one instant, one per
+    // landmark, and a consumer needs a pipeline per landmark per input to
+    // evaluate them.
+    //
+    // 0.6.0 carried the duplicated ROLES and nothing else, which the matcher
+    // had already resolved to paths and then discarded. A consumer could
+    // compile only the base binding, so a session over three landmarks would
+    // have been a calibration from one of them -- determined, plausible, and
+    // wrong. A tool that noticed refused the candidate outright, which is
+    // correct and is not what anyone wants.
+    //
+    // FLAT, AND TAGGED BY DUPLICATE, rather than a sequence of inputs nested
+    // inside a sequence of duplicates. Two reasons, and the second is a hard
+    // one:
+    //
+    //  - it keeps space_instances meaning what it meant, so this is an
+    //    APPEND rather than a change in the middle of SISPatternInstance;
+    //  - a fourth level of nested unbounded sequences (reply -> instances ->
+    //    duplicates -> inputs -> segments) overflows the uint32 the IDL
+    //    generator computes a worst-case CDR size into. That is not a style
+    //    preference; the generated code does not compile.
+    struct SISPatternExpansionInput {
+        // Which duplicate this input belongs to: an index into
+        // SISPatternInstance::space_instances.
+        //
+        // One index and not a set of role bindings, because exactly one role
+        // of a pattern is expandable -- a matcher that met two would have to
+        // pair their duplicates, and no catalogue entry asks for that. So each
+        // entry of space_instances IS one duplicate, and indexing it is
+        // unambiguous.
+        uint32 instance;
+
+        // Which of the pattern's inputs this realises: an index into
+        // SISPatternInstance::inputs. Only the correspondence inputs appear
+        // here; the others are shared across every duplicate and are already
+        // bound once on the instance.
+        uint32 input;
+
+        // This duplicate's own path for that input.
+        SISPatternInput binding;
+    };
+
+    struct SISPatternInstance {
+        string pattern;                 // catalogue name: "hand_eye"
+        string method;                  // the estimator this needs
+        sequence<SISPatternRole> roles;
+        sequence<SISPatternInput> inputs;
+
+        SRPatternExpansion expansion;
+
+        // For SIS_PX_SPACE: the duplicates FOUND in the graph, one entry per
+        // duplicate, each naming its own binding of the expandable role. Empty
+        // for SIS_PX_TIME, where the edges are the same on every measurement.
+        //
+        // Found, not assumed: three point correspondences for absolute
+        // orientation are three nodes each observed by both frames, and a
+        // graph holding one marker supports no space expansion however often
+        // it is asked.
+        //
+        // These NAME the duplicates; space_inputs below is what makes them
+        // runnable. Both are required for a space expansion and a reply
+        // carrying only the first is one a consumer must refuse (B67).
+        sequence<SISPatternRole> space_instances;
+
+        uint32 min_measurements;        // what the estimator needs
+        uint32 max_measurements;        // 0 when unbounded
+
+        // The engine's own ordering, ascending, best first: computed hops
+        // dominate, then hop count, then any stated covariance.
+        //
+        // AN OPINION, NOT AN AUTHORITY. Which of several solutions is best is
+        // left open by the paper this implements, and is left open here.
+        double cost;
+
+        // --- B67 -----------------------------------------------------------
+        // Every duplicate's own path for every correspondence input, tagged by
+        // which duplicate and which input it realises.
+        //
+        // Empty for SIS_PX_TIME. For SIS_PX_SPACE this is what makes the
+        // expansion runnable: space_instances names the duplicates and this
+        // says how to evaluate each one. A consumer that finds space_instances
+        // non-empty and this empty is talking to a pre-0.7.0 engine and should
+        // refuse the candidate rather than estimate from the base binding
+        // alone -- see SISPatternExpansionInput.
+        sequence<SISPatternExpansionInput> space_inputs;
+    };
+
+    struct SISPatternQueryRequest {
+
+        // The edge to be produced. Both frames must exist; the edge need not,
+        // and normally does not -- that is the point.
+        SISFrameRef from;
+        SISFrameRef to;
+
+        // What kind of relation is wanted. Patterns are matched against their
+        // OUTPUTS: a caller does not choose a method, it states a result, and
+        // the methods that produce that result are what come back.
+        sqe_msgs::msg::SRTransformType wanted;
+
+        // Hops from either named frame. 0 asks for the engine's default.
+        uint32 radius;
+
+        // Empty considers every pattern the engine knows.
+        sequence<string> only_patterns;
+
+        // 0 asks for the engine's default.
+        uint32 max_candidates;
+    };
+
+    struct SISPatternQueryReply {
+        // The graph read's vocabulary, reused: the refusals are identical --
+        // rate limited, unknown frame, malformed request -- and a second enum
+        // saying the same things in different words would be one more thing to
+        // keep in step.
+        SISGraphQueryStatus status;
+
+        // Ordered best-first by SISPatternInstance.cost. EMPTY IS AN ANSWER,
+        // and an SIS_GQ_OK one: "nothing in this graph produces that edge" is
+        // what an under-instrumented setup looks like, and it is the reply
+        // that tells an operator to add a landmark or a marker rather than to
+        // retry.
+        sequence<SISPatternInstance> instances;
+
+        string detail;
+    };
+
+  };
+};
+
+#endif

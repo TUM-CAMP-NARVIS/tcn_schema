@@ -1,0 +1,118 @@
+#ifndef CONVERSATION_MSGS_MSG_COMMON_IDL
+#define CONVERSATION_MSGS_MSG_COMMON_IDL
+
+module conversation_msgs {
+  module msg {
+
+  enum PayloadKind {
+    PAYLOAD_INLINE,
+    PAYLOAD_SHM_REF
+  };
+
+  enum AudioCodec {
+    AUDIO_CODEC_UNKNOWN,
+    AUDIO_CODEC_PCM_F32,
+    AUDIO_CODEC_PCM_S16LE,
+    AUDIO_CODEC_OPUS
+  };
+
+  enum ChannelLayout {
+    CHANNEL_LAYOUT_UNKNOWN,
+    CHANNEL_LAYOUT_MONO,
+    CHANNEL_LAYOUT_STEREO
+  };
+
+  enum StreamDirection {
+    STREAM_DIRECTION_UNKNOWN,
+    STREAM_DIRECTION_UPLINK,
+    STREAM_DIRECTION_DOWNLINK
+  };
+
+  enum EventState {
+    EVENT_STATE_UNKNOWN,
+    EVENT_STATE_PARTIAL,
+    EVENT_STATE_FINAL
+  };
+
+  enum CancelTarget {
+    CANCEL_TARGET_UNKNOWN,
+    CANCEL_TARGET_STT,
+    CANCEL_TARGET_LLM,
+    CANCEL_TARGET_TTS,
+    CANCEL_TARGET_ALL
+  };
+
+  enum SessionState {
+    SESSION_STATE_UNKNOWN,
+    SESSION_STATE_IDLE,
+    SESSION_STATE_LISTENING,
+    SESSION_STATE_CAPTURING_UTTERANCE,
+    SESSION_STATE_STT_FINALIZING,
+    SESSION_STATE_LLM_GENERATING,
+    SESSION_STATE_TTS_SYNTHESIZING,
+    SESSION_STATE_PLAYING,
+    SESSION_STATE_STOPPED,
+    SESSION_STATE_ERROR
+  };
+
+  enum ErrorCode {
+    ERROR_NONE,
+    ERROR_UNKNOWN,
+    ERROR_INVALID_ARGUMENT,
+    ERROR_DECODE_FAILED,
+    ERROR_RESAMPLE_FAILED,
+    ERROR_VAD_FAILED,
+    ERROR_STT_FAILED,
+    ERROR_LLM_FAILED,
+    ERROR_TTS_FAILED,
+    ERROR_ENCODE_FAILED,
+    ERROR_TIMEOUT,
+    ERROR_CANCELLED,
+    ERROR_BACKPRESSURE,
+    ERROR_SESSION_NOT_FOUND,
+    ERROR_UNSUPPORTED_FORMAT
+  };
+
+  struct MessageHeader {
+    string msg_id;
+    string trace_id;
+
+    string producer;
+    string site;
+    string node;
+    string service;
+
+    string session_id;
+    unsigned long long turn_id;
+    unsigned long long seq_no;
+
+    unsigned long long ts_mono_ns;
+    unsigned long long ts_wall_unix_ns;
+
+    unsigned short schema_version_major;
+    unsigned short schema_version_minor;
+  };
+
+  struct AudioFormat {
+    AudioCodec codec;
+    unsigned long sample_rate_hz;
+    unsigned short channels;
+    ChannelLayout channel_layout;
+    unsigned short frame_duration_ms;
+  };
+
+  struct ShmRef {
+    string region_id;
+    unsigned long long offset_bytes;
+    unsigned long length_bytes;
+  };
+
+  struct Status {
+    ErrorCode code;
+    string message;
+  };
+
+  };
+};
+
+#endif

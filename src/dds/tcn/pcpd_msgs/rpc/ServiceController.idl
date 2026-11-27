@@ -1,0 +1,89 @@
+#ifndef PCPD_MSGS_RPC_SERVICECONTROLLER_IDL
+#define PCPD_MSGS_RPC_SERVICECONTROLLER_IDL
+
+#include "pcpd_msgs/msg/CameraSensor.idl"
+#include "pcpd_msgs/rpc/Parameters.idl"
+
+module pcpd_msgs {
+  module rpc {
+
+    struct DeviceContextReply {
+        string name;
+        boolean is_valid;
+        float depth_units_per_meter;
+        int32 frame_rate;
+        string sensor_type;
+        string serial_number;
+        uint64 timestamp_offset;
+
+        pcpd_msgs::msg::CameraSensor value;
+        pcpd_msgs::rpc::RPCResponseStatus status;
+    };
+
+    struct ServiceInfoReply {
+        string name;
+        string service_type;
+        
+        pcpd_msgs::rpc::ParameterListSchema schema;
+        pcpd_msgs::rpc::RPCResponseStatus status;
+
+    };
+
+    // ------------------------------------------------------------------
+    // 0.9.0: process discovery and introspection. All additive. `<P>` is a
+    // process's service root (`<prefix>/<app>` by convention, e.g.
+    // `tcn/loc/holoscan/<app>`); its RPC root is `<P>/rpc` and the verbs
+    // below hang off it. See MIGRATION-0.9.0.md.
+    // ------------------------------------------------------------------
+
+    // A5. Dataflow graph, verb `<P>/rpc/graph`. The graph is a versioned
+    // JSON document (e.g. schema "tcn.plan_graph.v1") inside a CDR reply,
+    // because a pipeline graph is nested and app-specific.
+    struct GraphReply {
+        string graph_json;
+        string schema;
+        pcpd_msgs::rpc::RPCResponseStatus status;
+    };
+
+    // A6. Process info and liveliness. A process declares a Zenoh liveliness
+    // token on `<P>/rpc` while it serves, and answers `<P>/rpc/info` with
+    // a ProcessInfoReply. A changed pid or started_at on the same root is a
+    // restart; two different answers on one root are a duplicate root.
+    struct ProcessInfo {
+        string app;
+        string node;
+        string host;
+        uint32 pid;
+        string started_at;   // ISO 8601 UTC
+        string version;      // e.g. git describe
+        string plan_hash;
+        uint64 generation;   // parameter change counter (as in ParameterDescriptor)
+        string rpc_root;     // `<P>/rpc`, as the process sees it
+    };
+
+    struct ProcessInfoReply {
+        ProcessInfo value;
+        pcpd_msgs::rpc::RPCResponseStatus status;
+    };
+
+    // A7. Stream announcements, verb `<P>/rpc/streams`: the streams a process
+    // publishes, announced by each sender when it starts, so a client can
+    // find a preview without knowing the pipeline's parameter values.
+    struct StreamAnnouncement {
+        string op;         // operator (or component) that publishes it
+        string topic;      // full Zenoh key expression
+        string payload;    // payload type name
+        string role;       // "data" | "descriptor" | "state"
+        string encoding;   // e.g. "cdr", "json", a codec name
+        string mode;       // "stream" | "latched"
+    };
+
+    struct StreamAnnouncementReply {
+        sequence<StreamAnnouncement> streams;
+        pcpd_msgs::rpc::RPCResponseStatus status;
+    };
+
+  };
+};
+
+#endif

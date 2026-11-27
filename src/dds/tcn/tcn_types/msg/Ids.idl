@@ -1,0 +1,14 @@
+#ifndef TCN_TYPES_MSG_IDS_IDL
+#define TCN_TYPES_MSG_IDS_IDL
+
+module tcn_types {
+  module msg {
+
+    struct UUID {
+      uint8 uuid[16];
+    };
+
+  };
+};
+
+#endif

@@ -1,0 +1,64 @@
+#ifndef TCN_TYPES_MSG_GEOMETRY_IDL
+#define TCN_TYPES_MSG_GEOMETRY_IDL
+
+module tcn_types {
+  module msg {
+
+    struct Vector2 {
+      double x;
+      double y;
+    };
+
+    struct Vector3 {
+      double x;
+      double y;
+      double z;
+    };
+
+    struct Quaternion {
+      double x;
+      double y;
+      double z;
+      double w;
+    };
+
+    struct RigidTransform {
+      Vector3 translation;
+      Quaternion rotation;
+    };
+
+    struct Ray {
+      Vector3 origin;
+      Vector3 direction;
+    };
+
+    struct ViewPose {
+      Vector3 eye;
+      Vector3 target;
+      Vector3 up;
+    };
+
+        // --- coordinate conventions ------------------------------------------
+
+        // Which signed axis plays each of the three roles. 6 x 4 x 2 = 48 valid
+        // assignments; anything reusing an axis is degenerate.
+        enum CoordinateAxis {
+            COORD_AXIS_X_POS,
+            COORD_AXIS_X_NEG,
+            COORD_AXIS_Y_POS,
+            COORD_AXIS_Y_NEG,
+            COORD_AXIS_Z_POS,
+            COORD_AXIS_Z_NEG
+        };
+
+        struct CoordinateSystem {
+            CoordinateAxis forward;
+            CoordinateAxis right;
+            CoordinateAxis up;
+            uint8 dimensions;             // 2 or 3
+        };
+
+  };
+};
+
+#endif

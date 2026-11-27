@@ -1,0 +1,75 @@
+#ifndef TCNART_MSGS_MSG_STREAMDESCRIPTOR_IDL
+#define TCNART_MSGS_MSG_STREAMDESCRIPTOR_IDL
+
+#include "std_msgs/msg/Header.idl"
+#include "tcn_types/msg/Geometry.idl"
+#include "tcn_types/msg/Tracking.idl"
+#include "tcnart_msgs/msg/DataflowBufferInfo.idl"
+#include "tcnart_msgs/msg/MediaTypes.idl"
+
+module tcnart_msgs {
+  module msg {
+
+    struct StreamDescriptorMessage {
+
+      std_msgs::msg::Header header;
+
+      string stream_topic;
+      string stream_topic_schema;
+
+      string calib_topic;
+      string calib_topic_schema;
+
+      SensorType sensor_type;
+
+      uint32 frame_rate;
+
+      BufferInfo buffer_info;
+
+      // used if sensor has locality
+      tcn_types::msg::RigidTransform pose;
+
+      // used for pose trackers
+      tcn_types::msg::MarkerType marker_type;
+
+      // used for image sensors
+      uint32 image_height;
+      uint32 image_width;
+      uint32 image_step;
+      VideoPixelFormat image_format;
+      VideoImageCompression image_compression;
+
+      // used for h26x compression
+      VideoH26xProfile h26x_profile;
+      uint32 h26x_bitrate;
+
+      // used for microphone
+      uint8 audio_channels;
+      AudioAACProfile aac_profile;
+
+      // nanoseconds between the measurement and the header stamp; 0 if unknown.
+      // A consumer interpolating across sensors subtracts this before use.
+      int64 sensor_latency_ns;
+
+      // Which clock the header stamps were taken on. Empty means the default
+      // synchronized domain. Read by the SQE since 0.9.0 (engine B77): a
+      // relation whose live inputs come from two different domains is
+      // refused with SIS_RS_CLOCK_DOMAIN_MISMATCH rather than composed from
+      // stamps that cannot be compared. Any non-empty string names a domain;
+      // two streams are comparable exactly when the strings are equal.
+      string clock_domain;
+
+      // For a template marker tracker (a node-level SQE claim): the target
+      // registry alias system its marker ids live in, e.g. "art",
+      // "aruco:DICT_4X4_50" (0.9.0, engine B78). A marker id N registered
+      // under (marker_system, "N") becomes the registered target's Global
+      // node; otherwise, and when empty, the node stays
+      // `{prefix}__sis_marker__{N}` as before.
+      string marker_system;
+
+    };
+
+  };
+};
+
+#endif

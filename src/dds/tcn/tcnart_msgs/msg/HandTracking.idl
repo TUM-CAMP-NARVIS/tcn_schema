@@ -1,0 +1,49 @@
+#ifndef TCNART_MSGS_MSG_HANDTRACKING_IDL
+#define TCNART_MSGS_MSG_HANDTRACKING_IDL
+
+#include "std_msgs/msg/Header.idl"
+#include "tcn_types/msg/Geometry.idl"
+
+module tcnart_msgs {
+  module msg {
+
+    enum Handedness {
+      HANDEDNESS_UNKNOWN,
+      HANDEDNESS_LEFT,
+      HANDEDNESS_RIGHT
+    };
+
+    enum JointPoseAccuracy {
+      JointPoseAccuracy_High,
+      JointPoseAccuracy_Approximate
+    };
+
+    struct HandJointPose {
+      tcn_types::msg::RigidTransform pose;
+      float radius;
+      JointPoseAccuracy accuracy;
+    };
+
+    struct HandState {
+      Handedness hand;
+      boolean tracked;
+      boolean aim_valid;
+      tcn_types::msg::Ray aim;
+      sequence<HandJointPose> joints;
+    };
+
+    struct HandTrackingMessage {
+
+      std_msgs::msg::Header header;
+
+      tcn_types::msg::ViewPose head_pose;
+      boolean gaze_valid;
+      tcn_types::msg::Ray gaze;
+      sequence<HandState> hands;
+
+    };
+
+  };
+};
+
+#endif
