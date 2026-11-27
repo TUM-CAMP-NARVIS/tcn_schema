@@ -143,7 +143,7 @@ inline constexpr char kEncodingSeparator = ';';
 /// (B76).
 ///
 /// Appended to every annotation this library produces as
-/// `;tcn_schema=0.10`, and compared against the one a peer declares. Only
+/// `;tcn_schema=0.11`, and compared against the one a peer declares. Only
 /// major.minor: a patch release of tcn_schema changes no wire layout by the
 /// repository's own versioning rule, so a patch difference is not a reason to
 /// refuse a payload, and a reader that compared it would refuse peers for a
@@ -155,7 +155,7 @@ inline constexpr char kEncodingSeparator = ';';
 /// CDR decodes a short payload into a long struct, or a long one into a short
 /// struct, without an error on either side -- the name matched and the
 /// meaning did not.
-inline constexpr std::string_view kWireSchemaVersion = "0.10";
+inline constexpr std::string_view kWireSchemaVersion = "0.11";
 
 /// The parameter that carries it. Matched exactly (after trimming): the
 /// engine does the same, and a case-folded key would be a second spelling the
@@ -389,7 +389,7 @@ inline bool schema_version_matches(std::string_view v, std::string_view want) no
 
 }  // namespace detail
 
-/// `application/cdr;{TYPE_NAME};tcn_schema=0.10` for `T`.
+/// `application/cdr;{TYPE_NAME};tcn_schema=0.11` for `T`.
 ///
 /// The caller passes a type, not a string, so payload and annotation cannot
 /// disagree -- and since B76, neither can the release the payload's layout
@@ -400,7 +400,7 @@ inline std::string cdr_encoding()
     return detail::join_encoding(kCdrMediaType, WireType<T>::name);
 }
 
-/// `application/json;{TYPE_NAME};tcn_schema=0.10` for `T`.
+/// `application/json;{TYPE_NAME};tcn_schema=0.11` for `T`.
 template <class T>
 inline std::string json_encoding()
 {

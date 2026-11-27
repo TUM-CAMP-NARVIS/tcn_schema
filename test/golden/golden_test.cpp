@@ -20,6 +20,10 @@
 #include "tcnart_msgs/msg/PoseTrackingCdrAux.hpp"
 #include "sqe_msgs/msg/Graph.h"
 #include "sqe_msgs/msg/GraphCdrAux.hpp"
+#include "evo_v1/msg/EvolutionV1.h"
+#include "evo_v1/msg/EvolutionV1CdrAux.hpp"
+#include "evo_v2/msg/EvolutionV2.h"
+#include "evo_v2/msg/EvolutionV2CdrAux.hpp"
 
 #ifndef TCN_GOLDEN_DIR
 #error "TCN_GOLDEN_DIR must name the directory of the .hex files"
@@ -37,11 +41,32 @@ static std::string to_hex(const std::vector<char>& b)
     return s;
 }
 
+using tcn_test::Encoding;
+
+static std::vector<char> from_hex(const std::string& hex)
+{
+    std::vector<char> b;
+    std::istringstream in(hex);
+    unsigned x;
+    while (in >> std::hex >> x) b.push_back(static_cast<char>(x));
+    return b;
+}
+
+static std::vector<char> golden_bytes(const char* name)
+{
+    std::ifstream in(std::string(TCN_GOLDEN_DIR) + "/" + name + ".hex");
+    std::stringstream s;
+    s << in.rdbuf();
+    return from_hex(s.str());
+}
+
+// Encodes `value` with `e` and compares with test/golden/<name>.hex; returns the bytes.
 template <typename T>
-static void golden(const char* name, const T& value)
+static std::vector<char> golden(const char* name, const T& value, Encoding e)
 {
     std::vector<char> bytes;
-    CHECK(tcn_test::encode(value, bytes));
+    CHECK(tcn_test::encode(value, bytes, e));
+    CHECK(bytes.size() > 1 && bytes[1] == tcn_test::encapsulation_id(e));
     const std::string path = std::string(TCN_GOLDEN_DIR) + "/" + name + ".hex";
     const std::string hex = to_hex(bytes);
     const char* update = std::getenv("TCN_SCHEMA_UPDATE_GOLDEN");
@@ -60,6 +85,37 @@ static void golden(const char* name, const T& value)
     T back{};
     CHECK(tcn_test::decode(bytes, back));
     CHECK(back == value);
+    return bytes;
+}
+
+// Type evolution across the two versions of evo::Thing (decisions E5, E8), against the golden bytes.
+static void evolution()
+{
+    evo_v1::msg::Thing v1;
+    v1.a(5);
+    v1.b("ab");
+    golden("evo_v1_Thing", v1, Encoding::XCDR2);
+
+    evo_v2::msg::Thing v2;
+    v2.a(7);
+    v2.b("hi");
+    v2.c(1.5);
+    v2.d(0x1122334455667788LL);
+    golden("evo_v2_Thing", v2, Encoding::XCDR2);
+
+    // Newer bytes, older reader: the appended members are skipped by the DHEADER.
+    evo_v1::msg::Thing old_reader{};
+    CHECK(tcn_test::decode(golden_bytes("evo_v2_Thing"), old_reader));
+    CHECK(old_reader.a() == 7);
+    CHECK(old_reader.b() == "hi");
+
+    // Older bytes, newer reader decoding into a fresh object: c absent, d = 0.
+    evo_v2::msg::Thing new_reader{};
+    CHECK(tcn_test::decode(golden_bytes("evo_v1_Thing"), new_reader));
+    CHECK(new_reader.a() == 5);
+    CHECK(new_reader.b() == "ab");
+    CHECK(!new_reader.c().has_value());
+    CHECK(new_reader.d() == 0);
 }
 
 static std_msgs::msg::Header header()
@@ -73,7 +129,7 @@ static std_msgs::msg::Header header()
 
 int main()
 {
-    golden("std_msgs_Header", header());
+    golden("std_msgs_Header", header(), Encoding::XCDR1);
 
     tcnart_msgs::msg::TargetTrackingMessage tt;
     tt.header(header());
@@ -86,7 +142,7 @@ int main()
     target.quality(1.0f);
     target.is_tracked(true);
     tt.targets().push_back(target);
-    golden("tcnart_msgs_TargetTrackingMessage", tt);
+    golden("tcnart_msgs_TargetTrackingMessage", tt, Encoding::XCDR2);
 
     sqe_msgs::msg::SRGraph g;
     sqe_msgs::msg::SRNode node;
@@ -99,7 +155,9 @@ int main()
     identity.rotation().w(1);
     edge.transform().pose6d(identity);
     g.edges().push_back(edge);
-    golden("sqe_msgs_SRGraph", g);
+    golden("sqe_msgs_SRGraph", g, Encoding::XCDR2);
+
+    evolution();
 
     return tcn_test_exit("golden");
 }

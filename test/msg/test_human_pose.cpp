@@ -34,8 +34,8 @@ static bool encode(const T& m, std::vector<char>& out)
 {
     out.assign(1 << 20, 0);
     FastBuffer fb(out.data(), out.size());
-    Cdr ser(fb, Cdr::LITTLE_ENDIANNESS, CdrVersion::DDS_CDR);
-    try { ser.serialize_encapsulation(); ser << m; } catch (...) { return false; }
+    Cdr ser(fb, Cdr::LITTLE_ENDIANNESS, CdrVersion::XCDRv2);
+    try { ser.set_encoding_flag(eprosima::fastcdr::EncodingAlgorithmFlag::DELIMIT_CDR2); ser.serialize_encapsulation(); ser << m; } catch (...) { return false; }
     out.resize(ser.get_serialized_data_length());
     return true;
 }
@@ -45,7 +45,7 @@ static bool decode(const std::vector<char>& in, T& m)
 {
     std::vector<char> copy(in);
     FastBuffer fb(copy.data(), copy.size());
-    Cdr de(fb, Cdr::DEFAULT_ENDIAN, CdrVersion::DDS_CDR);
+    Cdr de(fb, Cdr::DEFAULT_ENDIAN, CdrVersion::XCDRv2);
     try { de.read_encapsulation(); de >> m; } catch (...) { return false; }
     return true;
 }
@@ -104,12 +104,13 @@ int main()
     msg::TimeRefRequest req;
     req.t1(1000000000);
     CHECK(encode(req, wire));
-    CHECK(wire == bytes({0x00, 0x01, 0x00, 0x00, 0x00, 0xca, 0x9a, 0x3b, 0, 0, 0, 0}));
+    // XCDR2: encapsulation 00 09, DHEADER (8 bytes follow), t1.
+    CHECK(wire == bytes({0x00, 0x09, 0x00, 0x00, 0x08, 0, 0, 0, 0x00, 0xca, 0x9a, 0x3b, 0, 0, 0, 0}));
     msg::TimeRefReply rep;
     rep.t1(1000000000); rep.t2(1000250000); rep.t3(1000260000);
     CHECK(encode(rep, wire));
-    CHECK(wire == bytes({0x00, 0x01, 0x00, 0x00, 0x00, 0xca, 0x9a, 0x3b, 0, 0, 0, 0, 0x90, 0x9a, 0x9e, 0x3b, 0, 0, 0, 0,
-                         0xa0, 0xc1, 0x9e, 0x3b, 0, 0, 0, 0}));
+    CHECK(wire == bytes({0x00, 0x09, 0x00, 0x00, 0x18, 0, 0, 0, 0x00, 0xca, 0x9a, 0x3b, 0, 0, 0, 0,
+                         0x90, 0x9a, 0x9e, 0x3b, 0, 0, 0, 0, 0xa0, 0xc1, 0x9e, 0x3b, 0, 0, 0, 0}));
     msg::TimeRefReply rep_out;
     CHECK(decode(wire, rep_out));
     CHECK(rep_out.t1() == 1000000000 && rep_out.t2() == 1000250000 && rep_out.t3() == 1000260000);

@@ -1,0 +1,14 @@
+// Test only: version 1 of an appendable type (0.11 plan 4, decisions E1, E5, E8).
+#ifndef EVO_V1_MSG_EVOLUTION_V1_IDL
+#define EVO_V1_MSG_EVOLUTION_V1_IDL
+
+module evo_v1 {
+  module msg {
+    @appendable struct Thing {
+      int32 a;
+      string b;
+    };
+  };
+};
+
+#endif

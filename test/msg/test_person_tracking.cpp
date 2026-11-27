@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: internal
 //
 // Round trip of tcnart_msgs::msg::PersonTrackingMessage (0.10.5) through CDR the way the Zenoh transport
-// carries it (DDS_CDR with the encapsulation header, as HTA's tcn::zenoh serde). The avatar extension (HTA design 70): the
+// carries it (XCDR2, encapsulation 00 09, 0.11 decisions E1). The avatar extension (HTA design 70): the
 // joint set, previous_id, per-joint age, ambiguous, the group number and the orientation fields.
 #include <cmath>
 #include <cstdint>
@@ -33,8 +33,8 @@ static bool encode(const msg::PersonTrackingMessage& m, std::vector<char>& out)
 {
     out.assign(1 << 20, 0);
     FastBuffer fb(out.data(), out.size());
-    Cdr ser(fb, Cdr::DEFAULT_ENDIAN, CdrVersion::DDS_CDR);
-    try { ser.serialize_encapsulation(); ser << m; } catch (...) { return false; }
+    Cdr ser(fb, Cdr::DEFAULT_ENDIAN, CdrVersion::XCDRv2);
+    try { ser.set_encoding_flag(eprosima::fastcdr::EncodingAlgorithmFlag::DELIMIT_CDR2); ser.serialize_encapsulation(); ser << m; } catch (...) { return false; }
     out.resize(ser.get_serialized_data_length());
     return true;
 }
@@ -43,7 +43,7 @@ static bool decode(const std::vector<char>& in, msg::PersonTrackingMessage& m)
 {
     std::vector<char> copy(in);
     FastBuffer fb(copy.data(), copy.size());
-    Cdr de(fb, Cdr::DEFAULT_ENDIAN, CdrVersion::DDS_CDR);
+    Cdr de(fb, Cdr::DEFAULT_ENDIAN, CdrVersion::XCDRv2);
     try { de.read_encapsulation(); de >> m; } catch (...) { return false; }
     return true;
 }

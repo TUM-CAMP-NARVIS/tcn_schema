@@ -40,10 +40,21 @@ target_link_libraries(tcn_schema_roundtrip_tests PRIVATE ${roundtrip_libs} ${DDS
 set_target_properties(tcn_schema_roundtrip_tests PROPERTIES CXX_STANDARD 17)
 add_test(NAME roundtrip COMMAND tcn_schema_roundtrip_tests)
 
+# Two versions of one appendable type, for the evolution goldens (0.11 plan 4).
+set(FASTDDSGEN_OUTPUT_DIR "${CMAKE_CURRENT_BINARY_DIR}/evo_gen")
+set(FASTDDSGEN_SRC_PREFIX "${CMAKE_CURRENT_SOURCE_DIR}")
+set(FASTDDS_INCLUDE_DIRECTORY "${PROJECT_SOURCE_DIR}/src/dds")
+FASTDDS_GENERATE_CPP(evo_v1 msg evo_v1_src evo_v1_hdr evo_v1_export "" idl/evo/EvolutionV1.idl)
+FASTDDS_GENERATE_CPP(evo_v2 msg evo_v2_src evo_v2_hdr evo_v2_export "" idl/evo/EvolutionV2.idl)
+add_library(tcn_test_evo STATIC ${evo_v1_src} ${evo_v1_hdr} ${evo_v2_src} ${evo_v2_hdr})
+target_include_directories(tcn_test_evo PUBLIC "${CMAKE_CURRENT_BINARY_DIR}/evo_gen")
+target_link_libraries(tcn_test_evo PUBLIC ${DDS_LIBRARIES})
+set_target_properties(tcn_test_evo PROPERTIES CXX_STANDARD 17 POSITION_INDEPENDENT_CODE ON)
+
 add_executable(tcn_schema_golden_tests golden/golden_test.cpp)
 target_include_directories(tcn_schema_golden_tests PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}")
 target_compile_definitions(tcn_schema_golden_tests PRIVATE TCN_GOLDEN_DIR="${CMAKE_CURRENT_SOURCE_DIR}/golden")
-target_link_libraries(tcn_schema_golden_tests PRIVATE tcn_schema_sqe_msgs tcn_schema_tcnart_msgs tcn_schema_std_msgs ${DDS_LIBRARIES})
+target_link_libraries(tcn_schema_golden_tests PRIVATE tcn_test_evo tcn_schema_sqe_msgs tcn_schema_tcnart_msgs tcn_schema_std_msgs ${DDS_LIBRARIES})
 set_target_properties(tcn_schema_golden_tests PROPERTIES CXX_STANDARD 17)
 add_test(NAME golden COMMAND tcn_schema_golden_tests)
 
