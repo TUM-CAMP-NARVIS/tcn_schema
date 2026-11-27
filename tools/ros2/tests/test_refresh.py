@@ -50,7 +50,8 @@ version: 2
 class TiersTest(unittest.TestCase):
     def test_tiers(self):
         self.assertEqual(DEFAULT_TIERS, ["base", "core"])
-        self.assertEqual(TIERS["base"], ["builtin_interfaces", "std_msgs", "geometry_msgs", "sensor_msgs"])
+        # service_msgs is in base: sensor_msgs has a service (SetCameraInfo), and every _Event type needs it.
+        self.assertEqual(TIERS["base"], ["builtin_interfaces", "std_msgs", "geometry_msgs", "sensor_msgs", "service_msgs"])
         self.assertIn("type_description_interfaces", TIERS["core"])
         self.assertEqual(TIERS["navigation"], ["nav2_msgs", "geographic_msgs"])
 
@@ -109,6 +110,25 @@ class GenerateTest(unittest.TestCase):
         self.assertEqual(kinds["tf2_msgs/action/LookupTransform"], "action")
         self.assertEqual(kinds["tf2_msgs/action/LookupTransform_SendGoal"], "action_part")
         self.assertEqual(types["distro"], "jazzy")
+
+    def test_colliding_action_file_is_renamed(self):
+        # fastddsgen writes code for included IDL into the including file's output directory, so an action file
+        # named like a message it includes would have its header overwritten (control_msgs/GripperCommand).
+        src = Path(self.tmp.name) / "src" / "fx_msgs"
+        (src / "msg").mkdir(parents=True)
+        (src / "action").mkdir()
+        (src / "msg" / "Grip.msg").write_text("float64 position\n")
+        (src / "action" / "Grip.action").write_text("fx_msgs/Grip command\n---\nbool ok\n---\nfloat64 p\n")
+        sources = dict(SOURCES, fx_msgs=src)
+        tiers = dict(TIER_OF, fx_msgs="manipulation")
+        out = Path(self.tmp.name) / "fx"
+        generate(sources, tiers, out, {"jazzy": None})
+        self.assertTrue((out / "fx_msgs" / "msg" / "Grip.idl").is_file())
+        self.assertFalse((out / "fx_msgs" / "action" / "Grip.idl").exists())
+        action = (out / "fx_msgs" / "action" / "GripAction.idl").read_text()
+        self.assertIn("@final struct Grip_Goal {", action)
+        self.assertIn("#ifndef FX_MSGS_ACTION_GRIPACTION_IDL", action)
+        self.assertIn('"action/GripAction.idl"', (out / "fx_msgs" / "CMakeLists.txt").read_text())
 
     def test_check_detects_drift(self):
         other = Path(self.tmp.name) / "again"

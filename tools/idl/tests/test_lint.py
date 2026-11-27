@@ -66,6 +66,15 @@ class LintRulesTest(unittest.TestCase):
         body = "module fx { module msg { @final struct Pose { double x; }; }; };"
         self.assertEqual(self.rules({"fx/msg/Pose.idl": _good("Pose", body)}, family="ros2"), [])
 
+    def test_include_collision(self):
+        # A file that includes another file with the same basename gets its generated header overwritten.
+        msg = "module fx { module msg { @appendable struct Grip { double p; }; }; };"
+        act = ('#include "fx/msg/Grip.idl"\n'
+               "module fx { module action { @appendable struct Grip_Goal { fx::msg::Grip g; }; }; };")
+        r = self.rules({"fx/msg/Grip.idl": _good("Grip", msg),
+                        "fx/action/Grip.idl": GUARD.format(stem="GRIP", body=act).replace("FX_MSG_", "FX_ACTION_")})
+        self.assertIn("include-collision", r)
+
     def test_no_enums_module(self):
         body = GOOD_BODY.replace("module msg {", "module msg { module enums { };", 1)
         self.assertEqual(self.rules({"fx/msg/Paint.idl": _good(body=body)}), ["no-enums-module"])

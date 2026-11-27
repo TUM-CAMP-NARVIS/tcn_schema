@@ -43,6 +43,13 @@ class EmitTest(unittest.TestCase):
         self.assertIn("sequence<p2::msg::X> xs;", idl)
         self.assertIn('#include "p2/msg/X.idl"', idl)
 
+    def test_keyword_field_is_escaped(self):
+        # nav_msgs/srv/GetMap_Response has a field named `map`, an IDL keyword; `_map` is the escaped identifier.
+        idl = emit_idl("p", "msg", "M", [parse_message("p", "M", "float64 map\nint32 module\nint32 value\n")])
+        self.assertIn("double _map;", idl)
+        self.assertIn("int32 _module;", idl)
+        self.assertIn("int32 value;", idl)
+
     def test_empty_message(self):
         idl = emit_idl("std_msgs", "msg", "Empty", [parse_message("std_msgs", "Empty", "")])
         self.assertIn("uint8 structure_needs_at_least_one_member;", idl)

@@ -13,7 +13,7 @@ module control_msgs {
     };
     @final struct JointComponentTolerance {
       string joint_name;
-      uint16 component;
+      uint16 _component;
       double position;
       double velocity;
       double acceleration;

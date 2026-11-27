@@ -56,6 +56,12 @@ function(FASTDDS_GENERATE_CPP MODPATH MODTYP SOURCES HEADERS DLLEXPORT GEN_DEPEN
 
     set(CMDARGS -jar ${FASTDDSGEN_JAR})
     list(APPEND CMDARGS -d ${MODOUTDIR})
+    # A private temporary directory per run: fastddsgen writes its preprocessed copies of the input and of every
+    # included IDL there, and concurrent runs sharing the default temporary directory overwrite each other's files
+    # (an included file then parses as empty: "mismatched input '<EOF>'").
+    set(_tcn_tmp "${CMAKE_CURRENT_BINARY_DIR}/fastddsgen_tmp/${MODPATH}_${MODTYP}")
+    file(MAKE_DIRECTORY "${_tcn_tmp}")
+    list(APPEND CMDARGS -t "${_tcn_tmp}")
     list(APPEND CMDARGS -I ${FASTDDS_INCLUDE_DIRECTORY}/ros2)
     list(APPEND CMDARGS -I ${FASTDDS_INCLUDE_DIRECTORY}/custom)
     list(APPEND CMDARGS -typeros2)
@@ -135,6 +141,8 @@ exec xcrun clang -E -x c "$@" -o "$out"
             OUTPUT ${${SOURCES}} ${${HEADERS}}
             COMMAND "${Java_JAVA_EXECUTABLE}"
             ARGS ${CMDARGS}
+            # fastddsgen 3.0.0 can write size constants that overflow uint32_t (tools/fastddsgen_fixup.py)
+            COMMAND "${Python3_EXECUTABLE}" -I -B "${PROJECT_SOURCE_DIR}/tools/fastddsgen_fixup.py" ${${HEADERS}}
             DEPENDS ${SCHEMAS} ${tool_depends} ${GEN_DEPENDENCY}
             COMMENT "Compiling IDL Files: ${SCHEMAS}"
             VERBATIM USES_TERMINAL

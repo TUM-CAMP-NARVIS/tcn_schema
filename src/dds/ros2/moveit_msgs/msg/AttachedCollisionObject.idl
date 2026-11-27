@@ -9,7 +9,7 @@ module moveit_msgs {
   module msg {
     @final struct AttachedCollisionObject {
       string link_name;
-      moveit_msgs::msg::CollisionObject object;
+      moveit_msgs::msg::CollisionObject _object;
       sequence<string> touch_links;
       trajectory_msgs::msg::JointTrajectory detach_posture;
       double weight;

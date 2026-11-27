@@ -20,9 +20,10 @@ class RepoSchemaTest(unittest.TestCase):
         cls.decls = _decls(cls.schema)
 
     def test_all_repo_files_parse(self):
-        self.assertEqual(len(self.schema.files), 144)
+        # 0.11 plan 2: the ROS 2 tree is generated from Jazzy (all tiers committed).
+        self.assertEqual(len(self.schema.files), 476)
         n = sum(1 for f in self.schema.files for d in f.decls if isinstance(d, (Struct, Enum, Union)))
-        self.assertEqual(n, 449)
+        self.assertEqual(n, 1279)
 
     def test_sensor_type(self):
         e = self.decls["tcnart_msgs::msg::SensorType"]
@@ -34,7 +35,7 @@ class RepoSchemaTest(unittest.TestCase):
         h = self.decls["std_msgs::msg::Header"]
         self.assertEqual([(m.name, m.type) for m in h.members],
                          [("stamp", "builtin_interfaces::msg::Time"), ("frame_id", "string")])
-        self.assertEqual(h.extensibility, "default")
+        self.assertEqual(h.extensibility, "final")
 
     def test_union(self):
         u = self.decls["tcnart_msgs::rpc::SRStreamTrigger"]
@@ -50,10 +51,9 @@ class RepoSchemaTest(unittest.TestCase):
         self.assertEqual(set(f.forward_decls), {"tcnart_msgs::rpc::Parameter", "tcnart_msgs::rpc::ParameterValue",
                                                 "tcnart_msgs::rpc::ParameterList"})
 
-    def test_typedef_array(self):
-        t = self.decls["unique_identifier_msgs::msg::uint8__16"]
-        self.assertIsInstance(t, Typedef)
-        self.assertEqual((t.type, t.array), ("uint8", [16]))
+    def test_ros_fixed_array_member(self):
+        m = self.decls["unique_identifier_msgs::msg::UUID"].members[0]
+        self.assertEqual((m.type, m.array), ("uint8", [16]))
 
     def test_file_metadata(self):
         f = next(f for f in self.schema.files if f.path == "tcnart_msgs/msg/Types.idl")
@@ -61,16 +61,28 @@ class RepoSchemaTest(unittest.TestCase):
         self.assertEqual(self.schema.family["std_msgs"], "ros2")
         self.assertEqual(self.schema.family["tcnart_msgs"], "tcn")
         hdr = next(f for f in self.schema.files if f.path == "std_msgs/msg/Header.idl")
-        self.assertEqual(hdr.includes, ["builtin_interfaces/msg/Time_.idl"])
+        self.assertEqual(hdr.includes, ["builtin_interfaces/msg/Time.idl"])
 
 
 class FixtureTest(unittest.TestCase):
+    def test_typedef_array(self):
+        f = parse_file(FIX / "typedef.idl", "fx/msg/typedef.idl")
+        t = f.decls[0]
+        self.assertIsInstance(t, Typedef)
+        self.assertEqual((t.name, t.type, t.array), ("fx::msg::uint8__16", "uint8", [16]))
+        self.assertEqual(f.decls[1].members[0].type, "fx::msg::uint8__16")
+
     def test_verbatim_multiline(self):
         f = parse_file(FIX / "verbatim.idl", "fx/msg/verbatim.idl")
         s = f.decls[0]
         self.assertEqual(s.name, "fx::msg::V")
         self.assertEqual([m.name for m in s.members], ["a", "b"])
         self.assertEqual(s.members[0].annotations.get("unit"), 'value="m"')
+
+    def test_escaped_identifier(self):
+        # IDL 4.2 7.2.3: a leading underscore escapes a keyword; the identifier is the name without it.
+        f = parse_file(FIX / "escaped.idl", "fx/msg/escaped.idl")
+        self.assertEqual([m.name for m in f.decls[0].members], ["map", "value"])
 
     def test_map(self):
         f = parse_file(FIX / "map.idl", "fx/msg/map.idl")

@@ -525,7 +525,7 @@
   "service_msgs": {
    "path": "service_msgs",
    "repo": "https://github.com/ros2/rcl_interfaces.git",
-   "tier": "core"
+   "tier": "base"
   },
   "shape_msgs": {
    "path": "shape_msgs",

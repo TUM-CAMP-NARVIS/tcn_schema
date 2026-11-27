@@ -11,7 +11,7 @@ module octomap_msgs {
       uint8 structure_needs_at_least_one_member;
     };
     @final struct GetOctomap_Response {
-      octomap_msgs::msg::Octomap map;
+      octomap_msgs::msg::Octomap _map;
     };
     @final struct GetOctomap_Event {
       service_msgs::msg::ServiceEventInfo info;

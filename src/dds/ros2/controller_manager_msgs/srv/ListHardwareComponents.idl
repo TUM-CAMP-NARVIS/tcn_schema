@@ -11,7 +11,7 @@ module controller_manager_msgs {
       uint8 structure_needs_at_least_one_member;
     };
     @final struct ListHardwareComponents_Response {
-      sequence<controller_manager_msgs::msg::HardwareComponentState> component;
+      sequence<controller_manager_msgs::msg::HardwareComponentState> _component;
     };
     @final struct ListHardwareComponents_Event {
       service_msgs::msg::ServiceEventInfo info;

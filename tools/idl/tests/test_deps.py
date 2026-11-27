@@ -32,6 +32,25 @@ class PackageTableTest(unittest.TestCase):
             self.assertTrue(set(p["deps"]) <= seen, f"{p['name']} listed before {set(p['deps']) - seen}")
             seen.add(p["name"])
 
+    def test_table_tiers(self):
+        from tools.ros2.tiers import TIERS
+        tier_of = {p: t for t, ps in TIERS.items() for p in ps}
+        ros = [p for p in self.table if p["family"] == "ros2"]
+        self.assertEqual({p["name"] for p in ros}, set(tier_of))
+        for p in ros:
+            self.assertEqual(p["tier"], tier_of[p["name"]], p["name"])
+        allowed = {"base": {"base"}, "core": {"base", "core"}}
+        by_name = {p["name"]: p for p in self.table}
+        for p in ros:
+            if p["tier"] in allowed:
+                for d in p["deps"]:
+                    self.assertIn(by_name[d]["tier"], allowed[p["tier"]], f"{p['name']} -> {d}")
+        for p in self.table:
+            if p["family"] == "tcn":
+                self.assertEqual(p["tier"], "tcn")
+                for d in p["deps"]:
+                    self.assertIn(by_name[d]["tier"], {"base", "tcn"}, f"{p['name']} -> {d}")
+
     def test_dirs_exist(self):
         for p in self.table:
             self.assertTrue((REPO / p["dir"]).is_dir(), p["dir"])

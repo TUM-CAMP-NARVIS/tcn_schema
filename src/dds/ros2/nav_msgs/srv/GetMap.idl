@@ -11,7 +11,7 @@ module nav_msgs {
       uint8 structure_needs_at_least_one_member;
     };
     @final struct GetMap_Response {
-      nav_msgs::msg::OccupancyGrid map;
+      nav_msgs::msg::OccupancyGrid _map;
     };
     @final struct GetMap_Event {
       service_msgs::msg::ServiceEventInfo info;

@@ -54,6 +54,26 @@ def lint(schema: Schema, files_text: Dict[str, str]) -> List[Finding]:
         else:
             seen[key] = f.path
 
+    # include-collision: fastddsgen writes the code of every included IDL file into the including run's output
+    # directory (<pkg>/<kind>), so an included file with the basename of a file of that run overwrites its header.
+    by_path = {f.path: f for f in schema.files}
+    batches: Dict[Tuple[str, str], List[str]] = {}
+    for f in schema.files:
+        batches.setdefault((f.package, f.kind), []).append(f.path)
+    for (pkg, kind), paths in sorted(batches.items()):
+        own = {PurePosixPath(p).name: p for p in paths}
+        included, queue = set(), [i for p in paths for i in by_path[p].includes]
+        while queue:
+            i = queue.pop()
+            if i in by_path and i not in included:
+                included.add(i)
+                queue.extend(by_path[i].includes)
+        for i in sorted(included):
+            name = PurePosixPath(i).name
+            if name in own and own[name] != i:
+                out.append(Finding("include-collision", own[name], 1, name,
+                                   f"its generated header is overwritten by the code generated for included {i}"))
+
     for f in schema.files:
         text = files_text.get(f.path, "")
         stem = PurePosixPath(f.path).stem

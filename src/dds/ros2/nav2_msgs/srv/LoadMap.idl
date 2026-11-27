@@ -18,7 +18,7 @@ module nav2_msgs {
       const uint8 RESULT_UNDEFINED_FAILURE = 255;
     };
     @final struct LoadMap_Response {
-      nav_msgs::msg::OccupancyGrid map;
+      nav_msgs::msg::OccupancyGrid _map;
       uint8 result;
     };
     @final struct LoadMap_Event {

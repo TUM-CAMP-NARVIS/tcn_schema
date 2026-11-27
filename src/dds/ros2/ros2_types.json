@@ -13124,7 +13124,7 @@
    "kind": "msg",
    "package": "service_msgs",
    "ros_name": "service_msgs/msg/ServiceEventInfo",
-   "tier": "core"
+   "tier": "base"
   },
   {
    "cpp_name": "shape_msgs::msg::Mesh",

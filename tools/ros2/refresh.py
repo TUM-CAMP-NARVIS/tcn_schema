@@ -85,16 +85,36 @@ def generate(sources: Dict[str, Path], tiers: Dict[str, str], out: Path,
                 files["msg"].append(_write(pdir, pkg, "msg", m.name, [m]))
         for key, s in sorted(tree.srvs.items()):
             if s.pkg == pkg:
-                files["srv"].append(_write(pdir, pkg, "srv", s.name, expand_service(s)))
+                parts = expand_service(s)
+                files["srv"].append(_write(pdir, pkg, "srv", _stem(s.name, "Service", parts, tree), parts))
         for key, a in sorted(tree.actions.items()):
             if a.pkg == pkg:
-                files["action"].append(_write(pdir, pkg, "action", a.name, expand_action(a)))
+                parts = expand_action(a)
+                files["action"].append(_write(pdir, pkg, "action", _stem(a.name, "Action", parts, tree), parts))
         (pdir / "CMakeLists.txt").write_text(_cmake(pkg, files), encoding="utf-8")
     hashes = {d: hash_all(t if t is not None else tree) for d, t in hash_trees.items()}
     doc = {"distro": DISTRO, "generated_by": "tools/ros2 (src/dds/ros2/UPSTREAM.lock)",
            "types": _types_entries(tree, tiers, hashes)}
     (out / "ros2_types.json").write_text(json.dumps(doc, indent=1, sort_keys=True) + "\n", encoding="utf-8")
     return tree
+
+
+def _stem(name: str, suffix: str, parts, tree: Tree) -> str:
+    """The IDL file stem of a service or action: its name, or <name><suffix> when a message it includes (directly or
+    transitively) has the same file name. fastddsgen writes the code of included IDL into the including file's
+    output directory, so equal names would overwrite each other's headers (control_msgs/action/GripperCommand
+    includes control_msgs/msg/GripperCommand; control_msgs/action/JointTrajectory includes
+    trajectory_msgs/msg/JointTrajectory)."""
+    seen, queue = set(), [f.type for m in parts for f in m.fields]
+    while queue:
+        t = queue.pop()
+        if t.pkg is None or t.kind != "msg" or (t.pkg, t.name) in seen:
+            continue
+        seen.add((t.pkg, t.name))
+        spec = tree.msgs.get(f"{t.pkg}/msg/{t.name}")
+        if spec is not None:
+            queue.extend(f.type for f in spec.fields)
+    return name + suffix if any(n == name for _, n in seen) else name
 
 
 def _write(pdir: Path, pkg: str, kind: str, stem: str, specs) -> str:

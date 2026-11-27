@@ -36,8 +36,8 @@ tcn_add_idl_package(
         ACTION
             "action/ExecuteMotionPrimitiveSequence.idl"
             "action/FollowJointTrajectory.idl"
-            "action/GripperCommand.idl"
-            "action/JointTrajectory.idl"
+            "action/GripperCommandAction.idl"
+            "action/JointTrajectoryAction.idl"
             "action/ParallelGripperCommand.idl"
             "action/PointHead.idl"
             "action/SingleJointPosition.idl"

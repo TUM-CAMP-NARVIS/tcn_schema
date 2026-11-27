@@ -15,6 +15,20 @@ IDL_PRIMITIVE = {"bool": "boolean", "byte": "octet", "char": "uint8", "int8": "i
                  "uint64": "uint64", "float32": "float", "float64": "double", "string": "string",
                  "wstring": "wstring"}
 
+# IDL 4.2 keywords (7.2.4) and the fastddsgen 3.0.0 grammar's additional ones; a field named like one of them is
+# written as the escaped identifier `_<name>` (IDL 4.2 7.2.3), which is the same identifier.
+IDL_KEYWORDS = {
+    "abstract", "any", "alias", "attribute", "bitfield", "bitmask", "bitset", "boolean", "case", "char", "component",
+    "connector", "const", "consumes", "context", "custom", "default", "double", "exception", "emits", "enum",
+    "eventtype", "factory", "false", "finder", "fixed", "float", "getraises", "getter", "home", "import", "in",
+    "inout", "interface", "local", "long", "manages", "map", "mirrorport", "module", "multiple", "native", "object",
+    "octet", "oneway", "out", "primarykey", "private", "port", "porttype", "provides", "public", "publishes",
+    "raises", "readonly", "setraises", "setter", "sequence", "short", "string", "struct", "supports", "switch",
+    "true", "truncatable", "typedef", "typeid", "typename", "typeprefix", "unsigned", "union", "uses", "valuebase",
+    "valuetype", "void", "wchar", "wstring", "int8", "uint8", "int16", "int32", "int64", "uint16", "uint32",
+    "uint64", "annotation",
+}
+
 UUID = RosType("unique_identifier_msgs", "UUID")
 TIME = RosType("builtin_interfaces", "Time")
 EVENT_INFO = RosType("service_msgs", "ServiceEventInfo")
@@ -77,9 +91,10 @@ def idl_type(t: RosType) -> str:
 
 
 def _declarator(f: Field) -> str:
+    name = "_" + f.name if f.name.lower() in IDL_KEYWORDS else f.name
     if f.type.array and f.type.array[0] == "fixed":
-        return f"{f.name}[{f.type.array[1]}]"
-    return f.name
+        return f"{name}[{f.type.array[1]}]"
+    return name
 
 
 def _string_literal(value: str) -> str:

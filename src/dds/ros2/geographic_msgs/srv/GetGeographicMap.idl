@@ -15,7 +15,7 @@ module geographic_msgs {
     @final struct GetGeographicMap_Response {
       boolean success;
       string status;
-      geographic_msgs::msg::GeographicMap map;
+      geographic_msgs::msg::GeographicMap _map;
     };
     @final struct GetGeographicMap_Event {
       service_msgs::msg::ServiceEventInfo info;

@@ -22,10 +22,13 @@ class TcnSchemaConan(ConanFile):
     options = {
         "shared": [True, False],
         "with_dds": [True, False],
+        # ROS 2 interface tiers to build, ';'-separated: base;core (default), manipulation, navigation, perception
+        "ros2_tiers": ["ANY"],
     }
     default_options = {
         "shared" : False,
         "with_dds": False,
+        "ros2_tiers": "base;core",
     }
 
     # all sources are deployed with the package
@@ -63,6 +66,7 @@ class TcnSchemaConan(ConanFile):
         if self.settings.os == "Windows" or self.settings.os == "WindowsStore":
             gen_path = gen_path.replace("\\", "\\\\")
         tc.variables["FASTDDS_GEN_JAR_PATH"] = gen_path
+        tc.cache_variables["TCN_SCHEMA_ROS2_TIERS"] = str(self.options.ros2_tiers)
 
     def build(self):
         # overwritten since generator needs to be able to find its shared lib if build with_shared
@@ -94,7 +98,14 @@ class TcnSchemaConan(ConanFile):
             raise ConanException("tcn_schema: package table not found in " + ", ".join(candidates))
         with open(table, encoding="utf-8") as f:
             packages = json.load(f)["packages"]
+        tiers = str(self.options.ros2_tiers).split(";")
         for p in packages:
+            # A ROS 2 tier that was not selected (option ros2_tiers). The installed table says so ("built"); the
+            # source table used in editable mode does not, so the option decides there.
+            if "built" in p and not p["built"]:
+                continue
+            if "built" not in p and p["family"] == "ros2" and p.get("tier") not in tiers:
+                continue
             c = self.cpp_info.components[p["name"]]
             c.names["cmake_find_package"] = p["name"]
             c.defines = []

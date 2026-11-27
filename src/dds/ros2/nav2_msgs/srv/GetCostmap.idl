@@ -12,7 +12,7 @@ module nav2_msgs {
       nav2_msgs::msg::CostmapMetaData specs;
     };
     @final struct GetCostmap_Response {
-      nav2_msgs::msg::Costmap map;
+      nav2_msgs::msg::Costmap _map;
     };
     @final struct GetCostmap_Event {
       service_msgs::msg::ServiceEventInfo info;
