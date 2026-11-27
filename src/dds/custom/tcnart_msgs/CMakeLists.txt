@@ -24,7 +24,6 @@ tcn_add_idl_package(
             "rpc/Requests.idl"
             "rpc/SpatialRelations.idl"
             "rpc/SIS.idl"
-        DEPS builtin_interfaces std_msgs geometry_msgs
         EXTRA_INSTALL "msg/JointSets.md"
         )
 

@@ -5,5 +5,4 @@ tcn_add_idl_package(
             "msg/OrbbecSensors.idl"
         RPC
             "rpc/OrbbecManager.idl"
-        DEPS builtin_interfaces std_msgs geometry_msgs tcnart_msgs
         )

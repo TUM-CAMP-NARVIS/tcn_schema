@@ -4,5 +4,4 @@ tcn_add_idl_package(
             "msg/StatisticDataType.idl"
             "msg/StatisticDataPoint.idl"
             "msg/MetricsMessage.idl"
-        DEPS builtin_interfaces
         )

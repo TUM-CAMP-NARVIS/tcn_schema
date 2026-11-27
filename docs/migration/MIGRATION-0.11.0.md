@@ -53,6 +53,20 @@ to do. Items marked *(wire)* need the lockstep cut-over; all others can be done 
     - tcnart's Unreal ordinals;
     - HTA's FlatBuffers mirrors.
   - The format is stable from 0.11.0 on. Fields are only added, never removed.
+- **Conan components follow the IDL includes** (one table, `cmake/tcn_packages.json`, installed as
+  `share/tcn_schema/packages.json`, drives CMake and conan):
+  - `std_msgs` now requires `builtin_interfaces`; this was missing, although `Header` contains `Time`.
+  - `tcnart_msgs` no longer requires `geometry_msgs`, which its IDL never includes. **A consumer that links
+    `tcn_schema::tcnart_msgs` and uses `geometry_msgs` types must require `tcn_schema::geometry_msgs` itself.** None of
+    the five consumers is affected: HTA links `tcn_schema::tcn_schema`, and only tcnart's deprecated v2 names
+    components, `geometry_msgs` included.
+  - The ROS packages require only what their IDL includes (for example `geometry_msgs` → `std_msgs`, `shape_msgs` →
+    `geometry_msgs`).
+- **fast-cdr headers are now visible to consumers** (`transitive_headers=True`).
+  - Every generated header includes fastcdr headers. Before, a Conan 2 consumer had to require `fast-cdr` itself, as
+    HTA does; that is no longer needed, though keeping it does no harm.
+- **tcnart:** the shipped `share/tcn_schema/dds/tf2_msgs/action/LookupTransform.idl` now matches the layout of your
+  snapshot `v3/third_party/tcn_schema_idl` (`idlgen.py check-package`).
 - **Building tcn_schema** needs Python 3 (standard library only) at build time.
 - **Building tcn_schema:**
   - it builds in parallel again (the forced serial build is gone);

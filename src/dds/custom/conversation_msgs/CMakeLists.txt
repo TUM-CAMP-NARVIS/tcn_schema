@@ -14,5 +14,4 @@ tcn_add_idl_package(
             "msg/metrics.idl"
         RPC
             "rpc/discovery.idl"
-        DEPS
         )

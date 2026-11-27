@@ -2,7 +2,6 @@
 #
 #   tcn_add_idl_package(NAME <pkg>
 #                       [MSG <idl>...] [RPC <idl>...] [ACTION <idl>...]
-#                       [DEPS <pkg>...]
 #                       [EXTRA_INSTALL <file>...])
 #
 # * Code is generated into ${PROJECT_BINARY_DIR}/generated/<pkg>/<msg|rpc|action>/ (never into the source tree).
@@ -10,13 +9,52 @@
 #   <prefix>/include. Header paths are the same in both: `<pkg>/<kind>/<File>.h`.
 # * Headers install to include/<pkg>/<kind>/, IDL files to share/tcn_schema/dds/<pkg>/<kind>/.
 # * EXTRA_INSTALL files (documentation shipped with the IDL) install next to the msg IDL.
-# * DEPS: other IDL packages whose IDL this package includes. When omitted, the package table
-#   (cmake/tcn_packages.json, see tcn_package_deps()) supplies them.
+# * Dependencies (the packages whose IDL this package includes) come from the package table cmake/tcn_packages.json;
+#   tools/idl/tests/test_deps.py checks the table against the IDL #includes.
 #
 # The rest (export definitions, PIC, MSVC runtime, C++17, per-target CMake config export) is what each package's
 # CMakeLists.txt did by hand up to 0.10.7.
 
 set(TCN_GENERATED_DIR "${PROJECT_BINARY_DIR}/generated")
+set(TCN_PACKAGE_TABLE "${PROJECT_SOURCE_DIR}/cmake/tcn_packages.json")
+file(READ "${TCN_PACKAGE_TABLE}" TCN_PACKAGE_TABLE_JSON)
+set_property(DIRECTORY APPEND PROPERTY CMAKE_CONFIGURE_DEPENDS "${TCN_PACKAGE_TABLE}")
+
+# tcn_package_deps(<pkg> <out-var>): the direct dependencies of <pkg> from the package table.
+function(tcn_package_deps pkg out)
+  string(JSON n LENGTH "${TCN_PACKAGE_TABLE_JSON}" packages)
+  math(EXPR last "${n} - 1")
+  foreach(i RANGE ${last})
+    string(JSON name GET "${TCN_PACKAGE_TABLE_JSON}" packages ${i} name)
+    if(name STREQUAL pkg)
+      set(deps)
+      string(JSON nd LENGTH "${TCN_PACKAGE_TABLE_JSON}" packages ${i} deps)
+      if(nd GREATER 0)
+        math(EXPR lastd "${nd} - 1")
+        foreach(j RANGE ${lastd})
+          string(JSON d GET "${TCN_PACKAGE_TABLE_JSON}" packages ${i} deps ${j})
+          list(APPEND deps ${d})
+        endforeach()
+      endif()
+      set(${out} ${deps} PARENT_SCOPE)
+      return()
+    endif()
+  endforeach()
+  message(FATAL_ERROR "package '${pkg}' is not in ${TCN_PACKAGE_TABLE}")
+endfunction()
+
+# tcn_add_packages_from_table(): add_subdirectory() for every IDL package (family ros2 or tcn), in table order.
+function(tcn_add_packages_from_table)
+  string(JSON n LENGTH "${TCN_PACKAGE_TABLE_JSON}" packages)
+  math(EXPR last "${n} - 1")
+  foreach(i RANGE ${last})
+    string(JSON family GET "${TCN_PACKAGE_TABLE_JSON}" packages ${i} family)
+    if(family STREQUAL "ros2" OR family STREQUAL "tcn")
+      string(JSON dir GET "${TCN_PACKAGE_TABLE_JSON}" packages ${i} dir)
+      add_subdirectory("${PROJECT_SOURCE_DIR}/${dir}")
+    endif()
+  endforeach()
+endfunction()
 
 function(tcn_add_idl_package)
   cmake_parse_arguments(ARG "" "NAME" "MSG;RPC;ACTION;DEPS;EXTRA_INSTALL" ${ARGN})
@@ -25,9 +63,10 @@ function(tcn_add_idl_package)
   endif()
 
   set(lib "tcn_schema_${ARG_NAME}")
-  if(NOT DEFINED ARG_DEPS AND COMMAND tcn_package_deps)
-    tcn_package_deps(${ARG_NAME} ARG_DEPS)
+  if(ARG_DEPS)
+    message(FATAL_ERROR "tcn_add_idl_package(${ARG_NAME}): DEPS come from cmake/tcn_packages.json; do not pass them")
   endif()
+  tcn_package_deps(${ARG_NAME} ARG_DEPS)
 
   # Read by FASTDDS_GENERATE_CPP from the calling scope.
   set(FASTDDSGEN_OUTPUT_DIR "${TCN_GENERATED_DIR}")

@@ -31,5 +31,4 @@ tcn_add_idl_package(
             "msg/Int32MultiArray.idl"
             "msg/UInt32MultiArray.idl"
             "msg/Bool.idl"
-        DEPS
         )

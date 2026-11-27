@@ -28,5 +28,4 @@ tcn_add_idl_package(
             "msg/CameraInfo.idl"
             "msg/MultiDOFJointState.idl"
             "msg/Imu.idl"
-        DEPS builtin_interfaces std_msgs geometry_msgs
         )

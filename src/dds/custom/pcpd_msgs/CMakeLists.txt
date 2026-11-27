@@ -6,5 +6,4 @@ tcn_add_idl_package(
             "msg/MeshBitstream.idl"
         RPC
             "rpc/ServiceController.idl"
-        DEPS builtin_interfaces tcnart_msgs
         )

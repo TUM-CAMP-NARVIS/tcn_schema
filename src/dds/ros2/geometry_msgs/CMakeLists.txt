@@ -30,5 +30,4 @@ tcn_add_idl_package(
             "msg/Twist.idl"
             "msg/Wrench.idl"
             "msg/InertiaStamped.idl"
-        DEPS builtin_interfaces std_msgs
         )

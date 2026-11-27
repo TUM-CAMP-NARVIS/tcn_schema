@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.18)
+cmake_minimum_required(VERSION 3.19)  # string(JSON) for the package table
 project(tcn_schema VERSION 0.10.7 LANGUAGES CXX)
 
 
@@ -36,21 +36,10 @@ if(TCN_SCHEMA_BUILD_MSG_TESTS OR TCN_SCHEMA_BUILD_SQE_TESTS)
   enable_testing()
 endif()
 
-add_subdirectory(src/dds/ros2/builtin_interfaces)
-add_subdirectory(src/dds/ros2/std_msgs)
-add_subdirectory(src/dds/ros2/geometry_msgs)
-add_subdirectory(src/dds/ros2/rosgraph_msgs)
-add_subdirectory(src/dds/ros2/sensor_msgs)
-add_subdirectory(src/dds/ros2/statistics_msgs)
-add_subdirectory(src/dds/ros2/tf2_msgs)
-add_subdirectory(src/dds/ros2/shape_msgs)
-add_subdirectory(src/dds/ros2/unique_identifier_msgs)
+# Every IDL package, in the build order of the package table (cmake/tcn_packages.json).
+tcn_add_packages_from_table()
 
-add_subdirectory(src/dds/custom/tcnart_msgs)
-add_subdirectory(src/dds/custom/pcpd_msgs)
-add_subdirectory(src/dds/custom/device_hl2_msgs)
-add_subdirectory(src/dds/custom/device_orbbec_msgs)
-add_subdirectory(src/dds/custom/conversation_msgs)
+install(FILES "${CMAKE_CURRENT_SOURCE_DIR}/cmake/tcn_packages.json" DESTINATION share/tcn_schema RENAME packages.json)
 
 # The SQE contract core. Header-only and dependency-free, so it adds nothing to
 # a link line; it is added last because its INTERFACE target names

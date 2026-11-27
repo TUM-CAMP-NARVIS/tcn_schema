@@ -1,0 +1,134 @@
+{
+ "_comment": "The package table: build order, family and direct dependencies of every component. Read by CMakeLists.txt (cmake/TcnPackage.cmake) and conanfile.py; tools/idl/tests/test_deps.py checks it against the IDL #includes.",
+ "packages": [
+  {
+   "name": "builtin_interfaces",
+   "dir": "src/dds/ros2/builtin_interfaces",
+   "family": "ros2",
+   "deps": []
+  },
+  {
+   "name": "std_msgs",
+   "dir": "src/dds/ros2/std_msgs",
+   "family": "ros2",
+   "deps": [
+    "builtin_interfaces"
+   ]
+  },
+  {
+   "name": "geometry_msgs",
+   "dir": "src/dds/ros2/geometry_msgs",
+   "family": "ros2",
+   "deps": [
+    "std_msgs"
+   ]
+  },
+  {
+   "name": "sensor_msgs",
+   "dir": "src/dds/ros2/sensor_msgs",
+   "family": "ros2",
+   "deps": [
+    "builtin_interfaces",
+    "geometry_msgs",
+    "std_msgs"
+   ]
+  },
+  {
+   "name": "shape_msgs",
+   "dir": "src/dds/ros2/shape_msgs",
+   "family": "ros2",
+   "deps": [
+    "geometry_msgs"
+   ]
+  },
+  {
+   "name": "tf2_msgs",
+   "dir": "src/dds/ros2/tf2_msgs",
+   "family": "ros2",
+   "deps": [
+    "builtin_interfaces",
+    "geometry_msgs"
+   ]
+  },
+  {
+   "name": "rosgraph_msgs",
+   "dir": "src/dds/ros2/rosgraph_msgs",
+   "family": "ros2",
+   "deps": [
+    "builtin_interfaces"
+   ]
+  },
+  {
+   "name": "statistics_msgs",
+   "dir": "src/dds/ros2/statistics_msgs",
+   "family": "ros2",
+   "deps": [
+    "builtin_interfaces"
+   ]
+  },
+  {
+   "name": "unique_identifier_msgs",
+   "dir": "src/dds/ros2/unique_identifier_msgs",
+   "family": "ros2",
+   "deps": []
+  },
+  {
+   "name": "tcnart_msgs",
+   "dir": "src/dds/custom/tcnart_msgs",
+   "family": "tcn",
+   "deps": [
+    "builtin_interfaces",
+    "std_msgs"
+   ]
+  },
+  {
+   "name": "pcpd_msgs",
+   "dir": "src/dds/custom/pcpd_msgs",
+   "family": "tcn",
+   "deps": [
+    "std_msgs",
+    "tcnart_msgs"
+   ]
+  },
+  {
+   "name": "device_hl2_msgs",
+   "dir": "src/dds/custom/device_hl2_msgs",
+   "family": "tcn",
+   "deps": [
+    "std_msgs",
+    "tcnart_msgs"
+   ]
+  },
+  {
+   "name": "device_orbbec_msgs",
+   "dir": "src/dds/custom/device_orbbec_msgs",
+   "family": "tcn",
+   "deps": [
+    "std_msgs",
+    "tcnart_msgs"
+   ]
+  },
+  {
+   "name": "conversation_msgs",
+   "dir": "src/dds/custom/conversation_msgs",
+   "family": "tcn",
+   "deps": []
+  },
+  {
+   "name": "sqe_contract",
+   "dir": "src/sqe",
+   "family": "header",
+   "deps": [
+    "tcnart_msgs"
+   ]
+  },
+  {
+   "name": "sqe_session",
+   "dir": "src/sqe",
+   "family": "header",
+   "deps": [
+    "sqe_contract"
+   ]
+  }
+ ]
+}

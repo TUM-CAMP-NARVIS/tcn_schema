@@ -9,5 +9,4 @@ tcn_add_idl_package(
             "rpc/Hololens2SceneUnderstanding.idl"
             "rpc/Hololens2VoiceInput.idl"
             "rpc/Hololens2Manager.idl"
-        DEPS builtin_interfaces std_msgs geometry_msgs tcnart_msgs
         )
