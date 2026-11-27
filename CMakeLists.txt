@@ -7,7 +7,6 @@ option(WITH_DDS "Compile with DDS Implementation" OFF)
 # Find requirements
 find_package(fastcdr REQUIRED)
 
-set(CMAKE_BUILD_PARALLEL_LEVEL 1)
 
 set (DDS_LIBRARIES)
 if (WITH_DDS)
@@ -19,7 +18,9 @@ else()
   include_directories("${CMAKE_CURRENT_SOURCE_DIR}/3rdparty/fastrtps/include")
 endif()
 
+include(GNUInstallDirs)
 include(${CMAKE_CURRENT_SOURCE_DIR}/cmake/FastDDSGeneratorMacros.cmake)
+include(${CMAKE_CURRENT_SOURCE_DIR}/cmake/TcnPackage.cmake)
 
 find_file(FASTDDSGEN_JAR
         "fastddsgen.jar"
@@ -29,6 +30,11 @@ if (BUILD_SHARED_LIBS)
   add_definitions("-DEPROSIMA_USER_DLL_EXPORT")
 endif()
 
+
+# The test options live in the subdirectories; enabling testing here makes `ctest` work from the build root.
+if(TCN_SCHEMA_BUILD_MSG_TESTS OR TCN_SCHEMA_BUILD_SQE_TESTS)
+  enable_testing()
+endif()
 
 add_subdirectory(src/dds/ros2/builtin_interfaces)
 add_subdirectory(src/dds/ros2/std_msgs)

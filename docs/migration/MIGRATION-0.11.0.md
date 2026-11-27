@@ -30,6 +30,20 @@ to do. Items marked *(wire)* need the lockstep cut-over; all others can be done 
     `docs/design/2026-08-31-sqe-contract-library-design.md`.
   - Migration notes are in `docs/migration/`, with an index in the root [MIGRATION.md](../../MIGRATION.md). Links to
     `MIGRATION-x.y.z.md` in the repository root no longer resolve; use `docs/migration/MIGRATION-x.y.z.md`.
+- **Generated code is no longer written into the source tree.**
+  - fastddsgen now writes to `<build>/generated/<pkg>/<msg|rpc|action>/` instead of `<repo>/include/`.
+  - **The installed package is unchanged:** headers stay at `include/<pkg>/<kind>/<File>.h`, so conan consumers
+    change nothing.
+  - **Only a build that uses the source tree directly** (for example `add_subdirectory(tcn_schema)`, or include paths
+    into a tcn_schema checkout) must use the `tcn_schema_<pkg>` targets, which carry the right include directory,
+    instead of `<repo>/include`.
+  - Delete a stale `<repo>/include/` left from older builds.
+- **`tf2_msgs` LookupTransform moved from `msg/` to `action/`:** `include/tf2_msgs/action/LookupTransform.h` and
+  `share/tcn_schema/dds/tf2_msgs/action/LookupTransform.idl`. This fixes the install path of an action type. None of
+  the five consumers uses it.
+- **Building tcn_schema:**
+  - it builds in parallel again (the forced serial build is gone);
+  - `ctest` works from the build root when `TCN_SCHEMA_BUILD_MSG_TESTS` or `TCN_SCHEMA_BUILD_SQE_TESTS` is on.
 
 ## 2. Per consumer
 
