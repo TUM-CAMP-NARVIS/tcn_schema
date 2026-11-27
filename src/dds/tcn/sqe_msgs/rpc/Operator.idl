@@ -15,6 +15,33 @@
 module sqe_msgs {
   module rpc {
 
+    // ======================================================================
+    // B82 (0.9.2): the operator surface -- sqe/{engine_id}/op/*
+    // ======================================================================
+    //
+    // For an operator tool (the SRG frontend in tcn_web_controller): what is
+    // stored, what is connected, what changed, and edits to fragments the
+    // tool does not own. In the engine's OWN namespace rather than under a
+    // client's key, for three reasons: the questions are the operator's, not
+    // a client's (SISGraphQueryRequest refuses cross-fragment reads on a
+    // client key, by design); the key names the engine, so exactly one engine
+    // answers; and an edit never has to impersonate the owning client.
+    //
+    // Answered only for fragments inside the engine's client scope
+    // (`--client-scope`). Requests are CDR or JSON; replies mirror the
+    // request's encoding.
+    //
+    //   sqe/{engine_id}/op/info         SISEngineInfoRequest -> SISEngineInfoReply
+    //   sqe/{engine_id}/op/fragments    SISFragmentListRequest -> SISFragmentListReply
+    //   sqe/{engine_id}/op/graph/query  SISOperatorGraphQueryRequest -> SISGraphQueryReply
+    //   sqe/{engine_id}/op/update       SISOperatorMutationRequest -> SISMutationReply
+    //   sqe/{engine_id}/op/changes      SISGraphChangeNotification (published)
+    //
+    // Discover engines with a liveliness get on sqe/*/alive/*, then pick the
+    // one whose SISEngineInfoReply.client_scope is your location.
+    //
+    // SISOperatorRef and the op/info types are in sqe_msgs/rpc/Session.idl.
+
     // --- sqe/{engine_id}/op/fragments -------------------------------------
     struct SISFragmentListRequest {
         SISOperatorRef who;

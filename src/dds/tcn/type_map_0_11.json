@@ -1300,5 +1300,267 @@
    "old": "tcnart_msgs::rpc::StringListRequest",
    "old_header": "tcnart_msgs/rpc/Requests.h"
   }
+ ],
+ "relocated": [
+  {
+   "name": "conversation_msgs::msg::AudioCodec",
+   "new_header": "conversation_msgs/msg/Common.h",
+   "old_header": "conversation_msgs/msg/common.h"
+  },
+  {
+   "name": "conversation_msgs::msg::AudioFormat",
+   "new_header": "conversation_msgs/msg/Common.h",
+   "old_header": "conversation_msgs/msg/common.h"
+  },
+  {
+   "name": "conversation_msgs::msg::AudioOpusFrame",
+   "new_header": "conversation_msgs/msg/Audio.h",
+   "old_header": "conversation_msgs/msg/audio.h"
+  },
+  {
+   "name": "conversation_msgs::msg::AudioPcmChunk",
+   "new_header": "conversation_msgs/msg/Audio.h",
+   "old_header": "conversation_msgs/msg/audio.h"
+  },
+  {
+   "name": "conversation_msgs::msg::CancelTarget",
+   "new_header": "conversation_msgs/msg/Common.h",
+   "old_header": "conversation_msgs/msg/common.h"
+  },
+  {
+   "name": "conversation_msgs::msg::ChannelLayout",
+   "new_header": "conversation_msgs/msg/Common.h",
+   "old_header": "conversation_msgs/msg/common.h"
+  },
+  {
+   "name": "conversation_msgs::msg::ClientIdentity",
+   "new_header": "conversation_msgs/msg/Control.h",
+   "old_header": "conversation_msgs/msg/control.h"
+  },
+  {
+   "name": "conversation_msgs::msg::ErrorCode",
+   "new_header": "conversation_msgs/msg/Common.h",
+   "old_header": "conversation_msgs/msg/common.h"
+  },
+  {
+   "name": "conversation_msgs::msg::EventState",
+   "new_header": "conversation_msgs/msg/Common.h",
+   "old_header": "conversation_msgs/msg/common.h"
+  },
+  {
+   "name": "conversation_msgs::msg::ExecutionPreference",
+   "new_header": "conversation_msgs/msg/Llm.h",
+   "old_header": "conversation_msgs/msg/llm.h"
+  },
+  {
+   "name": "conversation_msgs::msg::HealthStatus",
+   "new_header": "conversation_msgs/msg/Metrics.h",
+   "old_header": "conversation_msgs/msg/metrics.h"
+  },
+  {
+   "name": "conversation_msgs::msg::ImageAttachment",
+   "new_header": "conversation_msgs/msg/Llm.h",
+   "old_header": "conversation_msgs/msg/llm.h"
+  },
+  {
+   "name": "conversation_msgs::msg::InteractionActivity",
+   "new_header": "conversation_msgs/msg/Llm.h",
+   "old_header": "conversation_msgs/msg/llm.h"
+  },
+  {
+   "name": "conversation_msgs::msg::InteractionActivityState",
+   "new_header": "conversation_msgs/msg/Llm.h",
+   "old_header": "conversation_msgs/msg/llm.h"
+  },
+  {
+   "name": "conversation_msgs::msg::InteractionMode",
+   "new_header": "conversation_msgs/msg/Llm.h",
+   "old_header": "conversation_msgs/msg/llm.h"
+  },
+  {
+   "name": "conversation_msgs::msg::InteractionPartial",
+   "new_header": "conversation_msgs/msg/Llm.h",
+   "old_header": "conversation_msgs/msg/llm.h"
+  },
+  {
+   "name": "conversation_msgs::msg::InteractionRequest",
+   "new_header": "conversation_msgs/msg/Llm.h",
+   "old_header": "conversation_msgs/msg/llm.h"
+  },
+  {
+   "name": "conversation_msgs::msg::InteractionResponse",
+   "new_header": "conversation_msgs/msg/Llm.h",
+   "old_header": "conversation_msgs/msg/llm.h"
+  },
+  {
+   "name": "conversation_msgs::msg::LlmFinal",
+   "new_header": "conversation_msgs/msg/Llm.h",
+   "old_header": "conversation_msgs/msg/llm.h"
+  },
+  {
+   "name": "conversation_msgs::msg::LlmPartial",
+   "new_header": "conversation_msgs/msg/Llm.h",
+   "old_header": "conversation_msgs/msg/llm.h"
+  },
+  {
+   "name": "conversation_msgs::msg::LlmRequest",
+   "new_header": "conversation_msgs/msg/Llm.h",
+   "old_header": "conversation_msgs/msg/llm.h"
+  },
+  {
+   "name": "conversation_msgs::msg::MemoryScope",
+   "new_header": "conversation_msgs/msg/Llm.h",
+   "old_header": "conversation_msgs/msg/llm.h"
+  },
+  {
+   "name": "conversation_msgs::msg::MemoryScopeKind",
+   "new_header": "conversation_msgs/msg/Llm.h",
+   "old_header": "conversation_msgs/msg/llm.h"
+  },
+  {
+   "name": "conversation_msgs::msg::MessageHeader",
+   "new_header": "conversation_msgs/msg/Common.h",
+   "old_header": "conversation_msgs/msg/common.h"
+  },
+  {
+   "name": "conversation_msgs::msg::PayloadKind",
+   "new_header": "conversation_msgs/msg/Common.h",
+   "old_header": "conversation_msgs/msg/common.h"
+  },
+  {
+   "name": "conversation_msgs::msg::RetrievalOptions",
+   "new_header": "conversation_msgs/msg/Llm.h",
+   "old_header": "conversation_msgs/msg/llm.h"
+  },
+  {
+   "name": "conversation_msgs::msg::RetrievalPolicy",
+   "new_header": "conversation_msgs/msg/Llm.h",
+   "old_header": "conversation_msgs/msg/llm.h"
+  },
+  {
+   "name": "conversation_msgs::msg::SessionCancel",
+   "new_header": "conversation_msgs/msg/Control.h",
+   "old_header": "conversation_msgs/msg/control.h"
+  },
+  {
+   "name": "conversation_msgs::msg::SessionConfigUpdate",
+   "new_header": "conversation_msgs/msg/Control.h",
+   "old_header": "conversation_msgs/msg/control.h"
+  },
+  {
+   "name": "conversation_msgs::msg::SessionStart",
+   "new_header": "conversation_msgs/msg/Control.h",
+   "old_header": "conversation_msgs/msg/control.h"
+  },
+  {
+   "name": "conversation_msgs::msg::SessionState",
+   "new_header": "conversation_msgs/msg/Common.h",
+   "old_header": "conversation_msgs/msg/common.h"
+  },
+  {
+   "name": "conversation_msgs::msg::SessionStateEvent",
+   "new_header": "conversation_msgs/msg/Control.h",
+   "old_header": "conversation_msgs/msg/control.h"
+  },
+  {
+   "name": "conversation_msgs::msg::SessionStop",
+   "new_header": "conversation_msgs/msg/Control.h",
+   "old_header": "conversation_msgs/msg/control.h"
+  },
+  {
+   "name": "conversation_msgs::msg::ShmRef",
+   "new_header": "conversation_msgs/msg/Common.h",
+   "old_header": "conversation_msgs/msg/common.h"
+  },
+  {
+   "name": "conversation_msgs::msg::StageMetric",
+   "new_header": "conversation_msgs/msg/Metrics.h",
+   "old_header": "conversation_msgs/msg/metrics.h"
+  },
+  {
+   "name": "conversation_msgs::msg::Status",
+   "new_header": "conversation_msgs/msg/Common.h",
+   "old_header": "conversation_msgs/msg/common.h"
+  },
+  {
+   "name": "conversation_msgs::msg::StreamDirection",
+   "new_header": "conversation_msgs/msg/Common.h",
+   "old_header": "conversation_msgs/msg/common.h"
+  },
+  {
+   "name": "conversation_msgs::msg::SttFinal",
+   "new_header": "conversation_msgs/msg/Stt.h",
+   "old_header": "conversation_msgs/msg/stt.h"
+  },
+  {
+   "name": "conversation_msgs::msg::SttPartial",
+   "new_header": "conversation_msgs/msg/Stt.h",
+   "old_header": "conversation_msgs/msg/stt.h"
+  },
+  {
+   "name": "conversation_msgs::msg::SttRequest",
+   "new_header": "conversation_msgs/msg/Stt.h",
+   "old_header": "conversation_msgs/msg/stt.h"
+  },
+  {
+   "name": "conversation_msgs::msg::TtsAudioChunk",
+   "new_header": "conversation_msgs/msg/Tts.h",
+   "old_header": "conversation_msgs/msg/tts.h"
+  },
+  {
+   "name": "conversation_msgs::msg::TtsDone",
+   "new_header": "conversation_msgs/msg/Tts.h",
+   "old_header": "conversation_msgs/msg/tts.h"
+  },
+  {
+   "name": "conversation_msgs::msg::TtsRequest",
+   "new_header": "conversation_msgs/msg/Tts.h",
+   "old_header": "conversation_msgs/msg/tts.h"
+  },
+  {
+   "name": "conversation_msgs::msg::VadEvent",
+   "new_header": "conversation_msgs/msg/Audio.h",
+   "old_header": "conversation_msgs/msg/audio.h"
+  },
+  {
+   "name": "conversation_msgs::rpc::AppServerInfo",
+   "new_header": "conversation_msgs/rpc/Discovery.h",
+   "old_header": "conversation_msgs/rpc/discovery.h"
+  },
+  {
+   "name": "tcnart_msgs::msg::AudioAACProfile",
+   "new_header": "tcnart_msgs/msg/MediaTypes.h",
+   "old_header": "tcnart_msgs/msg/Types.h"
+  },
+  {
+   "name": "tcnart_msgs::msg::Handedness",
+   "new_header": "tcnart_msgs/msg/HandTracking.h",
+   "old_header": "tcnart_msgs/msg/Types.h"
+  },
+  {
+   "name": "tcnart_msgs::msg::SensorType",
+   "new_header": "tcnart_msgs/msg/MediaTypes.h",
+   "old_header": "tcnart_msgs/msg/Types.h"
+  },
+  {
+   "name": "tcnart_msgs::msg::VideoH26xProfile",
+   "new_header": "tcnart_msgs/msg/MediaTypes.h",
+   "old_header": "tcnart_msgs/msg/Types.h"
+  },
+  {
+   "name": "tcnart_msgs::msg::VideoImageCompression",
+   "new_header": "tcnart_msgs/msg/MediaTypes.h",
+   "old_header": "tcnart_msgs/msg/Types.h"
+  },
+  {
+   "name": "tcnart_msgs::msg::VideoPixelFormat",
+   "new_header": "tcnart_msgs/msg/MediaTypes.h",
+   "old_header": "tcnart_msgs/msg/Types.h"
+  },
+  {
+   "name": "tcnart_msgs::msg::XRGazeSpaceType",
+   "new_header": "tcnart_msgs/msg/EyeTracking.h",
+   "old_header": "tcnart_msgs/msg/Types.h"
+  }
  ]
 }

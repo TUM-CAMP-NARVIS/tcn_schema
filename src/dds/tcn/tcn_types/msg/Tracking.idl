@@ -45,8 +45,13 @@ module tcn_types {
       sequence<Marker> markers;
       boolean is_tracked; // if enough markers on the tool are visible to track it
       // How well `pose` is known: 0 or 21 doubles, upper triangle of the 6x6,
-      // row-major, (tx, ty, tz, rx, ry, rz), m^2/rad^2. See
-      // RigidTransformMapItem::pose_covariance for why this is per item.
+      // row-major, (tx, ty, tz, rx, ry, rz), m^2/rad^2. Empty means "not
+      // stated", which is different from a zero covariance meaning "known
+      // exactly". Per target rather than per message, because a message
+      // routinely mixes targets that state a covariance with targets that do
+      // not; a covariance-aware variant of the whole message would force a
+      // producer to fabricate one for the bare targets or discard it for the
+      // stated ones.
       //
       // Unrelated to `quality`, as on Marker.
       sequence<double, 21> pose_covariance;

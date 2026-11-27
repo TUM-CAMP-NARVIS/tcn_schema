@@ -64,6 +64,35 @@ class CompareTest(unittest.TestCase):
         self.assertIn("p::msg::Lost", r.problems[0])
 
 
+class RelocatedAndExtensibilityTest(unittest.TestCase):
+    def test_relocated_header_is_reported(self):
+        # Same name, new header (tcnart_msgs::msg::SensorType: Types.h -> MediaTypes.h).
+        import json
+        old = _schema({"p/msg/Types.idl": "module p { module msg { enum E { E_A }; }; };"})
+        new = _schema({"p/msg/Media.idl": "module p { module msg { enum E { E_A }; }; };"})
+        r = compare(old, new, {}, set())
+        self.assertEqual(r.problems, [])
+        self.assertEqual(r.relocated, [("p::msg::E", "p/msg/Types.h", "p/msg/Media.h")])
+        from tools.idl.moves import write_reports
+        with tempfile.TemporaryDirectory() as d:
+            js, md = Path(d) / "m.json", Path(d) / "m.md"
+            write_reports(r, old, new, js, md)
+            data = json.loads(js.read_text())
+            self.assertEqual(data["relocated"], [{"name": "p::msg::E", "old_header": "p/msg/Types.h",
+                                                   "new_header": "p/msg/Media.h"}])
+            self.assertIn("`p::msg::E` | `p/msg/Types.h` | `p/msg/Media.h`", md.read_text())
+
+    def test_extensibility_change_is_a_problem(self):
+        old = _schema({"p/msg/V.idl": "module p { module msg { @final struct V { double x; }; }; };"})
+        new = _schema({"p/msg/V.idl": "module p { module msg { @appendable struct V { double x; }; }; };"})
+        self.assertEqual(len(compare(old, new, {}, set()).problems), 1)
+
+    def test_member_annotation_change_is_a_problem(self):
+        old = _schema({"p/msg/V.idl": "module p { module msg { struct V { @key double x; }; }; };"})
+        new = _schema({"p/msg/V.idl": "module p { module msg { struct V { double x; }; }; };"})
+        self.assertEqual(len(compare(old, new, {}, set()).problems), 1)
+
+
 def _merge(schema):
     # cross-file resolution as load_schema does it
     from tools.idl.parser import _build  # noqa: F401  (resolution already applied per file in this fixture)

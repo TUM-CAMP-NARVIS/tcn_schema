@@ -18,7 +18,7 @@ module sqe_msgs {
         // unrepresentable, which is the failure that otherwise surfaces as a
         // Cholesky decomposition failing far from whatever produced it. Same
         // packing as every other covariance in this schema (see
-        // RigidTransformMapItem::pose_covariance): one packing, one unpacking,
+        // tcn_types::msg::Target::pose_covariance): one packing, one unpacking,
         // one place to get it wrong.
         //
         // The convention is stated here because it is not inferable from the
