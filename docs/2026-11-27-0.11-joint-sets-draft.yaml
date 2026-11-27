@@ -1,0 +1,244 @@
+# Joint-set table for tcn_schema 0.11 — DRAFT (tcnart rows; HTA adds COCO17 and HALPE26).
+# Format: see docs/2026-11-27-0.11-joint-sets-draft.md. One file, the single source for the IDL enum JointSet,
+# the C++/C#/Python arrays and the generated docs (replacing tcnart_msgs/msg/JointSets.md).
+
+format: 1
+
+body_frame:            # the canonical body frame B every rest pose is stated in
+  handedness: right
+  x: left              # the person's left
+  y: up
+  z: forward           # the direction the person faces
+
+joint_sets:
+
+  # ---------------------------------------------------------------- TCN_BODY (= tcnart_body_v1)
+  - id: TCN_BODY
+    ordinal: 4
+    version: 1
+    replaces: [tcnart_body_v1]      # the retired string name
+    purpose: full body for IK and avatars; produced by tcnart (IK, vision) and later HTA (rotation model)
+    root: pelvis
+    rest_pose: t_pose               # every joint frame equals B at rest
+    joints:                         # index = position in the list
+      - {name: pelvis,         parent: null}
+      - {name: spine,          parent: pelvis}
+      - {name: chest,          parent: spine}
+      - {name: neck,           parent: chest,          note: mid-point of the shoulders}
+      - {name: head,           parent: neck}
+      - {name: head_top,       parent: head}
+      - {name: left_shoulder,  parent: neck}
+      - {name: right_shoulder, parent: neck}
+      - {name: left_elbow,     parent: left_shoulder}
+      - {name: right_elbow,    parent: right_shoulder}
+      - {name: left_wrist,     parent: left_elbow}
+      - {name: right_wrist,    parent: right_elbow}
+      - {name: left_hip,       parent: pelvis}
+      - {name: right_hip,      parent: pelvis}
+      - {name: left_knee,      parent: left_hip}
+      - {name: right_knee,     parent: right_hip}
+      - {name: left_ankle,     parent: left_knee}
+      - {name: right_ankle,    parent: right_knee}
+      - {name: left_toe,       parent: left_ankle}
+      - {name: right_toe,      parent: right_ankle}
+    bones:                          # index = position; bone_lengths[i]; rest direction of the child in B
+      - {from: pelvis,         to: spine,          rest_dir: [0, 1, 0]}
+      - {from: spine,          to: chest,          rest_dir: [0, 1, 0]}
+      - {from: chest,          to: neck,           rest_dir: [0, 1, 0]}
+      - {from: neck,           to: head,           rest_dir: [0, 1, 0]}
+      - {from: head,           to: head_top,       rest_dir: [0, 1, 0]}
+      - {from: neck,           to: left_shoulder,  rest_dir: [1, 0, 0]}
+      - {from: left_shoulder,  to: left_elbow,     rest_dir: [1, 0, 0]}
+      - {from: left_elbow,     to: left_wrist,     rest_dir: [1, 0, 0]}
+      - {from: neck,           to: right_shoulder, rest_dir: [-1, 0, 0]}
+      - {from: right_shoulder, to: right_elbow,    rest_dir: [-1, 0, 0]}
+      - {from: right_elbow,    to: right_wrist,    rest_dir: [-1, 0, 0]}
+      - {from: pelvis,         to: left_hip,       rest_dir: [1, 0, 0]}
+      - {from: left_hip,       to: left_knee,      rest_dir: [0, -1, 0]}
+      - {from: left_knee,      to: left_ankle,     rest_dir: [0, -1, 0]}
+      - {from: left_ankle,     to: left_toe,       rest_dir: [0, 0, 1]}
+      - {from: pelvis,         to: right_hip,      rest_dir: [-1, 0, 0]}
+      - {from: right_hip,      to: right_knee,     rest_dir: [0, -1, 0]}
+      - {from: right_knee,     to: right_ankle,    rest_dir: [0, -1, 0]}
+      - {from: right_ankle,    to: right_toe,      rest_dir: [0, 0, 1]}
+    rotations:
+      derived_from_positions: [pelvis, chest, head]   # hips; shoulders; nose and ears (HALPE26)
+      without_source: [limb twist, feet]              # no rotation until a source with rotations exists
+    maps_from:                      # informational: the client library's index maps (TCN_BODY index <- source joint)
+      HALPE26: see the HTA row (pelvis = hip centre, head_top = halpe "head", toes = big toes); spine, chest, neck DERIVED
+
+  # ---------------------------------------------------------------- TCN_LITE
+  - id: TCN_LITE
+    ordinal: 3
+    version: 1
+    purpose: a headset user from XR poses (head, hands or controllers); lightweight avatars
+    root: pelvis
+    rest_pose: same as TCN_BODY for the shared joints (head, chest, pelvis, wrists); controllers as their hand
+    joints:
+      - {name: head,             parent: chest,      body: TCN_BODY.head}
+      - {name: chest,            parent: pelvis,     body: TCN_BODY.chest,       source: DERIVED}
+      - {name: pelvis,           parent: null,       body: TCN_BODY.pelvis,      source: DERIVED}
+      - {name: left_hand,        parent: chest,      body: TCN_BODY.left_wrist,  note: the wrist frame}
+      - {name: right_hand,       parent: chest,      body: TCN_BODY.right_wrist, note: the wrist frame}
+      - {name: left_controller,  parent: left_hand,  note: DEFAULTED and confidence 0 when not held}
+      - {name: right_controller, parent: right_hand, note: DEFAULTED and confidence 0 when not held}
+    bones:                          # only physical bones; hands and controllers float (no bone, no length)
+      - {from: pelvis, to: chest, rest_dir: [0, 1, 0]}
+      - {from: chest,  to: head,  rest_dir: [0, 1, 0]}
+    rotations:
+      all_joints: optional          # head, hands and controllers come with rotations from the XR runtime
+      derived: [chest, pelvis]      # from head and hands, as tcnart's lightweight avatars do
+
+  # ---------------------------------------------------------------- SMPL orders (for SmplParams.pose only)
+  - id: SMPL_24
+    ordinal: 5
+    version: 1
+    purpose: the joint order of SmplParams.pose (SMPL, SMPL-H body); no model data, no rest pose (SMPL's own)
+    pose_excludes_root: true        # SmplParams.global_orient is joint 0; pose holds joints 1..23 (23 entries)
+    verified: joints 0-21 (order and parents) match the SMPL+H model file's kintree_table (tcnart) and the smplx
+      package's names (HTA); joints 22-23 (left_hand, right_hand) and their parents per the SMPL documentation,
+      UNVERIFIED (no SMPL model file available; close with np.load(...)['kintree_table'][0])
+    rest_pose: smpl                 # SMPL's own template; not stated here (licensed model data)
+    joints:
+      - {name: pelvis,         parent: null}
+      - {name: left_hip,       parent: pelvis}
+      - {name: right_hip,      parent: pelvis}
+      - {name: spine1,         parent: pelvis}
+      - {name: left_knee,      parent: left_hip}
+      - {name: right_knee,     parent: right_hip}
+      - {name: spine2,         parent: spine1}
+      - {name: left_ankle,     parent: left_knee}
+      - {name: right_ankle,    parent: right_knee}
+      - {name: spine3,         parent: spine2}
+      - {name: left_foot,      parent: left_ankle}
+      - {name: right_foot,     parent: right_ankle}
+      - {name: neck,           parent: spine3}
+      - {name: left_collar,    parent: spine3}
+      - {name: right_collar,   parent: spine3}
+      - {name: head,           parent: neck}
+      - {name: left_shoulder,  parent: left_collar}
+      - {name: right_shoulder, parent: right_collar}
+      - {name: left_elbow,     parent: left_shoulder}
+      - {name: right_elbow,    parent: right_shoulder}
+      - {name: left_wrist,     parent: left_elbow}
+      - {name: right_wrist,    parent: right_elbow}
+      - {name: left_hand,      parent: left_wrist}
+      - {name: right_hand,     parent: right_wrist}
+
+  - id: SMPLX_55
+    ordinal: 6
+    version: 1
+    purpose: the joint order of SmplParams.pose for SMPL-X; no model data
+    pose_excludes_root: true        # pose holds joints 1..54 (54 entries)
+    verified: names and order match the smplx package's JOINT_NAMES (HTA, smplx 0.1.28; the package names the eyes
+      left_eye_smplhf / right_eye_smplhf); parents per the SMPL-X documentation, UNVERIFIED (no SMPL-X model file
+      available; close with np.load(...)['kintree_table'][0])
+    rest_pose: smplx
+    joints:
+      # 0..21: SMPL_24's joints 0..21 (pelvis .. right_wrist), same names and parents
+      - {range: "0-21", same_as: SMPL_24}
+      - {name: jaw,       parent: head}
+      - {name: left_eye,  parent: head}
+      - {name: right_eye, parent: head}
+      # 25..39 left hand, 40..54 right hand; each finger chain 1 -> 2 -> 3, the first joint parented to the wrist
+      - {hand: left,  parent: left_wrist,  fingers: [index, middle, pinky, ring, thumb], joints_per_finger: 3}
+      - {hand: right, parent: right_wrist, fingers: [index, middle, pinky, ring, thumb], joints_per_finger: 3}
+
+  - id: SMPLH_52
+    ordinal: 7
+    version: 1
+    purpose: the joint order of SmplParams.pose for SMPL+H (AMASS; HTA's pose prior)
+    pose_excludes_root: true        # pose holds joints 1..51 (51 entries)
+    rest_pose: smplh
+    verified: parents checked against the SMPL+H model file's kintree_table (52 joints, tcnart); names and order match
+      the smplx package's SMPLH_JOINT_NAMES (HTA), 2026-11-27
+    joints:
+      - {range: "0-21", same_as: SMPL_24}
+      # 22..36 left hand, 37..51 right hand; each finger chain 1 -> 2 -> 3, the first joint parented to the wrist
+      - {hand: left,  parent: left_wrist,  fingers: [index, middle, pinky, ring, thumb], joints_per_finger: 3}
+      - {hand: right, parent: right_wrist, fingers: [index, middle, pinky, ring, thumb], joints_per_finger: 3}
+
+  # ---------------------------------------------------------------- HTA rows (from HTA, #37, 2026-11-27)
+  - id: COCO17
+    ordinal: 1
+    version: 1
+    replaces: [coco17]
+    kind: positions
+    purpose: multi-camera person tracking (HTA pose tracker), positions only
+    root: {midpoint: [left_hip, right_hip]}
+    joints:
+      - {name: nose}
+      - {name: left_eye}
+      - {name: right_eye}
+      - {name: left_ear}
+      - {name: right_ear}
+      - {name: left_shoulder}
+      - {name: right_shoulder}
+      - {name: left_elbow}
+      - {name: right_elbow}
+      - {name: left_wrist}
+      - {name: right_wrist}
+      - {name: left_hip}
+      - {name: right_hip}
+      - {name: left_knee}
+      - {name: right_knee}
+      - {name: left_ankle}
+      - {name: right_ankle}
+    bones:                     # bone_lengths order; measured segments
+      - {from: nose,           to: left_eye}
+      - {from: nose,           to: right_eye}
+      - {from: left_eye,       to: left_ear}
+      - {from: right_eye,      to: right_ear}
+      - {from: left_shoulder,  to: right_shoulder}
+      - {from: left_shoulder,  to: left_elbow}
+      - {from: left_elbow,     to: left_wrist}
+      - {from: right_shoulder, to: right_elbow}
+      - {from: right_elbow,    to: right_wrist}
+      - {from: left_shoulder,  to: left_hip}
+      - {from: right_shoulder, to: right_hip}
+      - {from: left_hip,       to: right_hip}
+      - {from: left_hip,       to: left_knee}
+      - {from: left_knee,      to: left_ankle}
+      - {from: right_hip,      to: right_knee}
+      - {from: right_knee,     to: right_ankle}
+
+  - id: HALPE26
+    ordinal: 2
+    version: 1
+    replaces: [halpe26]
+    kind: positions
+    extends: COCO17            # joints 0-16 and bones 0-15 are COCO17's
+    root: {midpoint: [left_hip, right_hip]}   # as COCO17; hip_centre is the model's joint, not the root
+    joints:
+      - {range: "0-16", same_as: COCO17}
+      - {name: head_top}
+      - {name: neck}
+      - {name: hip_centre}
+      - {name: left_big_toe}
+      - {name: right_big_toe}
+      - {name: left_small_toe}
+      - {name: right_small_toe}
+      - {name: left_heel}
+      - {name: right_heel}
+    bones:
+      - {range: "0-15", same_as: COCO17}
+      - {from: head_top,    to: neck}
+      - {from: neck,        to: hip_centre}
+      - {from: left_hip,    to: hip_centre}
+      - {from: right_hip,   to: hip_centre}
+      - {from: left_ankle,  to: left_big_toe}
+      - {from: left_ankle,  to: left_small_toe}
+      - {from: left_ankle,  to: left_heel}
+      - {from: right_ankle, to: right_big_toe}
+      - {from: right_ankle, to: right_small_toe}
+      - {from: right_ankle, to: right_heel}
+    maps_to:                   # informational, for the client library's HALPE26 -> TCN_BODY map
+      TCN_BODY:
+        pelvis: hip_centre
+        head_top: head_top
+        left_toe: left_big_toe
+        right_toe: right_big_toe
+        neck: "derived: mid-point of the shoulders (TCN_BODY's definition; HALPE26's neck is the model's own joint)"
+        spine: derived
+        chest: derived
+        head: derived from nose and ears
