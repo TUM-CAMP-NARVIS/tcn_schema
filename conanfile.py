@@ -33,6 +33,8 @@ class TcnSchemaConan(ConanFile):
         copy(self, "3rdparty/*", src=self.recipe_folder, dst=self.export_sources_folder, keep_path=True)
         copy(self, "cmake/*", src=self.recipe_folder, dst=self.export_sources_folder, keep_path=True)
         copy(self, "src/*", src=self.recipe_folder, dst=self.export_sources_folder, keep_path=True)
+        copy(self, "tools/*.py", src=self.recipe_folder, dst=self.export_sources_folder, keep_path=True)
+        copy(self, "tools/idl/*.py", src=self.recipe_folder, dst=self.export_sources_folder, keep_path=True)
         copy(self, "CMakeLists.txt", src=self.recipe_folder, dst=self.export_sources_folder, keep_path=True)
 
     def build_requirements(self):

@@ -1,0 +1,6 @@
+#ifndef FX_MSG_OPTIONAL_IDL
+#define FX_MSG_OPTIONAL_IDL
+module fx { module msg {
+  @appendable struct S { @optional long a; sequence<double, 21> c; string<8> d; uint8 e[3]; };
+}; };
+#endif

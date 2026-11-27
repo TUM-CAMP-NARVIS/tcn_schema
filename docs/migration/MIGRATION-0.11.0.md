@@ -41,6 +41,19 @@ to do. Items marked *(wire)* need the lockstep cut-over; all others can be done 
 - **`tf2_msgs` LookupTransform moved from `msg/` to `action/`:** `include/tf2_msgs/action/LookupTransform.h` and
   `share/tcn_schema/dds/tf2_msgs/action/LookupTransform.idl`. This fixes the install path of an action type. None of
   the five consumers uses it.
+- **New: `share/tcn_schema/types.json` and `share/tcn_schema/enums.json`** (decisions O7).
+  - They list every IDL declaration with its fully qualified name, package, family (`ros2`/`tcn`), file,
+    extensibility, members (type, `@optional`, array dims), union discriminator and cases, and enumerator ordinals.
+  - They are generated from the IDL at build time by `tools/idl_cli.py tables`.
+  - **Every team that keeps a hand-written mirror of types or enum ordinals** should start generating it from these
+    files, or checking it against them in CI:
+    - the engine's `messages.rs` registry;
+    - the web controller's `packages/sqe/src/schemas.ts`;
+    - IVA's `tcn-wire`;
+    - tcnart's Unreal ordinals;
+    - HTA's FlatBuffers mirrors.
+  - The format is stable from 0.11.0 on. Fields are only added, never removed.
+- **Building tcn_schema** needs Python 3 (standard library only) at build time.
 - **Building tcn_schema:**
   - it builds in parallel again (the forced serial build is gone);
   - `ctest` works from the build root when `TCN_SCHEMA_BUILD_MSG_TESTS` or `TCN_SCHEMA_BUILD_SQE_TESTS` is on.

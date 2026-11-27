@@ -60,6 +60,21 @@ add_subdirectory(src/dds/custom/conversation_msgs)
 add_subdirectory(src/sqe)
 
 
+# Machine-readable tables of every IDL declaration (decisions O7): share/tcn_schema/{types,enums}.json.
+find_package(Python3 COMPONENTS Interpreter REQUIRED)
+file(GLOB_RECURSE TCN_IDL_FILES CONFIGURE_DEPENDS "${CMAKE_CURRENT_SOURCE_DIR}/src/dds/*.idl")
+file(GLOB_RECURSE TCN_IDL_TOOLS CONFIGURE_DEPENDS "${CMAKE_CURRENT_SOURCE_DIR}/tools/idl/*.py")
+set(TCN_TABLES_DIR "${PROJECT_BINARY_DIR}/share")
+add_custom_command(
+        OUTPUT "${TCN_TABLES_DIR}/types.json" "${TCN_TABLES_DIR}/enums.json"
+        COMMAND "${Python3_EXECUTABLE}" -I "${CMAKE_CURRENT_SOURCE_DIR}/tools/idl_cli.py" tables
+                --dds-root "${CMAKE_CURRENT_SOURCE_DIR}/src/dds" --version "${PROJECT_VERSION}" --out "${TCN_TABLES_DIR}"
+        DEPENDS ${TCN_IDL_FILES} ${TCN_IDL_TOOLS} "${CMAKE_CURRENT_SOURCE_DIR}/tools/idl_cli.py"
+        COMMENT "Generating types.json and enums.json"
+        VERBATIM)
+add_custom_target(tcn_schema_tables ALL DEPENDS "${TCN_TABLES_DIR}/types.json" "${TCN_TABLES_DIR}/enums.json")
+install(FILES "${TCN_TABLES_DIR}/types.json" "${TCN_TABLES_DIR}/enums.json" DESTINATION share/tcn_schema)
+
 # generated cpp/h files need one import from fastrtps, which we provide to avoid pulling the dependency, if it should be build without
 if (NOT WITH_DDS)
   install(FILES ${CMAKE_CURRENT_SOURCE_DIR}/3rdparty/fastrtps/include/fastrtps/utils/fixed_size_string.hpp DESTINATION include/fastrtps/utils)
