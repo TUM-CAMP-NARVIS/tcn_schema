@@ -15,10 +15,11 @@ library (`tcn::sqe`).
 | Package | Family | Content |
 |---|---|---|
 | 29 ROS 2 packages in tiers: `base` (builtin_interfaces, std_msgs, geometry_msgs, sensor_msgs, service_msgs) and `core` (nav_msgs, tf2_msgs, visualization_msgs, std_srvs, action_msgs, rcl_interfaces, …) built by default; `manipulation`, `navigation`, `perception` on request | ros2 | Generated from **ROS 2 Jazzy** by `tools/ros2`, with services and actions complete, `@final` (XCDR1, byte-compatible with ROS 2), and `share/tcn_schema/ros2_types.json` (ROS names, DDS names, RIHS01 hashes). See [src/dds/ros2/UPSTREAM.md](src/dds/ros2/UPSTREAM.md). |
-| `tcnart_msgs` | tcn | Streams (video, poses, eye/hand/person tracking, IMU), stream descriptors, presence, logging, the parameter RPC, and the SQE protocol (`SpatialRelations.idl`, `rpc/SIS.idl`). |
-| `pcpd_msgs` | tcn | Camera sensors and calibration, mesh bitstreams, and the service-controller RPC (discovery, process info, stream announcements). |
+| `tcn_types` | tcn | Shared types: geometry (`Vector3`, `Quaternion`, `RigidTransform`, `CoordinateSystem`, …), `UUID`, tracking targets and markers. |
+| `sqe_msgs` | tcn | The spatial query engine protocol: the graph (`msg/Graph.idl`, `msg/Transforms.idl`) and the requests and replies (`rpc/Session`, `Mutations`, `Streams`, `Queries`, `Targets`, `Operator`, `Sample`). |
+| `tcnart_msgs` | tcn | Streams (video, poses, eye/hand/person tracking, IMU), media types, stream descriptors, presence, time reference, HumanPose. |
+| `pcpd_msgs` | tcn | Camera sensors and calibration, mesh bitstreams, the service-controller RPC (discovery, process info, stream announcements) and the parameter RPC (`rpc/Parameters.idl`). |
 | `conversation_msgs` | tcn | The realtime conversational pipeline's protocol. See below. |
-| `device_hl2_msgs`, `device_orbbec_msgs` | tcn | Device control (HoloLens 2, Orbbec). Deleted in 0.11 (decisions §4). |
 | `sqe_contract`, `sqe_session` | header | The SQE contract library, `src/sqe/include/tcn/sqe/`. See below. |
 
 - **Build order and dependencies:** every package, its family and its direct dependencies are listed in one table,
@@ -75,7 +76,7 @@ under `share/tcn_schema/dds/`.
 ## The SQE wire contract
 
 - **Types:** the spatial query engine's message types (SQE, spatial_query_engine_rs) are in
-  `src/dds/custom/tcnart_msgs/rpc/SIS.idl` and `msg/SpatialRelations.idl`.
+  `src/dds/tcn/sqe_msgs/` (`msg/Graph.idl`, `msg/Transforms.idl`, `rpc/*.idl`).
 - **Contract library:** `src/sqe/include/tcn/sqe/` holds the header-only, zenoh-free `tcn::sqe` library: keys, wire
   type names, validation, relation requests, handles, leases. Its design note is
   [docs/design/2026-08-31-sqe-contract-library-design.md](docs/design/2026-08-31-sqe-contract-library-design.md).
@@ -84,11 +85,11 @@ under `share/tcn_schema/dds/`.
 - **Version check:** every SQE payload's encoding annotation carries the release, `;tcn_schema=0.10`
   (`tcn::sqe::kWireSchemaVersion`). Peers compare major.minor, so a minor bump is a lockstep rebuild of every peer.
 - **C++ clients** use sqe_client_cpp, which builds on this library.
-- **0.11** moves these types into their own package, `sqe_msgs`; the shared ones go to `tcn_types` (decisions §3).
+- **Since 0.11** these types are in their own package, `sqe_msgs`; the shared ones are in `tcn_types` (decisions §3).
 
 ## conversation_msgs: the voice-client protocol
 
-- **What it is:** `src/dds/custom/conversation_msgs/` is the realtime conversational pipeline's protocol:
+- **What it is:** `src/dds/tcn/conversation_msgs/` is the realtime conversational pipeline's protocol:
   `conversation_msgs::msg` (common, control, audio, stt, llm, tts, metrics) and `conversation_msgs::rpc` (discovery,
   `AppServerInfo`). Type names, field names, field order and enum order are the pipeline's.
 - **Encoding today:** these types travel as plain CDR: OMG CDR v1 little-endian *without* the 4-byte encapsulation
