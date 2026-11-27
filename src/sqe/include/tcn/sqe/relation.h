@@ -3,7 +3,7 @@
 // The terms of a relation stream, as plain C++ values.
 //
 // These mirror `SISFrameRef`, `SRStreamTrigger` and
-// `SISRelationStreamStartRequest` from `tcnart_msgs/rpc/SIS.idl`, and they are
+// `SISRelationStreamStartRequest` from `sqe_msgs/rpc/*.idl`, and they are
 // *not* those types. Two reasons, both load-bearing:
 //
 //   * the generated trigger is an IDL union whose case accessors throw when the

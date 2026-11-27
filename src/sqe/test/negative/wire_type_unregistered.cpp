@@ -6,7 +6,7 @@
 
 #include "tcn/sqe/wire_type.h"
 
-namespace tcnart_msgs {
+namespace sqe_msgs {
 namespace rpc {
 class SISJoinMessage;   // 0.3.0 deleted this; the engine refuses it
 }
@@ -14,6 +14,6 @@ class SISJoinMessage;   // 0.3.0 deleted this; the engine refuses it
 
 int main()
 {
-    const std::string e = tcn::sqe::cdr_encoding< ::tcnart_msgs::rpc::SISJoinMessage>();
+    const std::string e = tcn::sqe::cdr_encoding< ::sqe_msgs::rpc::SISJoinMessage>();
     return static_cast<int>(e.size());
 }

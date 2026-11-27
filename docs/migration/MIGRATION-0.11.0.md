@@ -12,8 +12,8 @@ note.
 | Plan | Content | Wire change | Status |
 |---|---|---|---|
 | 1 | Layout and tooling: docs, out-of-tree generation, package table, `types.json`/`enums.json`, lint, round-trip tests | **none** | merged (#41) |
-| 2 | ROS 2 tree regenerated from Jazzy, `@final`, service/action types, `ros2_types.json`, tiers | ROS types only (`Range.variance`) | in review (branch `0.11-plan2-ros2`) |
-| 3 | Moves and deletions: `sqe_msgs`, `tcn_types`, parameter RPC → `pcpd_msgs`, `custom/` → `tcn/`, deleted types | type names, removals | planned |
+| 2 | ROS 2 tree regenerated from Jazzy, `@final`, service/action types, `ros2_types.json`, tiers | ROS types only (`Range.variance`) | merged (#42) |
+| 3 | Moves and deletions: `sqe_msgs`, `tcn_types`, parameter RPC → `pcpd_msgs`, `custom/` → `tcn/`, deleted types | type names, removals | in review (branch `0.11-plan3-moves`) |
 | 4 | XCDR2 (E1–E9), field removals (F1–F5), #35 SQE changes | **yes** | planned |
 | 5 | #36, #37, #38 changes, HumanPose and joint sets; `0.11.0-rc1` | **yes** | planned |
 
@@ -170,6 +170,63 @@ to do. Items marked *(wire)* need the lockstep cut-over; all others can be done 
 - **Building tcn_schema:** parallel generation is now race-free, because each fastddsgen run has its own temp
   directory. Before, concurrent runs could corrupt each other's preprocessed includes.
 
+### Plan 3: moves and deletions (no field changes; type names and packages change)
+
+The complete old → new map, with header paths: **[0.11-type-map.md](0.11-type-map.md)**. It is also installed,
+machine-readable, as `share/tcn_schema/type_map_0_11.json` (`moved: [{old, new, old_header, new_header}]`,
+`deleted: [...]`); use it to rewrite code and mirrors mechanically. `tools/idl_cli.py moves` checked that every type
+that moved has exactly the same fields, enumerators and union cases.
+
+- **New packages and conan components:**
+  - `tcn_types`: shared types.
+    - `msg/Geometry.idl`: `Vector2`, `Vector3`, `Quaternion`, `RigidTransform`, `Ray`, `ViewPose`, `CoordinateAxis`,
+      `CoordinateSystem`;
+    - `msg/Ids.idl`: `UUID`;
+    - `msg/Tracking.idl`: `MarkerType`, `Marker`, `Target`.
+  - `sqe_msgs`: the SQE protocol.
+    - `msg/Graph.idl`: `SRNode`, `SREdge`, `SRGraph`, … ;
+    - `msg/Transforms.idl`: `SRTransform`, `SRIntrinsics`, … ;
+    - `rpc/{Session,Mutations,Streams,Queries,Targets,Operator,Sample}.idl`: the former `SIS.idl`, split by topic.
+  - Link `tcn_schema::sqe_msgs` and `tcn_schema::tcn_types` where you use them. `tcn_schema::sqe_contract` now
+    requires `sqe_msgs`, `tcnart_msgs` and `tcn_types`.
+- **Moved:**
+  - `tcnart_msgs::msg::SR*` → `sqe_msgs::msg::SR*`;
+  - `tcnart_msgs::rpc::SIS*` (and `SR*` request types) → `sqe_msgs::rpc::*`;
+  - `tcnart_msgs::msg::{Vector3, Quaternion, RigidTransform, UUID, Target, Marker, MarkerType, …}` →
+    `tcn_types::msg::*`;
+  - the parameter RPC (`tcnart_msgs/rpc/Requests.idl`) → `pcpd_msgs/rpc/Parameters.idl`, namespace
+    `pcpd_msgs::rpc` (`Parameter`, `ParameterValue`, `GenericParameterRequest/Reply`, `ParameterDescriptor*`,
+    `ParameterSet*`, `ParameterChanged`, `RPCResponseStatus`, `NullRequest/Reply`, `BoolReply`, `StringList*`, …);
+  - the media enums (`SensorType`, `VideoPixelFormat`, `VideoImageCompression`, `VideoH26xProfile`,
+    `AudioAACProfile`) → `tcnart_msgs/msg/MediaTypes.idl`; `Handedness` → `HandTracking.idl`; `XRGazeSpaceType` →
+    `EyeTracking.idl` (all still `tcnart_msgs::msg`);
+  - `conversation_msgs` files are PascalCase (`msg/Common.idl`, `Control`, `Audio`, `Stt`, `Llm`, `Tts`, `Metrics`,
+    `rpc/Discovery.idl`), so the headers are `conversation_msgs/msg/Common.h`, … . The namespaces are unchanged.
+  - `tcnart_msgs` has no `rpc/` any more.
+- **Headers:** `tcnart_msgs/msg/Types.h`, `tcnart_msgs/msg/SpatialRelations.h`, `tcnart_msgs/rpc/SIS.h` and
+  `tcnart_msgs/rpc/Requests.h` are gone. Include the new ones from the type map: its "Moved" table for renamed
+  types, and "Same name, new header" for types that kept their name (the media enums, `Handedness`,
+  `XRGazeSpaceType`, and every `conversation_msgs` type). Most code includes a message
+  header (for example `tcnart_msgs/msg/PoseTracking.h`), which pulls in the new ones itself.
+- **Wire type names follow the namespaces:** `application/cdr;sqe_msgs::msg::SRGraph`,
+  `pcpd_msgs::rpc::GenericParameterRequest`, … (the contract library's `WireType<T>` already does this). The
+  `tcn_schema=` annotation stays `0.10` until Plan 4. **Between this plan and rc1, a build from `main` cannot talk
+  to 0.10 peers about moved types.** That is expected, because consumers switch at rc1.
+- **Deleted** (decisions §4; listed in the type map):
+  - the `device_hl2_msgs` and `device_orbbec_msgs` packages and conan components;
+  - `GenericManager`, the legacy `rpc/SpatialRelations` types, `Logging`, `AudioStream`, `XRInput`, `XRRuntime`,
+    `Instance`;
+  - `Pose6DMapMessage` and `RigidTransformMap(Item)`;
+  - `CameraInfoMessage`;
+  - the scalar request/reply types (`StringRequest`, `Int32Reply`, … ; `BoolReply` stays);
+  - `ParameterSchemaReply`;
+  - the pcpd `ServiceType`, `RecorderStatus`, `BufferInfoReply` and `ComponentInfoReply`;
+  - the unused math types (`Vector4`, `Matrix*`, `Plane`, `MSGuid`, `BoundingBox`, `Frustum`, `OrientedBox`,
+    `Sphere`);
+  - the XR and audio enums only the deleted types used.
+- **Source tree:** `src/dds/custom/` is now `src/dds/tcn/`, and the IDL install path is
+  `share/tcn_schema/dds/<pkg>/…` as before. Every tcn file now has an include guard.
+
 ## 2. Per consumer
 
 Each list collects the items of §1 that need action from that consumer, plus the decided changes still to come (with
@@ -177,6 +234,10 @@ their plan), so that each team can prepare.
 
 ### SQE engine (spatial_query_engine_rs, sqe-calibrate)
 
+- *Plan 3:* (counts are approximate: a `git grep` for the old fully qualified names, outside third-party and build directories)
+  - about 82 moved type names in 14 files, mostly the `messages.rs` wire registry: `tcnart_msgs::rpc::SIS*` → `sqe_msgs::rpc::*` (74), `tcnart_msgs::msg::SR*` → `sqe_msgs::msg::*` (5), shared types → `tcn_types::msg::*` (3);
+  - drop the `Pose6DMapMessage` tracker payload (`messages.rs:2081-2112`, decided), the definitions of `Pose6DMapMessage`, `RigidTransformMap` and `RigidTransformMapItem` (`crates/sqe-core/src/messages.rs:1958-1985`), and the `CameraInfoMessage` test mention;
+  - generate the renames from `share/tcn_schema/type_map_0_11.json`.
 - *Plan 2:* nothing to do. Optional: `ros2_types.json` gives ROS names and hashes for showing ROS frames later.
 - *Plan 1:* optional:
   - check the Rust codec against `test/golden/*.hex`;
@@ -188,6 +249,15 @@ their plan), so that each team can prepare.
 
 ### tcnart (v3)
 
+- *Plan 3:*
+  - about 131 moved type names in 60–70 files under `v3/`: to `sqe_msgs::rpc` (80), `pcpd_msgs::rpc` (23, the parameter RPC), `sqe_msgs::msg` (16) and `tcn_types::msg` (12);
+  - idlgen's default package list gains `tcn_types` and `sqe_msgs`; the exclusion of the legacy rpc SpatialRelations types goes (the file is deleted);
+  - the vendored snapshot needs the new `src/dds/tcn` layout;
+  - goldens that list `device_hl2_msgs`/`device_orbbec_msgs` types need regenerating;
+  - remove the two stale device opt-ins (`TcnartV3Options.cmake:27`);
+  - **`Pose6DMapMessage` is deleted (XA7):** drop its registration (`wire/include/tcnart/wire/wire_type.hpp:105`), its decoder (`features/src/pose/pose_wire.cpp:56,73,82,144`) and its tests (`tests/sqe/test_sqe_conformance.cpp:297,310`, `tests/wire/test_cdr.cpp:117`, `tests/wire/test_wire_type.cpp:111`);
+  - **`conversation_msgs` headers are PascalCase now:** `wire/include/tcnart/wire/conversation_msgs.hpp:17-22` includes `conversation_msgs/msg/audio.h`, `common.h`, `rpc/discovery.h`, … , which become `Audio.h`, `Common.h`, `rpc/Discovery.h` (they fail on case-sensitive file systems otherwise);
+  - `tools/idlgen/mapping.py:39` names the deleted `ComponentInfoReply`.
 - *Plan 2:*
   - refresh the vendored snapshot `v3/third_party/tcn_schema_idl` (`Time_.idl` → `Time.idl`, `String_.idl` →
     `String.idl`, generated ROS files with `@final`, new packages);
@@ -204,6 +274,11 @@ their plan), so that each team can prepare.
 
 ### HTA (holoscan-tcn-applications)
 
+- *Plan 3:*
+  - about 45 moved type names in about 40 files: `sqe_msgs::rpc` (19), the parameter RPC `pcpd_msgs::rpc` (15), `tcn_types::msg` (7), `sqe_msgs::msg` (5);
+  - HTA links `tcn_schema::tcn_schema`, so no component change is needed;
+  - `tools/common/web_golden.hpp:16` includes `tcnart_msgs/msg/Types.h`, which is gone: the media enums are in `MediaTypes.h` (see "Same name, new header" in the type map);
+  - the FlatBuffers mirrors follow the renames.
 - *Plan 2:* nothing to do. No HTA code includes the renamed headers or names the removed typedefs. `PointCloud2` and `Header` are byte-identical.
 - *Plan 1:*
   - Check that no C++ code uses `operator==` on the 14 parameter and service-info types listed in §1 (it compares pointers).
@@ -211,6 +286,9 @@ their plan), so that each team can prepare.
 
 ### tcn web controller
 
+- *Plan 3:*
+  - about 35 moved type names in about 15 files (`schemas.ts`, registries): `sqe_msgs::rpc` (23), `pcpd_msgs::rpc` (7), `tcn_types::msg` (6);
+  - `Pose6DMapMessage` and `RigidTransformMap(Item)` are deleted; the fallback is already gone on `srg-dead-fields`.
 - *Plan 2:* nothing to do. The type names in `types.json` are unchanged. ROS types are now `"extensibility": "final"` in `types.json` (XCDR1, as before).
 - *Plan 1:* optional:
   - check `@tcn-web/cdr` against `test/golden/*.hex`;
@@ -218,6 +296,9 @@ their plan), so that each team can prepare.
 
 ### IVA (realtime conversational pipeline)
 
+- *Plan 3:*
+  - about 24 moved type names in about 10 files, almost all the parameter RPC in `tcn-wire` (`tcnart_msgs::rpc::*` → `pcpd_msgs::rpc::*`, 23), plus `tcn_types::msg` (1);
+  - the IDL sync takes `pcpd_msgs/rpc/Parameters.idl` instead of `tcnart_msgs/rpc/Requests.idl`, and the PascalCase `conversation_msgs` files.
 - *Plan 2:* when you next sync `idl/` from tcn_schema:
   - the closure has `builtin_interfaces/msg/Time.idl` instead of `Time_.idl`;
   - update `crates/tcn-wire/tests/alignment.rs` (lines 36 and 85), which name `Time_.idl`.
@@ -230,14 +311,10 @@ their plan), so that each team can prepare.
 Summary of what the later plans bring, so teams can plan their work. The details are in the decisions and will be
 written into §1 and §2 as each plan lands.
 
-- **Plan 3, moves:**
-  - SQE types move to `sqe_msgs`, shared types to `tcn_types`;
-  - the parameter RPC moves to `pcpd_msgs`;
-  - `src/dds/custom/` becomes `src/dds/tcn/`;
-  - the deleted packages and types are listed in decisions §4.
-
-  C++ namespaces, include paths and wire type names change.
 - **Plan 4, encoding:**
+  - comments that still describe the deleted `Pose6DMapMessage` (`sqe_msgs/msg/Graph.idl` `SREdge.stream_item_id`,
+    `tcnart_msgs/msg/PoseTracking.idl` `XR_POSE_*`, `sqe_msgs/rpc/Streams.idl` example schema) are rewritten with
+    the #35 changes that replace them (E4, H3);
   - every tcn type is XCDR2 `@appendable`, with encapsulation `00 09`;
   - the unknown-enumerator and unknown-union-case rules (E6) and the default rule (E8) are normative;
   - fields nobody writes are removed (decisions §4);

@@ -98,7 +98,7 @@ inline Result<std::string> marker_announce_key(const ClientId& client, std::stri
 // Marker node names
 // ---------------------------------------------------------------------------
 
-/// What a tracker reports, mirroring `tcnart_msgs::msg::MarkerType`.
+/// What a tracker reports, mirroring `tcn_types::msg::MarkerType`.
 ///
 /// A mirror rather than the IDL enum, because this library includes no
 /// generated header and builds where fastddsgen does not exist. The ordinals

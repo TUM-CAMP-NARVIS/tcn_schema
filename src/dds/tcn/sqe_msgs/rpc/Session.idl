@@ -1,0 +1,87 @@
+// The Spatial Information Service.
+//
+// These are thin RPC envelopes over the spatial relationship graph defined in
+// sqe_msgs/msg/Graph.idl and Transforms.idl. The graph is the model; nothing here
+// re-describes it.
+
+#ifndef SQE_MSGS_RPC_SESSION_IDL
+#define SQE_MSGS_RPC_SESSION_IDL
+
+#include "sqe_msgs/msg/Graph.idl"
+#include "sqe_msgs/rpc/Queries.idl"
+
+module sqe_msgs {
+  module rpc {
+
+    // --- graph lifecycle ---------------------------------------------------
+
+    // Announce a client and its whole graph at once. A QUERY since 0.9.0
+    // (engine B73), answered with SISMutationReply once the fragment is
+    // stored: a `stream/start` sent after the reply sees it. All or nothing --
+    // a graph whose origin is not among its nodes, or with any node or edge
+    // the engine refuses, is answered SIS_MU_REJECTED with every reason in
+    // `detail`, and nothing is stored. A second join from the same client
+    // replaces its fragment.
+    struct SISJoinRequest {
+        sqe_msgs::msg::SRGraph graph;
+    };
+
+    // Announce departure. Without this a client is only collected after the
+    // inactivity timeout.
+    struct SISLeaveRequest {
+        string client;
+    };
+
+    // The operator surface (B82, sqe/{engine_id}/op/*) is described at the top of sqe_msgs/rpc/Operator.idl; the
+    // operator identity and op/info live here because every operator request and the engine info use them.
+
+    // Who is asking. An operator key carries no client id, so this is what
+    // the operator rate limit is keyed on and what the engine's log names.
+    // Free-form, e.g. "tcn-web/lab-pc3/alice".
+    struct SISOperatorRef {
+        string requester;
+    };
+
+    // --- sqe/{engine_id}/op/info ------------------------------------------
+    struct SISEngineInfoRequest {
+        SISOperatorRef who;
+    };
+
+    enum SISStoreHealth {
+        SIS_SH_OK,              // a probe read came back in time
+        SIS_SH_DEGRADED,        // it came back slowly; store_detail says how
+        SIS_SH_UNAVAILABLE      // it failed or timed out; reads and writes will too
+    };
+
+    // The bounds one class of reader is held to.
+    struct SISReadLimits {
+        uint32 max_items;          // nodes plus relations per graph-read reply
+        uint32 max_bytes;          // bytes per reply
+        uint32 reads_per_second;   // per requester
+    };
+
+    // `status` is SIS_GQ_OK, SIS_GQ_REJECTED (undecodable) or
+    // SIS_GQ_UNAVAILABLE (the operator rate limit); every other field is then
+    // zero or empty.
+    struct SISEngineInfoReply {
+        SISGraphQueryStatus status;
+        string detail;
+        string engine_id;
+        uint64 engine_epoch;       // ms since the Unix epoch; the alive key's {epoch}
+        string engine_version;
+        uint32 protocol_break;     // highest compatibility break (B<n>) implemented
+        string schema_version;     // tcn_schema release, e.g. "0.9.2"
+        string client_scope;       // the prefix served; "" = unscoped
+        SISStoreHealth store;
+        string store_detail;
+        uint32 fragments_joined;   // clients holding a liveliness token now
+        uint32 fragments_stored;   // fragments stored in scope, connected or not
+        uint32 relation_streams;   // running
+        SISReadLimits client_limits;     // {client_id}/sis/graph/query
+        SISReadLimits operator_limits;   // sqe/{engine_id}/op/graph/query
+    };
+
+  };
+};
+
+#endif

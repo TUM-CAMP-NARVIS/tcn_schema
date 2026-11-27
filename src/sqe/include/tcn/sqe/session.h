@@ -79,17 +79,17 @@ struct RequestKey;
 // A `put` on any of these keys is ignored by the engine, and logged once per
 // key as a peer built against an older protocol. So a Publish left in this
 // table is not a degraded mode, it is a client that never joins.
-TCN_SQE_REGISTER_REQUEST_KEY(::tcnart_msgs::rpc::SISJoinRequest,       keys::kJoin,       RequestMode::Query,
-                             ::tcnart_msgs::rpc::SISMutationReply);
+TCN_SQE_REGISTER_REQUEST_KEY(::sqe_msgs::rpc::SISJoinRequest,       keys::kJoin,       RequestMode::Query,
+                             ::sqe_msgs::rpc::SISMutationReply);
 // The deliberate exception, and it stays one: withdrawing the liveliness token
 // reaches the identical departure with no query behind it to answer, and one
 // route answering while the other cannot is worse than neither.
-TCN_SQE_REGISTER_REQUEST_KEY(::tcnart_msgs::rpc::SISLeaveRequest,      keys::kLeave,      RequestMode::Publish,
+TCN_SQE_REGISTER_REQUEST_KEY(::sqe_msgs::rpc::SISLeaveRequest,      keys::kLeave,      RequestMode::Publish,
                              void);
-TCN_SQE_REGISTER_REQUEST_KEY(::tcnart_msgs::rpc::SISNodeUpdateRequest, keys::kNodeUpdate, RequestMode::Query,
-                             ::tcnart_msgs::rpc::SISMutationReply);
-TCN_SQE_REGISTER_REQUEST_KEY(::tcnart_msgs::rpc::SISNodeRemoveRequest, keys::kNodeRemove, RequestMode::Query,
-                             ::tcnart_msgs::rpc::SISMutationReply);
+TCN_SQE_REGISTER_REQUEST_KEY(::sqe_msgs::rpc::SISNodeUpdateRequest, keys::kNodeUpdate, RequestMode::Query,
+                             ::sqe_msgs::rpc::SISMutationReply);
+TCN_SQE_REGISTER_REQUEST_KEY(::sqe_msgs::rpc::SISNodeRemoveRequest, keys::kNodeRemove, RequestMode::Query,
+                             ::sqe_msgs::rpc::SISMutationReply);
 // A `Query`, not a `Publish`, since B47. `/sis/relation/update` stopped being a
 // subscriber and became a queryable: a `put` on that key now reaches **nothing
 // at all**, with no error on either side. It answers `SISMutationReply`, and
@@ -102,36 +102,36 @@ TCN_SQE_REGISTER_REQUEST_KEY(::tcnart_msgs::rpc::SISNodeRemoveRequest, keys::kNo
 // here compiles against the engine. When a key changes mode, this table is the
 // second place to change and the easy one to miss. (B73 moved four more, in
 // the same tcn_schema release that changed the engine, for that reason.)
-TCN_SQE_REGISTER_REQUEST_KEY(::tcnart_msgs::rpc::SISEdgeUpdateRequest, keys::kEdgeUpdate, RequestMode::Query,
-                             ::tcnart_msgs::rpc::SISMutationReply);
-TCN_SQE_REGISTER_REQUEST_KEY(::tcnart_msgs::rpc::SISEdgeRemoveRequest, keys::kEdgeRemove, RequestMode::Query,
-                             ::tcnart_msgs::rpc::SISMutationReply);
-TCN_SQE_REGISTER_REQUEST_KEY(::tcnart_msgs::rpc::SISRelationStreamStartRequest, keys::kStreamStart, RequestMode::Query,
-                             ::tcnart_msgs::rpc::SISRelationStreamReply);
-TCN_SQE_REGISTER_REQUEST_KEY(::tcnart_msgs::rpc::SISRelationStreamStopRequest,  keys::kStreamStop,  RequestMode::Query,
-                             ::tcnart_msgs::rpc::SISRelationStreamReply);
+TCN_SQE_REGISTER_REQUEST_KEY(::sqe_msgs::rpc::SISEdgeUpdateRequest, keys::kEdgeUpdate, RequestMode::Query,
+                             ::sqe_msgs::rpc::SISMutationReply);
+TCN_SQE_REGISTER_REQUEST_KEY(::sqe_msgs::rpc::SISEdgeRemoveRequest, keys::kEdgeRemove, RequestMode::Query,
+                             ::sqe_msgs::rpc::SISMutationReply);
+TCN_SQE_REGISTER_REQUEST_KEY(::sqe_msgs::rpc::SISRelationStreamStartRequest, keys::kStreamStart, RequestMode::Query,
+                             ::sqe_msgs::rpc::SISRelationStreamReply);
+TCN_SQE_REGISTER_REQUEST_KEY(::sqe_msgs::rpc::SISRelationStreamStopRequest,  keys::kStreamStop,  RequestMode::Query,
+                             ::sqe_msgs::rpc::SISRelationStreamReply);
 // The read. `Query` for the obvious reason and one less obvious: a read
 // answered by a subscriber would have nowhere to put SIS_GQ_TRUNCATED or a
 // cursor, so paging could not exist at all.
-TCN_SQE_REGISTER_REQUEST_KEY(::tcnart_msgs::rpc::SISGraphQueryRequest, keys::kGraphQuery, RequestMode::Query,
-                             ::tcnart_msgs::rpc::SISGraphQueryReply);
+TCN_SQE_REGISTER_REQUEST_KEY(::sqe_msgs::rpc::SISGraphQueryRequest, keys::kGraphQuery, RequestMode::Query,
+                             ::sqe_msgs::rpc::SISGraphQueryReply);
 // The pattern read (B63). Its reply reuses SISGraphQueryStatus and opens with
 // it, so a SISGraphQueryReply would decode from a pattern reply's bytes; the
 // `Reply` below and the declared-type check are what keep the two apart.
-TCN_SQE_REGISTER_REQUEST_KEY(::tcnart_msgs::rpc::SISPatternQueryRequest, keys::kPatternQuery, RequestMode::Query,
-                             ::tcnart_msgs::rpc::SISPatternQueryReply);
+TCN_SQE_REGISTER_REQUEST_KEY(::sqe_msgs::rpc::SISPatternQueryRequest, keys::kPatternQuery, RequestMode::Query,
+                             ::sqe_msgs::rpc::SISPatternQueryReply);
 // The target registry (B78): a read with its own reply, and a write answered
 // like every other write.
-TCN_SQE_REGISTER_REQUEST_KEY(::tcnart_msgs::rpc::SISTargetQueryRequest, keys::kTargetQuery, RequestMode::Query,
-                             ::tcnart_msgs::rpc::SISTargetQueryReply);
-TCN_SQE_REGISTER_REQUEST_KEY(::tcnart_msgs::rpc::SISTargetMutationRequest, keys::kTargetUpdate, RequestMode::Query,
-                             ::tcnart_msgs::rpc::SISMutationReply);
+TCN_SQE_REGISTER_REQUEST_KEY(::sqe_msgs::rpc::SISTargetQueryRequest, keys::kTargetQuery, RequestMode::Query,
+                             ::sqe_msgs::rpc::SISTargetQueryReply);
+TCN_SQE_REGISTER_REQUEST_KEY(::sqe_msgs::rpc::SISTargetMutationRequest, keys::kTargetUpdate, RequestMode::Query,
+                             ::sqe_msgs::rpc::SISMutationReply);
 // The relation sample (B93, 0.10.6): one value at one instant, with its own
 // reply. The engine may wait up to the request's wait_ms (capped at 5 s) for
 // data, after a graph read bounded like a start's, before it answers;
 // kDefaultQueryTimeoutMs is above both.
-TCN_SQE_REGISTER_REQUEST_KEY(::tcnart_msgs::rpc::SISRelationSampleRequest, keys::kRelationSample, RequestMode::Query,
-                             ::tcnart_msgs::rpc::SISRelationSampleReply);
+TCN_SQE_REGISTER_REQUEST_KEY(::sqe_msgs::rpc::SISRelationSampleRequest, keys::kRelationSample, RequestMode::Query,
+                             ::sqe_msgs::rpc::SISRelationSampleReply);
 
 namespace detail {
 
@@ -241,8 +241,8 @@ inline Result<Declaration> declare_subscription(Transport& t, std::string_view k
 /// ```cpp
 /// RelationLeaseTable relations(
 ///   [&](const RelationStreamRequest& r) -> Result<StreamClaim> {
-///     tcnart_msgs::rpc::SISRelationStreamStartRequest req = to_idl(r);   // yours
-///     tcnart_msgs::rpc::SISRelationStreamReply reply;
+///     sqe_msgs::rpc::SISRelationStreamStartRequest req = to_idl(r);   // yours
+///     sqe_msgs::rpc::SISRelationStreamReply reply;
 ///     const auto q = session.query_request(req, reply);
 ///     if (!q) { return Result<StreamClaim>::fail(q.error()); }
 ///     Result<Handle> h = Handle::from_reply(reply);   // enforces the invariant
@@ -258,9 +258,9 @@ inline Result<Declaration> declare_subscription(Transport& t, std::string_view k
 ///         StreamClaim{std::move(h.value()), std::move(sub.value())});
 ///   },
 ///   [&](const Handle& h) -> Result<Status> {
-///     tcnart_msgs::rpc::SISRelationStreamStopRequest req;
+///     sqe_msgs::rpc::SISRelationStreamStopRequest req;
 ///     req.handle(h.data_topic());
-///     tcnart_msgs::rpc::SISRelationStreamReply reply;
+///     sqe_msgs::rpc::SISRelationStreamReply reply;
 ///     const auto q = session.query_request(req, reply);
 ///     if (!q) { return Result<Status>::fail(q.error()); }
 ///     return reply_status(reply);

@@ -72,6 +72,7 @@ class _Parser:
         self.decls: List[tuple] = []
         # forward declarations (scope + [name]); fastddsgen 3.0.0 stores members of these types as pointers
         self.forwards: List[List[str]] = []
+        self.forward_kinds: Dict[str, str] = {}
 
     # -- token helpers -----------------------------------------------------------------------------------------
     def peek(self, k: int = 0):
@@ -129,7 +130,40 @@ class _Parser:
             ann[name] = args
         return ann
 
+    def _decl_start(self) -> int:
+        """Start of the next declaration's text: its leading comments and annotations belong to it, a comment on the
+        line of the previous declaration's end does not."""
+        prev_end = self.toks[self.i - 1][3] if self.i > 0 else 0
+        nl = self.text.find("\n", prev_end)
+        rest = self.text[prev_end:nl if nl >= 0 else len(self.text)]
+        if nl >= 0 and (not rest.strip() or rest.strip().startswith("//")):
+            pos = nl + 1
+        else:
+            pos = prev_end
+        while pos < len(self.text) and self.text[pos] in " \t\r\n":
+            pos += 1
+        return pos
+
+    def _decl_end(self) -> int:
+        """End of the declaration just parsed: after its `;`, plus a comment on the same line."""
+        end = self.toks[self.i - 1][3]
+        nl = self.text.find("\n", end)
+        rest = self.text[end:nl if nl >= 0 else len(self.text)]
+        if rest.strip().startswith("//") or rest.strip().startswith("/*"):
+            return end + len(rest.rstrip())
+        return end
+
     def definition(self, scope: List[str]):
+        start = self._decl_start()
+        before = len(self.decls)
+        self._definition(scope)
+        # A declaration (not a module, whose inner declarations carry their own spans, nor a forward declaration)
+        # was added: record its span.
+        if len(self.decls) == before + 1 and len(self.decls[-1]) == 4:
+            kind, sc, name, payload = self.decls[-1]
+            self.decls[-1] = (kind, sc, name, payload, (start, self._decl_end()))
+
+    def _definition(self, scope: List[str]):
         ann = self.annotations()
         kw = self.peek()[1]
         if kw == "module":
@@ -182,6 +216,7 @@ class _Parser:
         name = self.next()[1]
         if self.accept(";"):
             self.forwards.append(scope + [name])
+            self.forward_kinds["::".join(scope + [name])] = "struct"
             return  # forward declaration
         if self.accept(":"):
             self.next()  # base type (unused in this repository)
@@ -234,6 +269,7 @@ class _Parser:
         name = self.next()[1]
         if self.accept(";"):
             self.forwards.append(scope + [name])
+            self.forward_kinds["::".join(scope + [name])] = "union"
             return  # forward declaration
         self.expect("switch")
         self.expect("(")
@@ -329,24 +365,25 @@ def _make_resolver(scope: List[str], known: Set[str]):
 
 def _build(raw_decls, known: Set[str]):
     out = []
-    for kind, scope, name, payload in raw_decls:
+    for kind, scope, name, payload, span in raw_decls:
         fq = "::".join(scope + [name])
         res = _make_resolver(scope, known)
         if kind == "struct":
             members, ext, ann = payload
-            out.append(Struct(fq, [_member(m, res) for m in members], ext, ann))
+            out.append(Struct(fq, [_member(m, res) for m in members], ext, ann, span))
         elif kind == "enum":
             values, ext, ann = payload
-            out.append(Enum(fq, values, ext, ann))
+            out.append(Enum(fq, values, ext, ann, span))
         elif kind == "union":
             disc, cases, ext, ann = payload
-            out.append(Union(fq, _render(disc, res), [(labels, _member(m, res)) for labels, m in cases], ext, ann))
+            out.append(Union(fq, _render(disc, res), [(labels, _member(m, res)) for labels, m in cases], ext, ann,
+                             span))
         elif kind == "typedef":
             ty, dims = payload
-            out.append(Typedef(fq, _render(ty, res), dims))
+            out.append(Typedef(fq, _render(ty, res), dims, span))
         elif kind == "const":
             ty, value = payload
-            out.append(Const(fq, _render(ty, res), value))
+            out.append(Const(fq, _render(ty, res), value, span))
     return out
 
 
@@ -376,13 +413,14 @@ def _file_meta(rel: str):
 def parse_file(path: Path, rel: str, family: str = "tcn") -> IdlFile:
     """Parse one file; names resolve against this file's own declarations only."""
     p = _parse_raw(path)
-    known = {"::".join(s + [n]) for _, s, n, _ in p.decls}
+    known = {"::".join(d[1] + [d[2]]) for d in p.decls}
     pkg, kind = _file_meta(rel)
-    return IdlFile(rel, pkg, kind, p.includes, _build(p.decls, known), family, ["::".join(x) for x in p.forwards])
+    return IdlFile(rel, pkg, kind, p.includes, _build(p.decls, known), family, ["::".join(x) for x in p.forwards],
+                   dict(p.forward_kinds))
 
 
 def load_schema(dds_root: Path) -> Schema:
-    """Parse every *.idl under dds_root/{ros2,custom,tcn}; resolve names across all files."""
+    """Parse every *.idl under dds_root/{ros2,tcn} (and custom, the pre-0.11 location); resolve names across all files."""
     raws = []
     family: Dict[str, str] = {}
     for sub, fam in FAMILY_DIRS.items():
@@ -393,9 +431,10 @@ def load_schema(dds_root: Path) -> Schema:
             rel = path.relative_to(base).as_posix()
             raws.append((rel, fam, _parse_raw(path)))
             family[_file_meta(rel)[0]] = fam
-    known = {"::".join(s + [n]) for _, _, p in raws for _, s, n, _ in p.decls}
+    known = {"::".join(d[1] + [d[2]]) for _, _, p in raws for d in p.decls}
     files = []
     for rel, fam, p in raws:
         pkg, kind = _file_meta(rel)
-        files.append(IdlFile(rel, pkg, kind, p.includes, _build(p.decls, known), fam, ["::".join(x) for x in p.forwards]))
+        files.append(IdlFile(rel, pkg, kind, p.includes, _build(p.decls, known), fam, ["::".join(x) for x in p.forwards],
+                             dict(p.forward_kinds)))
     return Schema(files, family)

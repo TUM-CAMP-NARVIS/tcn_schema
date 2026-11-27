@@ -19,7 +19,7 @@ struct Codec
     template <class T> static Result<void> decode(BytesView, T&) { return Result<void>::ok(); }
 };
 
-void f(SisSession<Codec>& s, const ::tcnart_msgs::rpc::SISRelationStreamStartRequest& req)
+void f(SisSession<Codec>& s, const ::sqe_msgs::rpc::SISRelationStreamStartRequest& req)
 {
     (void)s.publish_request(req);   // must not compile: this request is a query
 }

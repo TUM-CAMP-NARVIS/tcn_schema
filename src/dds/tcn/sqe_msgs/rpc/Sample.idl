@@ -1,0 +1,104 @@
+// The Spatial Information Service.
+//
+// These are thin RPC envelopes over the spatial relationship graph defined in
+// sqe_msgs/msg/Graph.idl and Transforms.idl. The graph is the model; nothing here
+// re-describes it.
+
+#ifndef SQE_MSGS_RPC_SAMPLE_IDL
+#define SQE_MSGS_RPC_SAMPLE_IDL
+
+#include "sqe_msgs/rpc/Streams.idl"
+#include "tcn_types/msg/Tracking.idl"
+
+module sqe_msgs {
+  module rpc {
+
+    // --- Relation sample (engine B93, tcn_schema 0.10.6) -----------------
+    //
+    //   {client}/sis/relation/sample   SISRelationSampleRequest -> SISRelationSampleReply
+    //
+    // One value of a relation at one instant: the route a start would compile,
+    // evaluated once, from the same buffered samples and with the same
+    // interpolation and extrapolation a stream uses -- so a sample at t equals a
+    // running stream's message at t. Nothing is started: no handle, no status
+    // topic, no derived edge, no transaction-log record. The engine keeps the
+    // route and its inputs' subscriptions warm for a short time after each
+    // sample (--sample-linger-ms), so a repeat is cheap. A read: charged to the
+    // requester's graph-read bucket, frames inside the engine's client scope.
+    // An engine older than B93 does not answer (the query closes empty).
+
+    // Which instant to sample. Ordinals are the wire encoding; append only.
+    enum SISRelationSampleInstant {
+        SIS_SI_AT,              // `stamp_ns`, a data stamp in the route's clock domain
+        SIS_SI_NOW,             // what a FIXED_RATE trigger samples at when the request
+                                // arrives: host now - system latency - the route's
+                                // largest declared sensor latency
+        SIS_SI_LATEST           // the newest instant every input has data for: the
+                                // minimum over the inputs of their newest stamp. Never
+                                // extrapolates
+    };
+
+    struct SISRelationSampleRequest {
+        SISFrameRef observer;
+        SISFrameRef target;
+        double freshness_bias;          // [0, 1], as for a start
+        SISRelationSampleInstant instant;
+        int64 stamp_ns;                 // SIS_SI_AT only: ns; must be > 0
+        uint32 wait_ms;                 // how long to wait for data; 0 = the engine's
+                                        // default (500), capped at 5000
+        boolean include_plan;           // also return the route as a plan
+    };
+
+    // Ordinals are the wire encoding; append only.
+    enum SISRelationSampleStatus {
+        SIS_SA_OK,              // a value at `stamp_ns`, for at least one instance
+        SIS_SA_NO_ROUTE,        // no route now: `relation`, `relation_detail` and
+                                // `blocked_by` say why, as a start's reply would
+        SIS_SA_NO_VALUE,        // a route, but no instance resolved at the instant:
+                                // an input silent within the wait, or the instant past
+                                // its extrapolation horizon (see `inputs`)
+        SIS_SA_TOO_OLD,         // the instant is before an input's held history
+                                // (about 2 s, and only while the input is read)
+        SIS_SA_REJECTED,        // undecodable, bias outside [0, 1], a frame outside the
+                                // client scope, SIS_SI_AT without a stamp
+        SIS_SA_UNAVAILABLE      // the rate limit, the graph read failed or timed out,
+                                // or the sampler table is full
+    };
+
+    // One input of the route, in plan order: what was buffered for it when the
+    // sample was evaluated.
+    struct SISSampleInput {
+        string topic;
+        int64 oldest_ns;                // oldest buffered stamp; 0 = none
+        int64 newest_ns;                // newest buffered stamp; 0 = none
+        int64 extrapolated_ns;          // how far past newest_ns the instant was;
+                                        // 0 = interpolated (or no value)
+    };
+
+    // `detail` is non-empty exactly when `status` is not SIS_SA_OK. `relation`
+    // is what a start would be answered: SIS_RS_ACTIVE whenever there is a
+    // route (OK, NO_VALUE, TOO_OLD), otherwise why not.
+    struct SISRelationSampleReply {
+        SISRelationSampleStatus status;
+        string detail;
+        string engine_id;
+        uint64 engine_epoch;
+        SISRelationStreamStatus relation;
+        string relation_detail;
+        sequence<SISBlockingRelation> blocked_by;
+        int64 stamp_ns;                 // the instant evaluated; 0 = none was
+        string clock_domain;            // the route's
+        // One per instance that resolved at the instant, exactly as a stream
+        // publishes them on its handle (target_id = materialized id; 0 for a
+        // plain relation). An instance with a hole is absent.
+        sequence<tcn_types::msg::Target> targets;
+        sequence<SISSampleInput> inputs;
+        boolean cached;                 // the route came from the sampler cache
+        uint32 waited_ms;               // how long the engine waited for data
+        SISTranslationPlan plan;        // with include_plan; empty otherwise
+    };
+
+  };
+};
+
+#endif

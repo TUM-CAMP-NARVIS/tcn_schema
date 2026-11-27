@@ -24,11 +24,38 @@ def main(argv) -> int:
     rt.add_argument("--package", required=True)
     rt.add_argument("--out", type=Path, required=True)
 
+    rs = sub.add_parser("restructure", help="apply a move list (0.11 plan 3) to <dds-root>/<source>")
+    rs.add_argument("--dds-root", type=Path, required=True)
+    rs.add_argument("--spec", type=Path, required=True)
+
+    mv = sub.add_parser("moves", help="check a move: every old type deleted or mapped with the same layout")
+    mv.add_argument("--old", type=Path, required=True, help="dds root before the move")
+    mv.add_argument("--new", type=Path, required=True, help="dds root after the move")
+    mv.add_argument("--spec", type=Path, required=True)
+    mv.add_argument("--json", type=Path)
+    mv.add_argument("--markdown", type=Path)
+
     args = ap.parse_args(argv)
     if args.cmd == "tables":
         from .tables import write_tables
         write_tables(load_schema(args.dds_root), args.version, args.out)
         return 0
+    if args.cmd in ("restructure", "moves"):
+        import json
+        spec = json.loads(args.spec.read_text(encoding="utf-8"))
+        if args.cmd == "restructure":
+            from .restructure import restructure
+            restructure(args.dds_root, spec, args.dds_root)
+            return 0
+        from .moves import compare, write_reports
+        renames = {o: f"{e['module']}::{o.rsplit('::', 1)[1]}" for e in spec["files"] for o in e["decls"]}
+        old, new = load_schema(args.old), load_schema(args.new)
+        report = compare(old, new, renames, set(spec.get("deleted", [])), spec.get("new_types", []))
+        for p in report.problems:
+            print(p)
+        write_reports(report, old, new, args.json, args.markdown)
+        print(f"{len(report.mapped)} moved, {len(report.deleted)} deleted, {len(report.problems)} problems")
+        return 1 if report.problems else 0
     if args.cmd == "roundtrip":
         from .roundtrip import write
         write(args.types, args.package, args.out)

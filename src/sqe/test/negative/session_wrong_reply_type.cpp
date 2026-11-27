@@ -23,8 +23,8 @@ struct Codec
     template <class T> static Result<void> decode(BytesView, T&) { return Result<void>::ok(); }
 };
 
-void f(SisSession<Codec>& s, const ::tcnart_msgs::rpc::SISJoinRequest& req)
+void f(SisSession<Codec>& s, const ::sqe_msgs::rpc::SISJoinRequest& req)
 {
-    ::tcnart_msgs::rpc::SISRelationStreamReply reply;
+    ::sqe_msgs::rpc::SISRelationStreamReply reply;
     (void)s.query_request(req, reply);   // must not compile: the wrong reply type
 }

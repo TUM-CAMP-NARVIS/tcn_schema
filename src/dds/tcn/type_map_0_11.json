@@ -1,0 +1,1566 @@
+{
+ "deleted": [
+  {
+   "old": "device_hl2_msgs::msg::Hololens2ImuAccel",
+   "old_header": "device_hl2_msgs/msg/Hololens2Sensors.h"
+  },
+  {
+   "old": "device_hl2_msgs::msg::Hololens2ImuGyro",
+   "old_header": "device_hl2_msgs/msg/Hololens2Sensors.h"
+  },
+  {
+   "old": "device_hl2_msgs::msg::Hololens2ImuMag",
+   "old_header": "device_hl2_msgs/msg/Hololens2Sensors.h"
+  },
+  {
+   "old": "device_hl2_msgs::msg::Hololens2SensorInfoVLC",
+   "old_header": "device_hl2_msgs/msg/Hololens2Sensors.h"
+  },
+  {
+   "old": "device_hl2_msgs::msg::Hololens2SensorInfoZHT",
+   "old_header": "device_hl2_msgs/msg/Hololens2Sensors.h"
+  },
+  {
+   "old": "device_hl2_msgs::msg::Hololens2SensorInfoZLT",
+   "old_header": "device_hl2_msgs/msg/Hololens2Sensors.h"
+  },
+  {
+   "old": "device_hl2_msgs::msg::enums::Dummy",
+   "old_header": "device_hl2_msgs/msg/Hololens2Enums.h"
+  },
+  {
+   "old": "device_hl2_msgs::msg::enums::Hololens2SensorType",
+   "old_header": "device_hl2_msgs/msg/Hololens2Enums.h"
+  },
+  {
+   "old": "device_hl2_msgs::rpc::HL2MGRRequest_StartMC",
+   "old_header": "device_hl2_msgs/rpc/Hololens2Manager.h"
+  },
+  {
+   "old": "device_hl2_msgs::rpc::HL2MGRRequest_StartPV",
+   "old_header": "device_hl2_msgs/rpc/Hololens2Manager.h"
+  },
+  {
+   "old": "device_hl2_msgs::rpc::HL2MGRRequest_StartRM",
+   "old_header": "device_hl2_msgs/rpc/Hololens2Manager.h"
+  },
+  {
+   "old": "device_hl2_msgs::rpc::HL2RCRequest_SetPVExposure",
+   "old_header": "device_hl2_msgs/rpc/Hololens2RemoteControl.h"
+  },
+  {
+   "old": "device_hl2_msgs::rpc::HL2RCRequest_SetPVFocus",
+   "old_header": "device_hl2_msgs/rpc/Hololens2RemoteControl.h"
+  },
+  {
+   "old": "device_hl2_msgs::rpc::HL2RCRequest_SetPVIsoSpeed",
+   "old_header": "device_hl2_msgs/rpc/Hololens2RemoteControl.h"
+  },
+  {
+   "old": "device_hl2_msgs::rpc::HL2RCResponse_GetApplicationVersion",
+   "old_header": "device_hl2_msgs/rpc/Hololens2RemoteControl.h"
+  },
+  {
+   "old": "device_hl2_msgs::rpc::HL2SMRequest_GetMeshes",
+   "old_header": "device_hl2_msgs/rpc/Hololens2SpatialMapping.h"
+  },
+  {
+   "old": "device_hl2_msgs::rpc::HL2SMRequest_SetVolumes",
+   "old_header": "device_hl2_msgs/rpc/Hololens2SpatialMapping.h"
+  },
+  {
+   "old": "device_hl2_msgs::rpc::HL2SMResponse_GetMeshes",
+   "old_header": "device_hl2_msgs/rpc/Hololens2SpatialMapping.h"
+  },
+  {
+   "old": "device_hl2_msgs::rpc::HL2SMResponse_GetObservedSurfaces",
+   "old_header": "device_hl2_msgs/rpc/Hololens2SpatialMapping.h"
+  },
+  {
+   "old": "device_hl2_msgs::rpc::HL2SURequest_SpatialQuery",
+   "old_header": "device_hl2_msgs/rpc/Hololens2SceneUnderstanding.h"
+  },
+  {
+   "old": "device_hl2_msgs::rpc::HL2SUResponse_SpatialQuery",
+   "old_header": "device_hl2_msgs/rpc/Hololens2SceneUnderstanding.h"
+  },
+  {
+   "old": "device_hl2_msgs::rpc::HL2SUSceneUnderstanding_Mesh",
+   "old_header": "device_hl2_msgs/rpc/Hololens2SceneUnderstanding.h"
+  },
+  {
+   "old": "device_hl2_msgs::rpc::HL2SUSceneUnderstanding_SceneMeshLevelOfDetail",
+   "old_header": "device_hl2_msgs/rpc/Hololens2SceneUnderstanding.h"
+  },
+  {
+   "old": "device_hl2_msgs::rpc::HL2SUSceneUnderstanding_SceneObjectKind",
+   "old_header": "device_hl2_msgs/rpc/Hololens2SceneUnderstanding.h"
+  },
+  {
+   "old": "device_hl2_msgs::rpc::HL2SUSceneUnderstanding_SceneQuadAlignment",
+   "old_header": "device_hl2_msgs/rpc/Hololens2SceneUnderstanding.h"
+  },
+  {
+   "old": "device_hl2_msgs::rpc::HL2SUSceneUnderstanding_SceneQuerySettings",
+   "old_header": "device_hl2_msgs/rpc/Hololens2SceneUnderstanding.h"
+  },
+  {
+   "old": "device_hl2_msgs::rpc::HL2SUSceneUnderstanding_SceneUnderstandingResult",
+   "old_header": "device_hl2_msgs/rpc/Hololens2SceneUnderstanding.h"
+  },
+  {
+   "old": "device_hl2_msgs::rpc::HL2SUSceneUnderstanding_SpatialQueryResult",
+   "old_header": "device_hl2_msgs/rpc/Hololens2SceneUnderstanding.h"
+  },
+  {
+   "old": "device_hl2_msgs::rpc::HL2SUSceneUnderstanding_Status",
+   "old_header": "device_hl2_msgs/rpc/Hololens2SceneUnderstanding.h"
+  },
+  {
+   "old": "device_hl2_msgs::rpc::HL2SpatialMapping_MeshDescription",
+   "old_header": "device_hl2_msgs/rpc/Hololens2SpatialMapping.h"
+  },
+  {
+   "old": "device_hl2_msgs::rpc::HL2SpatialMapping_MeshInfo",
+   "old_header": "device_hl2_msgs/rpc/Hololens2SpatialMapping.h"
+  },
+  {
+   "old": "device_hl2_msgs::rpc::HL2SpatialMapping_SurfaceInfo",
+   "old_header": "device_hl2_msgs/rpc/Hololens2SpatialMapping.h"
+  },
+  {
+   "old": "device_hl2_msgs::rpc::HL2SpatialMapping_Volume",
+   "old_header": "device_hl2_msgs/rpc/Hololens2SpatialMapping.h"
+  },
+  {
+   "old": "device_hl2_msgs::rpc::HL2SpatialMapping_VolumeType",
+   "old_header": "device_hl2_msgs/rpc/Hololens2SpatialMapping.h"
+  },
+  {
+   "old": "device_hl2_msgs::rpc::HL2VIRequest_RegisterCommands",
+   "old_header": "device_hl2_msgs/rpc/Hololens2VoiceInput.h"
+  },
+  {
+   "old": "device_hl2_msgs::rpc::HL2VIResponse_VoiceInput_Pop",
+   "old_header": "device_hl2_msgs/rpc/Hololens2VoiceInput.h"
+  },
+  {
+   "old": "device_hl2_msgs::rpc::HL2VIVoiceInput_Result",
+   "old_header": "device_hl2_msgs/rpc/Hololens2VoiceInput.h"
+  },
+  {
+   "old": "device_orbbec_msgs::msg::AccelStreamProfile",
+   "old_header": "device_orbbec_msgs/msg/OrbbecTypes.h"
+  },
+  {
+   "old": "device_orbbec_msgs::msg::GyroStreamProfile",
+   "old_header": "device_orbbec_msgs/msg/OrbbecTypes.h"
+  },
+  {
+   "old": "device_orbbec_msgs::msg::MultiDeviceSyncConfig",
+   "old_header": "device_orbbec_msgs/msg/OrbbecTypes.h"
+  },
+  {
+   "old": "device_orbbec_msgs::msg::OrbbecImuAccel",
+   "old_header": "device_orbbec_msgs/msg/OrbbecSensors.h"
+  },
+  {
+   "old": "device_orbbec_msgs::msg::OrbbecImuGyro",
+   "old_header": "device_orbbec_msgs/msg/OrbbecSensors.h"
+  },
+  {
+   "old": "device_orbbec_msgs::msg::OrbbecImuMag",
+   "old_header": "device_orbbec_msgs/msg/OrbbecSensors.h"
+  },
+  {
+   "old": "device_orbbec_msgs::msg::OrbbecSensorInfoColorSensor",
+   "old_header": "device_orbbec_msgs/msg/OrbbecSensors.h"
+  },
+  {
+   "old": "device_orbbec_msgs::msg::OrbbecSensorInfoDepthSensor",
+   "old_header": "device_orbbec_msgs/msg/OrbbecSensors.h"
+  },
+  {
+   "old": "device_orbbec_msgs::msg::VideoStreamProfile",
+   "old_header": "device_orbbec_msgs/msg/OrbbecTypes.h"
+  },
+  {
+   "old": "device_orbbec_msgs::msg::enums::AccelFullScaleRange",
+   "old_header": "device_orbbec_msgs/msg/OrbbecTypes.h"
+  },
+  {
+   "old": "device_orbbec_msgs::msg::enums::AlignMode",
+   "old_header": "device_orbbec_msgs/msg/OrbbecTypes.h"
+  },
+  {
+   "old": "device_orbbec_msgs::msg::enums::DeviceConnectionType",
+   "old_header": "device_orbbec_msgs/msg/OrbbecTypes.h"
+  },
+  {
+   "old": "device_orbbec_msgs::msg::enums::Format",
+   "old_header": "device_orbbec_msgs/msg/OrbbecTypes.h"
+  },
+  {
+   "old": "device_orbbec_msgs::msg::enums::GyroFullScaleRange",
+   "old_header": "device_orbbec_msgs/msg/OrbbecTypes.h"
+  },
+  {
+   "old": "device_orbbec_msgs::msg::enums::ImuSampleRate",
+   "old_header": "device_orbbec_msgs/msg/OrbbecTypes.h"
+  },
+  {
+   "old": "device_orbbec_msgs::msg::enums::MultiDeviceSyncMode",
+   "old_header": "device_orbbec_msgs/msg/OrbbecTypes.h"
+  },
+  {
+   "old": "device_orbbec_msgs::msg::enums::SensorType",
+   "old_header": "device_orbbec_msgs/msg/OrbbecTypes.h"
+  },
+  {
+   "old": "device_orbbec_msgs::msg::enums::StreamType",
+   "old_header": "device_orbbec_msgs/msg/OrbbecTypes.h"
+  },
+  {
+   "old": "device_orbbec_msgs::rpc::RPCMGRRequest_StartOrbbecCamera",
+   "old_header": "device_orbbec_msgs/rpc/OrbbecManager.h"
+  },
+  {
+   "old": "pcpd_msgs::msg::Instance",
+   "old_header": "pcpd_msgs/msg/Instance.h"
+  },
+  {
+   "old": "pcpd_msgs::msg::RpcTypesEnum",
+   "old_header": "pcpd_msgs/msg/Instance.h"
+  },
+  {
+   "old": "pcpd_msgs::rpc::BufferInfoReply",
+   "old_header": "pcpd_msgs/rpc/ServiceController.h"
+  },
+  {
+   "old": "pcpd_msgs::rpc::ComponentInfoReply",
+   "old_header": "pcpd_msgs/rpc/ServiceController.h"
+  },
+  {
+   "old": "pcpd_msgs::rpc::RecorderStatus",
+   "old_header": "pcpd_msgs/rpc/ServiceController.h"
+  },
+  {
+   "old": "pcpd_msgs::rpc::ServiceType",
+   "old_header": "pcpd_msgs/rpc/ServiceController.h"
+  },
+  {
+   "old": "tcnart_msgs::msg::ApplicationEventMessage",
+   "old_header": "tcnart_msgs/msg/Logging.h"
+  },
+  {
+   "old": "tcnart_msgs::msg::ApplicationHealthStatusMessage",
+   "old_header": "tcnart_msgs/msg/Logging.h"
+  },
+  {
+   "old": "tcnart_msgs::msg::ApplicationHealthStatusUpdate",
+   "old_header": "tcnart_msgs/msg/Logging.h"
+  },
+  {
+   "old": "tcnart_msgs::msg::ApplicationLifeCycleEventDomain",
+   "old_header": "tcnart_msgs/msg/Logging.h"
+  },
+  {
+   "old": "tcnart_msgs::msg::ApplicationLifeCycleStatus",
+   "old_header": "tcnart_msgs/msg/Logging.h"
+  },
+  {
+   "old": "tcnart_msgs::msg::AudioChannelLayout",
+   "old_header": "tcnart_msgs/msg/Types.h"
+  },
+  {
+   "old": "tcnart_msgs::msg::AudioEncoding",
+   "old_header": "tcnart_msgs/msg/Types.h"
+  },
+  {
+   "old": "tcnart_msgs::msg::AudioStreamMessage",
+   "old_header": "tcnart_msgs/msg/AudioStream.h"
+  },
+  {
+   "old": "tcnart_msgs::msg::BoundingBox",
+   "old_header": "tcnart_msgs/msg/Types.h"
+  },
+  {
+   "old": "tcnart_msgs::msg::CameraInfoMessage",
+   "old_header": "tcnart_msgs/msg/CameraModel.h"
+  },
+  {
+   "old": "tcnart_msgs::msg::Frustum",
+   "old_header": "tcnart_msgs/msg/Types.h"
+  },
+  {
+   "old": "tcnart_msgs::msg::MSGuid",
+   "old_header": "tcnart_msgs/msg/Types.h"
+  },
+  {
+   "old": "tcnart_msgs::msg::Matrix3x3",
+   "old_header": "tcnart_msgs/msg/Types.h"
+  },
+  {
+   "old": "tcnart_msgs::msg::Matrix4x3",
+   "old_header": "tcnart_msgs/msg/Types.h"
+  },
+  {
+   "old": "tcnart_msgs::msg::Matrix4x4",
+   "old_header": "tcnart_msgs/msg/Types.h"
+  },
+  {
+   "old": "tcnart_msgs::msg::OrientedBox",
+   "old_header": "tcnart_msgs/msg/Types.h"
+  },
+  {
+   "old": "tcnart_msgs::msg::PerformanceMonitorItem",
+   "old_header": "tcnart_msgs/msg/Logging.h"
+  },
+  {
+   "old": "tcnart_msgs::msg::PerformanceMonitorMessage",
+   "old_header": "tcnart_msgs/msg/Logging.h"
+  },
+  {
+   "old": "tcnart_msgs::msg::Plane",
+   "old_header": "tcnart_msgs/msg/Types.h"
+  },
+  {
+   "old": "tcnart_msgs::msg::Pose6DMapMessage",
+   "old_header": "tcnart_msgs/msg/PoseTracking.h"
+  },
+  {
+   "old": "tcnart_msgs::msg::RigidTransformMap",
+   "old_header": "tcnart_msgs/msg/Types.h"
+  },
+  {
+   "old": "tcnart_msgs::msg::RigidTransformMapItem",
+   "old_header": "tcnart_msgs/msg/Types.h"
+  },
+  {
+   "old": "tcnart_msgs::msg::Sphere",
+   "old_header": "tcnart_msgs/msg/Types.h"
+  },
+  {
+   "old": "tcnart_msgs::msg::TcnartLogItem",
+   "old_header": "tcnart_msgs/msg/Logging.h"
+  },
+  {
+   "old": "tcnart_msgs::msg::TcnartLogLevel",
+   "old_header": "tcnart_msgs/msg/Logging.h"
+  },
+  {
+   "old": "tcnart_msgs::msg::TcnartLogMessage",
+   "old_header": "tcnart_msgs/msg/Logging.h"
+  },
+  {
+   "old": "tcnart_msgs::msg::Vector4",
+   "old_header": "tcnart_msgs/msg/Types.h"
+  },
+  {
+   "old": "tcnart_msgs::msg::XRControllerButtons",
+   "old_header": "tcnart_msgs/msg/XRInput.h"
+  },
+  {
+   "old": "tcnart_msgs::msg::XRControllerPoseSet",
+   "old_header": "tcnart_msgs/msg/XRInput.h"
+  },
+  {
+   "old": "tcnart_msgs::msg::XRControllerRole",
+   "old_header": "tcnart_msgs/msg/Types.h"
+  },
+  {
+   "old": "tcnart_msgs::msg::XRControllerState",
+   "old_header": "tcnart_msgs/msg/XRInput.h"
+  },
+  {
+   "old": "tcnart_msgs::msg::XRControllerStateMessage",
+   "old_header": "tcnart_msgs/msg/XRInput.h"
+  },
+  {
+   "old": "tcnart_msgs::msg::XREnvironmentBlendMode",
+   "old_header": "tcnart_msgs/msg/Types.h"
+  },
+  {
+   "old": "tcnart_msgs::msg::XRReferenceSpaceType",
+   "old_header": "tcnart_msgs/msg/Types.h"
+  },
+  {
+   "old": "tcnart_msgs::msg::XRRuntimeStateMessage",
+   "old_header": "tcnart_msgs/msg/XRRuntime.h"
+  },
+  {
+   "old": "tcnart_msgs::msg::XRSessionStateMessage",
+   "old_header": "tcnart_msgs/msg/XRRuntime.h"
+  },
+  {
+   "old": "tcnart_msgs::rpc::ArucoBoardTargetConfig",
+   "old_header": "tcnart_msgs/rpc/GenericManager.h"
+  },
+  {
+   "old": "tcnart_msgs::rpc::ArucoFractalTargetConfig",
+   "old_header": "tcnart_msgs/rpc/GenericManager.h"
+  },
+  {
+   "old": "tcnart_msgs::rpc::ArucoMarkerTargetConfig",
+   "old_header": "tcnart_msgs/rpc/GenericManager.h"
+  },
+  {
+   "old": "tcnart_msgs::rpc::BoolRequest",
+   "old_header": "tcnart_msgs/rpc/Requests.h"
+  },
+  {
+   "old": "tcnart_msgs::rpc::Float32Reply",
+   "old_header": "tcnart_msgs/rpc/Requests.h"
+  },
+  {
+   "old": "tcnart_msgs::rpc::Float32Request",
+   "old_header": "tcnart_msgs/rpc/Requests.h"
+  },
+  {
+   "old": "tcnart_msgs::rpc::Float64Reply",
+   "old_header": "tcnart_msgs/rpc/Requests.h"
+  },
+  {
+   "old": "tcnart_msgs::rpc::Float64Request",
+   "old_header": "tcnart_msgs/rpc/Requests.h"
+  },
+  {
+   "old": "tcnart_msgs::rpc::IRTargetConfig",
+   "old_header": "tcnart_msgs/rpc/GenericManager.h"
+  },
+  {
+   "old": "tcnart_msgs::rpc::Int32Reply",
+   "old_header": "tcnart_msgs/rpc/Requests.h"
+  },
+  {
+   "old": "tcnart_msgs::rpc::Int32Request",
+   "old_header": "tcnart_msgs/rpc/Requests.h"
+  },
+  {
+   "old": "tcnart_msgs::rpc::Int64Reply",
+   "old_header": "tcnart_msgs/rpc/Requests.h"
+  },
+  {
+   "old": "tcnart_msgs::rpc::Int64Request",
+   "old_header": "tcnart_msgs/rpc/Requests.h"
+  },
+  {
+   "old": "tcnart_msgs::rpc::ParameterSchemaReply",
+   "old_header": "tcnart_msgs/rpc/Requests.h"
+  },
+  {
+   "old": "tcnart_msgs::rpc::RPCMGRRequest_StartCVCamera",
+   "old_header": "tcnart_msgs/rpc/GenericManager.h"
+  },
+  {
+   "old": "tcnart_msgs::rpc::RPCMGR_AACFormat",
+   "old_header": "tcnart_msgs/rpc/GenericManager.h"
+  },
+  {
+   "old": "tcnart_msgs::rpc::RPCMGR_H26xFormat",
+   "old_header": "tcnart_msgs/rpc/GenericManager.h"
+  },
+  {
+   "old": "tcnart_msgs::rpc::RPCMGR_TrackerConfig",
+   "old_header": "tcnart_msgs/rpc/GenericManager.h"
+  },
+  {
+   "old": "tcnart_msgs::rpc::SRGraphPublishReply",
+   "old_header": "tcnart_msgs/rpc/SpatialRelations.h"
+  },
+  {
+   "old": "tcnart_msgs::rpc::SRGraphPublishRequest",
+   "old_header": "tcnart_msgs/rpc/SpatialRelations.h"
+  },
+  {
+   "old": "tcnart_msgs::rpc::SRGraphQueryReply",
+   "old_header": "tcnart_msgs/rpc/SpatialRelations.h"
+  },
+  {
+   "old": "tcnart_msgs::rpc::SRGraphQueryRequest",
+   "old_header": "tcnart_msgs/rpc/SpatialRelations.h"
+  },
+  {
+   "old": "tcnart_msgs::rpc::SRNodeRef",
+   "old_header": "tcnart_msgs/rpc/SpatialRelations.h"
+  },
+  {
+   "old": "tcnart_msgs::rpc::StringReply",
+   "old_header": "tcnart_msgs/rpc/Requests.h"
+  },
+  {
+   "old": "tcnart_msgs::rpc::StringRequest",
+   "old_header": "tcnart_msgs/rpc/Requests.h"
+  },
+  {
+   "old": "tcnart_msgs::rpc::TrackingTargetConfig",
+   "old_header": "tcnart_msgs/rpc/GenericManager.h"
+  },
+  {
+   "old": "tcnart_msgs::rpc::UInt32Reply",
+   "old_header": "tcnart_msgs/rpc/Requests.h"
+  },
+  {
+   "old": "tcnart_msgs::rpc::UInt32Request",
+   "old_header": "tcnart_msgs/rpc/Requests.h"
+  },
+  {
+   "old": "tcnart_msgs::rpc::UInt64Reply",
+   "old_header": "tcnart_msgs/rpc/Requests.h"
+  },
+  {
+   "old": "tcnart_msgs::rpc::UInt64Request",
+   "old_header": "tcnart_msgs/rpc/Requests.h"
+  }
+ ],
+ "moved": [
+  {
+   "new": "tcn_types::msg::CoordinateAxis",
+   "new_header": "tcn_types/msg/Geometry.h",
+   "old": "tcnart_msgs::msg::CoordinateAxis",
+   "old_header": "tcnart_msgs/msg/SpatialRelations.h"
+  },
+  {
+   "new": "tcn_types::msg::CoordinateSystem",
+   "new_header": "tcn_types/msg/Geometry.h",
+   "old": "tcnart_msgs::msg::CoordinateSystem",
+   "old_header": "tcnart_msgs/msg/SpatialRelations.h"
+  },
+  {
+   "new": "tcn_types::msg::Marker",
+   "new_header": "tcn_types/msg/Tracking.h",
+   "old": "tcnart_msgs::msg::Marker",
+   "old_header": "tcnart_msgs/msg/Types.h"
+  },
+  {
+   "new": "tcn_types::msg::MarkerType",
+   "new_header": "tcn_types/msg/Tracking.h",
+   "old": "tcnart_msgs::msg::MarkerType",
+   "old_header": "tcnart_msgs/msg/Types.h"
+  },
+  {
+   "new": "tcn_types::msg::Quaternion",
+   "new_header": "tcn_types/msg/Geometry.h",
+   "old": "tcnart_msgs::msg::Quaternion",
+   "old_header": "tcnart_msgs/msg/Types.h"
+  },
+  {
+   "new": "tcn_types::msg::Ray",
+   "new_header": "tcn_types/msg/Geometry.h",
+   "old": "tcnart_msgs::msg::Ray",
+   "old_header": "tcnart_msgs/msg/Types.h"
+  },
+  {
+   "new": "tcn_types::msg::RigidTransform",
+   "new_header": "tcn_types/msg/Geometry.h",
+   "old": "tcnart_msgs::msg::RigidTransform",
+   "old_header": "tcnart_msgs/msg/Types.h"
+  },
+  {
+   "new": "sqe_msgs::msg::SRCalibration",
+   "new_header": "sqe_msgs/msg/Graph.h",
+   "old": "tcnart_msgs::msg::SRCalibration",
+   "old_header": "tcnart_msgs/msg/SpatialRelations.h"
+  },
+  {
+   "new": "sqe_msgs::msg::SREdge",
+   "new_header": "sqe_msgs/msg/Graph.h",
+   "old": "tcnart_msgs::msg::SREdge",
+   "old_header": "tcnart_msgs/msg/SpatialRelations.h"
+  },
+  {
+   "new": "sqe_msgs::msg::SREdgeTemporalType",
+   "new_header": "sqe_msgs/msg/Graph.h",
+   "old": "tcnart_msgs::msg::SREdgeTemporalType",
+   "old_header": "tcnart_msgs/msg/SpatialRelations.h"
+  },
+  {
+   "new": "sqe_msgs::msg::SREdgeView",
+   "new_header": "sqe_msgs/msg/Graph.h",
+   "old": "tcnart_msgs::msg::SREdgeView",
+   "old_header": "tcnart_msgs/msg/SpatialRelations.h"
+  },
+  {
+   "new": "sqe_msgs::msg::SRGraph",
+   "new_header": "sqe_msgs/msg/Graph.h",
+   "old": "tcnart_msgs::msg::SRGraph",
+   "old_header": "tcnart_msgs/msg/SpatialRelations.h"
+  },
+  {
+   "new": "sqe_msgs::msg::SRIntrinsics",
+   "new_header": "sqe_msgs/msg/Transforms.h",
+   "old": "tcnart_msgs::msg::SRIntrinsics",
+   "old_header": "tcnart_msgs/msg/SpatialRelations.h"
+  },
+  {
+   "new": "sqe_msgs::msg::SRNode",
+   "new_header": "sqe_msgs/msg/Graph.h",
+   "old": "tcnart_msgs::msg::SRNode",
+   "old_header": "tcnart_msgs/msg/SpatialRelations.h"
+  },
+  {
+   "new": "sqe_msgs::msg::SRNodeScope",
+   "new_header": "sqe_msgs/msg/Graph.h",
+   "old": "tcnart_msgs::msg::SRNodeScope",
+   "old_header": "tcnart_msgs/msg/SpatialRelations.h"
+  },
+  {
+   "new": "sqe_msgs::msg::SRNodeTemplate",
+   "new_header": "sqe_msgs/msg/Graph.h",
+   "old": "tcnart_msgs::msg::SRNodeTemplate",
+   "old_header": "tcnart_msgs/msg/SpatialRelations.h"
+  },
+  {
+   "new": "sqe_msgs::msg::SRNodeType",
+   "new_header": "sqe_msgs/msg/Graph.h",
+   "old": "tcnart_msgs::msg::SRNodeType",
+   "old_header": "tcnart_msgs/msg/SpatialRelations.h"
+  },
+  {
+   "new": "sqe_msgs::msg::SRNodeView",
+   "new_header": "sqe_msgs/msg/Graph.h",
+   "old": "tcnart_msgs::msg::SRNodeView",
+   "old_header": "tcnart_msgs/msg/SpatialRelations.h"
+  },
+  {
+   "new": "sqe_msgs::msg::SRPoint2D",
+   "new_header": "sqe_msgs/msg/Transforms.h",
+   "old": "tcnart_msgs::msg::SRPoint2D",
+   "old_header": "tcnart_msgs/msg/SpatialRelations.h"
+  },
+  {
+   "new": "sqe_msgs::msg::SRPose6DWithCovariance",
+   "new_header": "sqe_msgs/msg/Transforms.h",
+   "old": "tcnart_msgs::msg::SRPose6DWithCovariance",
+   "old_header": "tcnart_msgs/msg/SpatialRelations.h"
+  },
+  {
+   "new": "sqe_msgs::msg::SRTransform",
+   "new_header": "sqe_msgs/msg/Transforms.h",
+   "old": "tcnart_msgs::msg::SRTransform",
+   "old_header": "tcnart_msgs/msg/SpatialRelations.h"
+  },
+  {
+   "new": "sqe_msgs::msg::SRTransformType",
+   "new_header": "sqe_msgs/msg/Transforms.h",
+   "old": "tcnart_msgs::msg::SRTransformType",
+   "old_header": "tcnart_msgs/msg/SpatialRelations.h"
+  },
+  {
+   "new": "sqe_msgs::msg::SRTranslation3DWithCovariance",
+   "new_header": "sqe_msgs/msg/Transforms.h",
+   "old": "tcnart_msgs::msg::SRTranslation3DWithCovariance",
+   "old_header": "tcnart_msgs/msg/SpatialRelations.h"
+  },
+  {
+   "new": "tcn_types::msg::Target",
+   "new_header": "tcn_types/msg/Tracking.h",
+   "old": "tcnart_msgs::msg::Target",
+   "old_header": "tcnart_msgs/msg/Types.h"
+  },
+  {
+   "new": "tcn_types::msg::UUID",
+   "new_header": "tcn_types/msg/Ids.h",
+   "old": "tcnart_msgs::msg::UUID",
+   "old_header": "tcnart_msgs/msg/Types.h"
+  },
+  {
+   "new": "tcn_types::msg::Vector2",
+   "new_header": "tcn_types/msg/Geometry.h",
+   "old": "tcnart_msgs::msg::Vector2",
+   "old_header": "tcnart_msgs/msg/Types.h"
+  },
+  {
+   "new": "tcn_types::msg::Vector3",
+   "new_header": "tcn_types/msg/Geometry.h",
+   "old": "tcnart_msgs::msg::Vector3",
+   "old_header": "tcnart_msgs/msg/Types.h"
+  },
+  {
+   "new": "tcn_types::msg::ViewPose",
+   "new_header": "tcn_types/msg/Geometry.h",
+   "old": "tcnart_msgs::msg::ViewPose",
+   "old_header": "tcnart_msgs/msg/Types.h"
+  },
+  {
+   "new": "pcpd_msgs::rpc::BoolReply",
+   "new_header": "pcpd_msgs/rpc/Parameters.h",
+   "old": "tcnart_msgs::rpc::BoolReply",
+   "old_header": "tcnart_msgs/rpc/Requests.h"
+  },
+  {
+   "new": "pcpd_msgs::rpc::EnumEntry",
+   "new_header": "pcpd_msgs/rpc/Parameters.h",
+   "old": "tcnart_msgs::rpc::EnumEntry",
+   "old_header": "tcnart_msgs/rpc/Requests.h"
+  },
+  {
+   "new": "pcpd_msgs::rpc::GenericParameterReply",
+   "new_header": "pcpd_msgs/rpc/Parameters.h",
+   "old": "tcnart_msgs::rpc::GenericParameterReply",
+   "old_header": "tcnart_msgs/rpc/Requests.h"
+  },
+  {
+   "new": "pcpd_msgs::rpc::GenericParameterRequest",
+   "new_header": "pcpd_msgs/rpc/Parameters.h",
+   "old": "tcnart_msgs::rpc::GenericParameterRequest",
+   "old_header": "tcnart_msgs/rpc/Requests.h"
+  },
+  {
+   "new": "pcpd_msgs::rpc::NullReply",
+   "new_header": "pcpd_msgs/rpc/Parameters.h",
+   "old": "tcnart_msgs::rpc::NullReply",
+   "old_header": "tcnart_msgs/rpc/Requests.h"
+  },
+  {
+   "new": "pcpd_msgs::rpc::NullRequest",
+   "new_header": "pcpd_msgs/rpc/Parameters.h",
+   "old": "tcnart_msgs::rpc::NullRequest",
+   "old_header": "tcnart_msgs/rpc/Requests.h"
+  },
+  {
+   "new": "pcpd_msgs::rpc::Parameter",
+   "new_header": "pcpd_msgs/rpc/Parameters.h",
+   "old": "tcnart_msgs::rpc::Parameter",
+   "old_header": "tcnart_msgs/rpc/Requests.h"
+  },
+  {
+   "new": "pcpd_msgs::rpc::ParameterAccess",
+   "new_header": "pcpd_msgs/rpc/Parameters.h",
+   "old": "tcnart_msgs::rpc::ParameterAccess",
+   "old_header": "tcnart_msgs/rpc/Requests.h"
+  },
+  {
+   "new": "pcpd_msgs::rpc::ParameterChanged",
+   "new_header": "pcpd_msgs/rpc/Parameters.h",
+   "old": "tcnart_msgs::rpc::ParameterChanged",
+   "old_header": "tcnart_msgs/rpc/Requests.h"
+  },
+  {
+   "new": "pcpd_msgs::rpc::ParameterDescriptor",
+   "new_header": "pcpd_msgs/rpc/Parameters.h",
+   "old": "tcnart_msgs::rpc::ParameterDescriptor",
+   "old_header": "tcnart_msgs/rpc/Requests.h"
+  },
+  {
+   "new": "pcpd_msgs::rpc::ParameterDescriptorList",
+   "new_header": "pcpd_msgs/rpc/Parameters.h",
+   "old": "tcnart_msgs::rpc::ParameterDescriptorList",
+   "old_header": "tcnart_msgs/rpc/Requests.h"
+  },
+  {
+   "new": "pcpd_msgs::rpc::ParameterDescriptorReply",
+   "new_header": "pcpd_msgs/rpc/Parameters.h",
+   "old": "tcnart_msgs::rpc::ParameterDescriptorReply",
+   "old_header": "tcnart_msgs/rpc/Requests.h"
+  },
+  {
+   "new": "pcpd_msgs::rpc::ParameterList",
+   "new_header": "pcpd_msgs/rpc/Parameters.h",
+   "old": "tcnart_msgs::rpc::ParameterList",
+   "old_header": "tcnart_msgs/rpc/Requests.h"
+  },
+  {
+   "new": "pcpd_msgs::rpc::ParameterListSchema",
+   "new_header": "pcpd_msgs/rpc/Parameters.h",
+   "old": "tcnart_msgs::rpc::ParameterListSchema",
+   "old_header": "tcnart_msgs/rpc/Requests.h"
+  },
+  {
+   "new": "pcpd_msgs::rpc::ParameterSchema",
+   "new_header": "pcpd_msgs/rpc/Parameters.h",
+   "old": "tcnart_msgs::rpc::ParameterSchema",
+   "old_header": "tcnart_msgs/rpc/Requests.h"
+  },
+  {
+   "new": "pcpd_msgs::rpc::ParameterSetReply",
+   "new_header": "pcpd_msgs/rpc/Parameters.h",
+   "old": "tcnart_msgs::rpc::ParameterSetReply",
+   "old_header": "tcnart_msgs/rpc/Requests.h"
+  },
+  {
+   "new": "pcpd_msgs::rpc::ParameterSetResult",
+   "new_header": "pcpd_msgs/rpc/Parameters.h",
+   "old": "tcnart_msgs::rpc::ParameterSetResult",
+   "old_header": "tcnart_msgs/rpc/Requests.h"
+  },
+  {
+   "new": "pcpd_msgs::rpc::ParameterSetStatus",
+   "new_header": "pcpd_msgs/rpc/Parameters.h",
+   "old": "tcnart_msgs::rpc::ParameterSetStatus",
+   "old_header": "tcnart_msgs/rpc/Requests.h"
+  },
+  {
+   "new": "pcpd_msgs::rpc::ParameterValue",
+   "new_header": "pcpd_msgs/rpc/Parameters.h",
+   "old": "tcnart_msgs::rpc::ParameterValue",
+   "old_header": "tcnart_msgs/rpc/Requests.h"
+  },
+  {
+   "new": "pcpd_msgs::rpc::ParameterValueType",
+   "new_header": "pcpd_msgs/rpc/Parameters.h",
+   "old": "tcnart_msgs::rpc::ParameterValueType",
+   "old_header": "tcnart_msgs/rpc/Requests.h"
+  },
+  {
+   "new": "pcpd_msgs::rpc::RPCResponseStatus",
+   "new_header": "pcpd_msgs/rpc/Parameters.h",
+   "old": "tcnart_msgs::rpc::RPCResponseStatus",
+   "old_header": "tcnart_msgs/rpc/Requests.h"
+  },
+  {
+   "new": "sqe_msgs::rpc::SISBlockingRelation",
+   "new_header": "sqe_msgs/rpc/Streams.h",
+   "old": "tcnart_msgs::rpc::SISBlockingRelation",
+   "old_header": "tcnart_msgs/rpc/SIS.h"
+  },
+  {
+   "new": "sqe_msgs::rpc::SISEdgeRemoveRequest",
+   "new_header": "sqe_msgs/rpc/Mutations.h",
+   "old": "tcnart_msgs::rpc::SISEdgeRemoveRequest",
+   "old_header": "tcnart_msgs/rpc/SIS.h"
+  },
+  {
+   "new": "sqe_msgs::rpc::SISEdgeUpdateRequest",
+   "new_header": "sqe_msgs/rpc/Mutations.h",
+   "old": "tcnart_msgs::rpc::SISEdgeUpdateRequest",
+   "old_header": "tcnart_msgs/rpc/SIS.h"
+  },
+  {
+   "new": "sqe_msgs::rpc::SISEngineInfoReply",
+   "new_header": "sqe_msgs/rpc/Session.h",
+   "old": "tcnart_msgs::rpc::SISEngineInfoReply",
+   "old_header": "tcnart_msgs/rpc/SIS.h"
+  },
+  {
+   "new": "sqe_msgs::rpc::SISEngineInfoRequest",
+   "new_header": "sqe_msgs/rpc/Session.h",
+   "old": "tcnart_msgs::rpc::SISEngineInfoRequest",
+   "old_header": "tcnart_msgs/rpc/SIS.h"
+  },
+  {
+   "new": "sqe_msgs::rpc::SISEvaluationMode",
+   "new_header": "sqe_msgs/rpc/Streams.h",
+   "old": "tcnart_msgs::rpc::SISEvaluationMode",
+   "old_header": "tcnart_msgs/rpc/SIS.h"
+  },
+  {
+   "new": "sqe_msgs::rpc::SISExplainKind",
+   "new_header": "sqe_msgs/rpc/Operator.h",
+   "old": "tcnart_msgs::rpc::SISExplainKind",
+   "old_header": "tcnart_msgs/rpc/SIS.h"
+  },
+  {
+   "new": "sqe_msgs::rpc::SISExplainReply",
+   "new_header": "sqe_msgs/rpc/Operator.h",
+   "old": "tcnart_msgs::rpc::SISExplainReply",
+   "old_header": "tcnart_msgs/rpc/SIS.h"
+  },
+  {
+   "new": "sqe_msgs::rpc::SISExplainRequest",
+   "new_header": "sqe_msgs/rpc/Operator.h",
+   "old": "tcnart_msgs::rpc::SISExplainRequest",
+   "old_header": "tcnart_msgs/rpc/SIS.h"
+  },
+  {
+   "new": "sqe_msgs::rpc::SISFragmentListReply",
+   "new_header": "sqe_msgs/rpc/Operator.h",
+   "old": "tcnart_msgs::rpc::SISFragmentListReply",
+   "old_header": "tcnart_msgs/rpc/SIS.h"
+  },
+  {
+   "new": "sqe_msgs::rpc::SISFragmentListRequest",
+   "new_header": "sqe_msgs/rpc/Operator.h",
+   "old": "tcnart_msgs::rpc::SISFragmentListRequest",
+   "old_header": "tcnart_msgs/rpc/SIS.h"
+  },
+  {
+   "new": "sqe_msgs::rpc::SISFragmentSummary",
+   "new_header": "sqe_msgs/rpc/Operator.h",
+   "old": "tcnart_msgs::rpc::SISFragmentSummary",
+   "old_header": "tcnart_msgs/rpc/SIS.h"
+  },
+  {
+   "new": "sqe_msgs::rpc::SISFrameRef",
+   "new_header": "sqe_msgs/rpc/Streams.h",
+   "old": "tcnart_msgs::rpc::SISFrameRef",
+   "old_header": "tcnart_msgs/rpc/SIS.h"
+  },
+  {
+   "new": "sqe_msgs::rpc::SISGlobalTarget",
+   "new_header": "sqe_msgs/rpc/Targets.h",
+   "old": "tcnart_msgs::rpc::SISGlobalTarget",
+   "old_header": "tcnart_msgs/rpc/SIS.h"
+  },
+  {
+   "new": "sqe_msgs::rpc::SISGraphChangeKind",
+   "new_header": "sqe_msgs/rpc/Operator.h",
+   "old": "tcnart_msgs::rpc::SISGraphChangeKind",
+   "old_header": "tcnart_msgs/rpc/SIS.h"
+  },
+  {
+   "new": "sqe_msgs::rpc::SISGraphChangeNotification",
+   "new_header": "sqe_msgs/rpc/Operator.h",
+   "old": "tcnart_msgs::rpc::SISGraphChangeNotification",
+   "old_header": "tcnart_msgs/rpc/SIS.h"
+  },
+  {
+   "new": "sqe_msgs::rpc::SISGraphQueryKind",
+   "new_header": "sqe_msgs/rpc/Queries.h",
+   "old": "tcnart_msgs::rpc::SISGraphQueryKind",
+   "old_header": "tcnart_msgs/rpc/SIS.h"
+  },
+  {
+   "new": "sqe_msgs::rpc::SISGraphQueryReply",
+   "new_header": "sqe_msgs/rpc/Queries.h",
+   "old": "tcnart_msgs::rpc::SISGraphQueryReply",
+   "old_header": "tcnart_msgs/rpc/SIS.h"
+  },
+  {
+   "new": "sqe_msgs::rpc::SISGraphQueryRequest",
+   "new_header": "sqe_msgs/rpc/Queries.h",
+   "old": "tcnart_msgs::rpc::SISGraphQueryRequest",
+   "old_header": "tcnart_msgs/rpc/SIS.h"
+  },
+  {
+   "new": "sqe_msgs::rpc::SISGraphQueryStatus",
+   "new_header": "sqe_msgs/rpc/Queries.h",
+   "old": "tcnart_msgs::rpc::SISGraphQueryStatus",
+   "old_header": "tcnart_msgs/rpc/SIS.h"
+  },
+  {
+   "new": "sqe_msgs::rpc::SISJoinRequest",
+   "new_header": "sqe_msgs/rpc/Session.h",
+   "old": "tcnart_msgs::rpc::SISJoinRequest",
+   "old_header": "tcnart_msgs/rpc/SIS.h"
+  },
+  {
+   "new": "sqe_msgs::rpc::SISLeaveRequest",
+   "new_header": "sqe_msgs/rpc/Session.h",
+   "old": "tcnart_msgs::rpc::SISLeaveRequest",
+   "old_header": "tcnart_msgs/rpc/SIS.h"
+  },
+  {
+   "new": "sqe_msgs::rpc::SISMutationReply",
+   "new_header": "sqe_msgs/rpc/Mutations.h",
+   "old": "tcnart_msgs::rpc::SISMutationReply",
+   "old_header": "tcnart_msgs/rpc/SIS.h"
+  },
+  {
+   "new": "sqe_msgs::rpc::SISMutationStatus",
+   "new_header": "sqe_msgs/rpc/Mutations.h",
+   "old": "tcnart_msgs::rpc::SISMutationStatus",
+   "old_header": "tcnart_msgs/rpc/SIS.h"
+  },
+  {
+   "new": "sqe_msgs::rpc::SISNodeRemoveRequest",
+   "new_header": "sqe_msgs/rpc/Mutations.h",
+   "old": "tcnart_msgs::rpc::SISNodeRemoveRequest",
+   "old_header": "tcnart_msgs/rpc/SIS.h"
+  },
+  {
+   "new": "sqe_msgs::rpc::SISNodeUpdateRequest",
+   "new_header": "sqe_msgs/rpc/Mutations.h",
+   "old": "tcnart_msgs::rpc::SISNodeUpdateRequest",
+   "old_header": "tcnart_msgs/rpc/SIS.h"
+  },
+  {
+   "new": "sqe_msgs::rpc::SISOperatorGraphQueryRequest",
+   "new_header": "sqe_msgs/rpc/Operator.h",
+   "old": "tcnart_msgs::rpc::SISOperatorGraphQueryRequest",
+   "old_header": "tcnart_msgs/rpc/SIS.h"
+  },
+  {
+   "new": "sqe_msgs::rpc::SISOperatorMutation",
+   "new_header": "sqe_msgs/rpc/Operator.h",
+   "old": "tcnart_msgs::rpc::SISOperatorMutation",
+   "old_header": "tcnart_msgs/rpc/SIS.h"
+  },
+  {
+   "new": "sqe_msgs::rpc::SISOperatorMutationKind",
+   "new_header": "sqe_msgs/rpc/Operator.h",
+   "old": "tcnart_msgs::rpc::SISOperatorMutationKind",
+   "old_header": "tcnart_msgs/rpc/SIS.h"
+  },
+  {
+   "new": "sqe_msgs::rpc::SISOperatorMutationRequest",
+   "new_header": "sqe_msgs/rpc/Operator.h",
+   "old": "tcnart_msgs::rpc::SISOperatorMutationRequest",
+   "old_header": "tcnart_msgs/rpc/SIS.h"
+  },
+  {
+   "new": "sqe_msgs::rpc::SISOperatorRef",
+   "new_header": "sqe_msgs/rpc/Session.h",
+   "old": "tcnart_msgs::rpc::SISOperatorRef",
+   "old_header": "tcnart_msgs/rpc/SIS.h"
+  },
+  {
+   "new": "sqe_msgs::rpc::SISPathPredicate",
+   "new_header": "sqe_msgs/rpc/Queries.h",
+   "old": "tcnart_msgs::rpc::SISPathPredicate",
+   "old_header": "tcnart_msgs/rpc/SIS.h"
+  },
+  {
+   "new": "sqe_msgs::rpc::SISPatternExpansionInput",
+   "new_header": "sqe_msgs/rpc/Queries.h",
+   "old": "tcnart_msgs::rpc::SISPatternExpansionInput",
+   "old_header": "tcnart_msgs/rpc/SIS.h"
+  },
+  {
+   "new": "sqe_msgs::rpc::SISPatternInput",
+   "new_header": "sqe_msgs/rpc/Queries.h",
+   "old": "tcnart_msgs::rpc::SISPatternInput",
+   "old_header": "tcnart_msgs/rpc/SIS.h"
+  },
+  {
+   "new": "sqe_msgs::rpc::SISPatternInstance",
+   "new_header": "sqe_msgs/rpc/Queries.h",
+   "old": "tcnart_msgs::rpc::SISPatternInstance",
+   "old_header": "tcnart_msgs/rpc/SIS.h"
+  },
+  {
+   "new": "sqe_msgs::rpc::SISPatternQueryReply",
+   "new_header": "sqe_msgs/rpc/Queries.h",
+   "old": "tcnart_msgs::rpc::SISPatternQueryReply",
+   "old_header": "tcnart_msgs/rpc/SIS.h"
+  },
+  {
+   "new": "sqe_msgs::rpc::SISPatternQueryRequest",
+   "new_header": "sqe_msgs/rpc/Queries.h",
+   "old": "tcnart_msgs::rpc::SISPatternQueryRequest",
+   "old_header": "tcnart_msgs/rpc/SIS.h"
+  },
+  {
+   "new": "sqe_msgs::rpc::SISPatternRole",
+   "new_header": "sqe_msgs/rpc/Queries.h",
+   "old": "tcnart_msgs::rpc::SISPatternRole",
+   "old_header": "tcnart_msgs/rpc/SIS.h"
+  },
+  {
+   "new": "sqe_msgs::rpc::SISPatternSegment",
+   "new_header": "sqe_msgs/rpc/Queries.h",
+   "old": "tcnart_msgs::rpc::SISPatternSegment",
+   "old_header": "tcnart_msgs/rpc/SIS.h"
+  },
+  {
+   "new": "sqe_msgs::rpc::SISPlanCoordSwapOp",
+   "new_header": "sqe_msgs/rpc/Streams.h",
+   "old": "tcnart_msgs::rpc::SISPlanCoordSwapOp",
+   "old_header": "tcnart_msgs/rpc/SIS.h"
+  },
+  {
+   "new": "sqe_msgs::rpc::SISPlanDynamicOp",
+   "new_header": "sqe_msgs/rpc/Streams.h",
+   "old": "tcnart_msgs::rpc::SISPlanDynamicOp",
+   "old_header": "tcnart_msgs/rpc/SIS.h"
+  },
+  {
+   "new": "sqe_msgs::rpc::SISPlanHop",
+   "new_header": "sqe_msgs/rpc/Streams.h",
+   "old": "tcnart_msgs::rpc::SISPlanHop",
+   "old_header": "tcnart_msgs/rpc/SIS.h"
+  },
+  {
+   "new": "sqe_msgs::rpc::SISPlanInput",
+   "new_header": "sqe_msgs/rpc/Streams.h",
+   "old": "tcnart_msgs::rpc::SISPlanInput",
+   "old_header": "tcnart_msgs/rpc/SIS.h"
+  },
+  {
+   "new": "sqe_msgs::rpc::SISPlanInputSource",
+   "new_header": "sqe_msgs/rpc/Streams.h",
+   "old": "tcnart_msgs::rpc::SISPlanInputSource",
+   "old_header": "tcnart_msgs/rpc/SIS.h"
+  },
+  {
+   "new": "sqe_msgs::rpc::SISPlanInstance",
+   "new_header": "sqe_msgs/rpc/Streams.h",
+   "old": "tcnart_msgs::rpc::SISPlanInstance",
+   "old_header": "tcnart_msgs/rpc/SIS.h"
+  },
+  {
+   "new": "sqe_msgs::rpc::SISPlanLive",
+   "new_header": "sqe_msgs/rpc/Operator.h",
+   "old": "tcnart_msgs::rpc::SISPlanLive",
+   "old_header": "tcnart_msgs/rpc/SIS.h"
+  },
+  {
+   "new": "sqe_msgs::rpc::SISPlanOp",
+   "new_header": "sqe_msgs/rpc/Streams.h",
+   "old": "tcnart_msgs::rpc::SISPlanOp",
+   "old_header": "tcnart_msgs/rpc/SIS.h"
+  },
+  {
+   "new": "sqe_msgs::rpc::SISPlanOpKind",
+   "new_header": "sqe_msgs/rpc/Streams.h",
+   "old": "tcnart_msgs::rpc::SISPlanOpKind",
+   "old_header": "tcnart_msgs/rpc/SIS.h"
+  },
+  {
+   "new": "sqe_msgs::rpc::SISReadLimits",
+   "new_header": "sqe_msgs/rpc/Session.h",
+   "old": "tcnart_msgs::rpc::SISReadLimits",
+   "old_header": "tcnart_msgs/rpc/SIS.h"
+  },
+  {
+   "new": "sqe_msgs::rpc::SISRelationSampleInstant",
+   "new_header": "sqe_msgs/rpc/Sample.h",
+   "old": "tcnart_msgs::rpc::SISRelationSampleInstant",
+   "old_header": "tcnart_msgs/rpc/SIS.h"
+  },
+  {
+   "new": "sqe_msgs::rpc::SISRelationSampleReply",
+   "new_header": "sqe_msgs/rpc/Sample.h",
+   "old": "tcnart_msgs::rpc::SISRelationSampleReply",
+   "old_header": "tcnart_msgs/rpc/SIS.h"
+  },
+  {
+   "new": "sqe_msgs::rpc::SISRelationSampleRequest",
+   "new_header": "sqe_msgs/rpc/Sample.h",
+   "old": "tcnart_msgs::rpc::SISRelationSampleRequest",
+   "old_header": "tcnart_msgs/rpc/SIS.h"
+  },
+  {
+   "new": "sqe_msgs::rpc::SISRelationSampleStatus",
+   "new_header": "sqe_msgs/rpc/Sample.h",
+   "old": "tcnart_msgs::rpc::SISRelationSampleStatus",
+   "old_header": "tcnart_msgs/rpc/SIS.h"
+  },
+  {
+   "new": "sqe_msgs::rpc::SISRelationStreamHandle",
+   "new_header": "sqe_msgs/rpc/Streams.h",
+   "old": "tcnart_msgs::rpc::SISRelationStreamHandle",
+   "old_header": "tcnart_msgs/rpc/SIS.h"
+  },
+  {
+   "new": "sqe_msgs::rpc::SISRelationStreamHandleKind",
+   "new_header": "sqe_msgs/rpc/Streams.h",
+   "old": "tcnart_msgs::rpc::SISRelationStreamHandleKind",
+   "old_header": "tcnart_msgs/rpc/SIS.h"
+  },
+  {
+   "new": "sqe_msgs::rpc::SISRelationStreamReply",
+   "new_header": "sqe_msgs/rpc/Streams.h",
+   "old": "tcnart_msgs::rpc::SISRelationStreamReply",
+   "old_header": "tcnart_msgs/rpc/SIS.h"
+  },
+  {
+   "new": "sqe_msgs::rpc::SISRelationStreamStartRequest",
+   "new_header": "sqe_msgs/rpc/Streams.h",
+   "old": "tcnart_msgs::rpc::SISRelationStreamStartRequest",
+   "old_header": "tcnart_msgs/rpc/SIS.h"
+  },
+  {
+   "new": "sqe_msgs::rpc::SISRelationStreamStatus",
+   "new_header": "sqe_msgs/rpc/Streams.h",
+   "old": "tcnart_msgs::rpc::SISRelationStreamStatus",
+   "old_header": "tcnart_msgs/rpc/SIS.h"
+  },
+  {
+   "new": "sqe_msgs::rpc::SISRelationStreamStatusNotification",
+   "new_header": "sqe_msgs/rpc/Streams.h",
+   "old": "tcnart_msgs::rpc::SISRelationStreamStatusNotification",
+   "old_header": "tcnart_msgs/rpc/SIS.h"
+  },
+  {
+   "new": "sqe_msgs::rpc::SISRelationStreamStopRequest",
+   "new_header": "sqe_msgs/rpc/Streams.h",
+   "old": "tcnart_msgs::rpc::SISRelationStreamStopRequest",
+   "old_header": "tcnart_msgs/rpc/SIS.h"
+  },
+  {
+   "new": "sqe_msgs::rpc::SISReoptimisePolicy",
+   "new_header": "sqe_msgs/rpc/Streams.h",
+   "old": "tcnart_msgs::rpc::SISReoptimisePolicy",
+   "old_header": "tcnart_msgs/rpc/SIS.h"
+  },
+  {
+   "new": "sqe_msgs::rpc::SISSampleInput",
+   "new_header": "sqe_msgs/rpc/Sample.h",
+   "old": "tcnart_msgs::rpc::SISSampleInput",
+   "old_header": "tcnart_msgs/rpc/SIS.h"
+  },
+  {
+   "new": "sqe_msgs::rpc::SISStoreHealth",
+   "new_header": "sqe_msgs/rpc/Session.h",
+   "old": "tcnart_msgs::rpc::SISStoreHealth",
+   "old_header": "tcnart_msgs/rpc/SIS.h"
+  },
+  {
+   "new": "sqe_msgs::rpc::SISTargetAlias",
+   "new_header": "sqe_msgs/rpc/Targets.h",
+   "old": "tcnart_msgs::rpc::SISTargetAlias",
+   "old_header": "tcnart_msgs/rpc/SIS.h"
+  },
+  {
+   "new": "sqe_msgs::rpc::SISTargetChange",
+   "new_header": "sqe_msgs/rpc/Targets.h",
+   "old": "tcnart_msgs::rpc::SISTargetChange",
+   "old_header": "tcnart_msgs/rpc/SIS.h"
+  },
+  {
+   "new": "sqe_msgs::rpc::SISTargetKind",
+   "new_header": "sqe_msgs/rpc/Targets.h",
+   "old": "tcnart_msgs::rpc::SISTargetKind",
+   "old_header": "tcnart_msgs/rpc/SIS.h"
+  },
+  {
+   "new": "sqe_msgs::rpc::SISTargetMutationKind",
+   "new_header": "sqe_msgs/rpc/Targets.h",
+   "old": "tcnart_msgs::rpc::SISTargetMutationKind",
+   "old_header": "tcnart_msgs/rpc/SIS.h"
+  },
+  {
+   "new": "sqe_msgs::rpc::SISTargetMutationRequest",
+   "new_header": "sqe_msgs/rpc/Targets.h",
+   "old": "tcnart_msgs::rpc::SISTargetMutationRequest",
+   "old_header": "tcnart_msgs/rpc/SIS.h"
+  },
+  {
+   "new": "sqe_msgs::rpc::SISTargetQueryKind",
+   "new_header": "sqe_msgs/rpc/Targets.h",
+   "old": "tcnart_msgs::rpc::SISTargetQueryKind",
+   "old_header": "tcnart_msgs/rpc/SIS.h"
+  },
+  {
+   "new": "sqe_msgs::rpc::SISTargetQueryReply",
+   "new_header": "sqe_msgs/rpc/Targets.h",
+   "old": "tcnart_msgs::rpc::SISTargetQueryReply",
+   "old_header": "tcnart_msgs/rpc/SIS.h"
+  },
+  {
+   "new": "sqe_msgs::rpc::SISTargetQueryRequest",
+   "new_header": "sqe_msgs/rpc/Targets.h",
+   "old": "tcnart_msgs::rpc::SISTargetQueryRequest",
+   "old_header": "tcnart_msgs/rpc/SIS.h"
+  },
+  {
+   "new": "sqe_msgs::rpc::SISTargetQueryStatus",
+   "new_header": "sqe_msgs/rpc/Targets.h",
+   "old": "tcnart_msgs::rpc::SISTargetQueryStatus",
+   "old_header": "tcnart_msgs/rpc/SIS.h"
+  },
+  {
+   "new": "sqe_msgs::rpc::SISTransactionLogAction",
+   "new_header": "sqe_msgs/rpc/Operator.h",
+   "old": "tcnart_msgs::rpc::SISTransactionLogAction",
+   "old_header": "tcnart_msgs/rpc/SIS.h"
+  },
+  {
+   "new": "sqe_msgs::rpc::SISTransactionLogReply",
+   "new_header": "sqe_msgs/rpc/Operator.h",
+   "old": "tcnart_msgs::rpc::SISTransactionLogReply",
+   "old_header": "tcnart_msgs/rpc/SIS.h"
+  },
+  {
+   "new": "sqe_msgs::rpc::SISTransactionLogRequest",
+   "new_header": "sqe_msgs/rpc/Operator.h",
+   "old": "tcnart_msgs::rpc::SISTransactionLogRequest",
+   "old_header": "tcnart_msgs/rpc/SIS.h"
+  },
+  {
+   "new": "sqe_msgs::rpc::SISTranslationPlan",
+   "new_header": "sqe_msgs/rpc/Streams.h",
+   "old": "tcnart_msgs::rpc::SISTranslationPlan",
+   "old_header": "tcnart_msgs/rpc/SIS.h"
+  },
+  {
+   "new": "sqe_msgs::rpc::SRPatternExpansion",
+   "new_header": "sqe_msgs/rpc/Queries.h",
+   "old": "tcnart_msgs::rpc::SRPatternExpansion",
+   "old_header": "tcnart_msgs/rpc/SIS.h"
+  },
+  {
+   "new": "sqe_msgs::rpc::SRReferencePolicy",
+   "new_header": "sqe_msgs/rpc/Streams.h",
+   "old": "tcnart_msgs::rpc::SRReferencePolicy",
+   "old_header": "tcnart_msgs/rpc/SIS.h"
+  },
+  {
+   "new": "sqe_msgs::rpc::SRStreamTrigger",
+   "new_header": "sqe_msgs/rpc/Streams.h",
+   "old": "tcnart_msgs::rpc::SRStreamTrigger",
+   "old_header": "tcnart_msgs/rpc/SIS.h"
+  },
+  {
+   "new": "sqe_msgs::rpc::SRStreamTriggerKind",
+   "new_header": "sqe_msgs/rpc/Streams.h",
+   "old": "tcnart_msgs::rpc::SRStreamTriggerKind",
+   "old_header": "tcnart_msgs/rpc/SIS.h"
+  },
+  {
+   "new": "pcpd_msgs::rpc::StringListReply",
+   "new_header": "pcpd_msgs/rpc/Parameters.h",
+   "old": "tcnart_msgs::rpc::StringListReply",
+   "old_header": "tcnart_msgs/rpc/Requests.h"
+  },
+  {
+   "new": "pcpd_msgs::rpc::StringListRequest",
+   "new_header": "pcpd_msgs/rpc/Parameters.h",
+   "old": "tcnart_msgs::rpc::StringListRequest",
+   "old_header": "tcnart_msgs/rpc/Requests.h"
+  }
+ ],
+ "relocated": [
+  {
+   "name": "conversation_msgs::msg::AudioCodec",
+   "new_header": "conversation_msgs/msg/Common.h",
+   "old_header": "conversation_msgs/msg/common.h"
+  },
+  {
+   "name": "conversation_msgs::msg::AudioFormat",
+   "new_header": "conversation_msgs/msg/Common.h",
+   "old_header": "conversation_msgs/msg/common.h"
+  },
+  {
+   "name": "conversation_msgs::msg::AudioOpusFrame",
+   "new_header": "conversation_msgs/msg/Audio.h",
+   "old_header": "conversation_msgs/msg/audio.h"
+  },
+  {
+   "name": "conversation_msgs::msg::AudioPcmChunk",
+   "new_header": "conversation_msgs/msg/Audio.h",
+   "old_header": "conversation_msgs/msg/audio.h"
+  },
+  {
+   "name": "conversation_msgs::msg::CancelTarget",
+   "new_header": "conversation_msgs/msg/Common.h",
+   "old_header": "conversation_msgs/msg/common.h"
+  },
+  {
+   "name": "conversation_msgs::msg::ChannelLayout",
+   "new_header": "conversation_msgs/msg/Common.h",
+   "old_header": "conversation_msgs/msg/common.h"
+  },
+  {
+   "name": "conversation_msgs::msg::ClientIdentity",
+   "new_header": "conversation_msgs/msg/Control.h",
+   "old_header": "conversation_msgs/msg/control.h"
+  },
+  {
+   "name": "conversation_msgs::msg::ErrorCode",
+   "new_header": "conversation_msgs/msg/Common.h",
+   "old_header": "conversation_msgs/msg/common.h"
+  },
+  {
+   "name": "conversation_msgs::msg::EventState",
+   "new_header": "conversation_msgs/msg/Common.h",
+   "old_header": "conversation_msgs/msg/common.h"
+  },
+  {
+   "name": "conversation_msgs::msg::ExecutionPreference",
+   "new_header": "conversation_msgs/msg/Llm.h",
+   "old_header": "conversation_msgs/msg/llm.h"
+  },
+  {
+   "name": "conversation_msgs::msg::HealthStatus",
+   "new_header": "conversation_msgs/msg/Metrics.h",
+   "old_header": "conversation_msgs/msg/metrics.h"
+  },
+  {
+   "name": "conversation_msgs::msg::ImageAttachment",
+   "new_header": "conversation_msgs/msg/Llm.h",
+   "old_header": "conversation_msgs/msg/llm.h"
+  },
+  {
+   "name": "conversation_msgs::msg::InteractionActivity",
+   "new_header": "conversation_msgs/msg/Llm.h",
+   "old_header": "conversation_msgs/msg/llm.h"
+  },
+  {
+   "name": "conversation_msgs::msg::InteractionActivityState",
+   "new_header": "conversation_msgs/msg/Llm.h",
+   "old_header": "conversation_msgs/msg/llm.h"
+  },
+  {
+   "name": "conversation_msgs::msg::InteractionMode",
+   "new_header": "conversation_msgs/msg/Llm.h",
+   "old_header": "conversation_msgs/msg/llm.h"
+  },
+  {
+   "name": "conversation_msgs::msg::InteractionPartial",
+   "new_header": "conversation_msgs/msg/Llm.h",
+   "old_header": "conversation_msgs/msg/llm.h"
+  },
+  {
+   "name": "conversation_msgs::msg::InteractionRequest",
+   "new_header": "conversation_msgs/msg/Llm.h",
+   "old_header": "conversation_msgs/msg/llm.h"
+  },
+  {
+   "name": "conversation_msgs::msg::InteractionResponse",
+   "new_header": "conversation_msgs/msg/Llm.h",
+   "old_header": "conversation_msgs/msg/llm.h"
+  },
+  {
+   "name": "conversation_msgs::msg::LlmFinal",
+   "new_header": "conversation_msgs/msg/Llm.h",
+   "old_header": "conversation_msgs/msg/llm.h"
+  },
+  {
+   "name": "conversation_msgs::msg::LlmPartial",
+   "new_header": "conversation_msgs/msg/Llm.h",
+   "old_header": "conversation_msgs/msg/llm.h"
+  },
+  {
+   "name": "conversation_msgs::msg::LlmRequest",
+   "new_header": "conversation_msgs/msg/Llm.h",
+   "old_header": "conversation_msgs/msg/llm.h"
+  },
+  {
+   "name": "conversation_msgs::msg::MemoryScope",
+   "new_header": "conversation_msgs/msg/Llm.h",
+   "old_header": "conversation_msgs/msg/llm.h"
+  },
+  {
+   "name": "conversation_msgs::msg::MemoryScopeKind",
+   "new_header": "conversation_msgs/msg/Llm.h",
+   "old_header": "conversation_msgs/msg/llm.h"
+  },
+  {
+   "name": "conversation_msgs::msg::MessageHeader",
+   "new_header": "conversation_msgs/msg/Common.h",
+   "old_header": "conversation_msgs/msg/common.h"
+  },
+  {
+   "name": "conversation_msgs::msg::PayloadKind",
+   "new_header": "conversation_msgs/msg/Common.h",
+   "old_header": "conversation_msgs/msg/common.h"
+  },
+  {
+   "name": "conversation_msgs::msg::RetrievalOptions",
+   "new_header": "conversation_msgs/msg/Llm.h",
+   "old_header": "conversation_msgs/msg/llm.h"
+  },
+  {
+   "name": "conversation_msgs::msg::RetrievalPolicy",
+   "new_header": "conversation_msgs/msg/Llm.h",
+   "old_header": "conversation_msgs/msg/llm.h"
+  },
+  {
+   "name": "conversation_msgs::msg::SessionCancel",
+   "new_header": "conversation_msgs/msg/Control.h",
+   "old_header": "conversation_msgs/msg/control.h"
+  },
+  {
+   "name": "conversation_msgs::msg::SessionConfigUpdate",
+   "new_header": "conversation_msgs/msg/Control.h",
+   "old_header": "conversation_msgs/msg/control.h"
+  },
+  {
+   "name": "conversation_msgs::msg::SessionStart",
+   "new_header": "conversation_msgs/msg/Control.h",
+   "old_header": "conversation_msgs/msg/control.h"
+  },
+  {
+   "name": "conversation_msgs::msg::SessionState",
+   "new_header": "conversation_msgs/msg/Common.h",
+   "old_header": "conversation_msgs/msg/common.h"
+  },
+  {
+   "name": "conversation_msgs::msg::SessionStateEvent",
+   "new_header": "conversation_msgs/msg/Control.h",
+   "old_header": "conversation_msgs/msg/control.h"
+  },
+  {
+   "name": "conversation_msgs::msg::SessionStop",
+   "new_header": "conversation_msgs/msg/Control.h",
+   "old_header": "conversation_msgs/msg/control.h"
+  },
+  {
+   "name": "conversation_msgs::msg::ShmRef",
+   "new_header": "conversation_msgs/msg/Common.h",
+   "old_header": "conversation_msgs/msg/common.h"
+  },
+  {
+   "name": "conversation_msgs::msg::StageMetric",
+   "new_header": "conversation_msgs/msg/Metrics.h",
+   "old_header": "conversation_msgs/msg/metrics.h"
+  },
+  {
+   "name": "conversation_msgs::msg::Status",
+   "new_header": "conversation_msgs/msg/Common.h",
+   "old_header": "conversation_msgs/msg/common.h"
+  },
+  {
+   "name": "conversation_msgs::msg::StreamDirection",
+   "new_header": "conversation_msgs/msg/Common.h",
+   "old_header": "conversation_msgs/msg/common.h"
+  },
+  {
+   "name": "conversation_msgs::msg::SttFinal",
+   "new_header": "conversation_msgs/msg/Stt.h",
+   "old_header": "conversation_msgs/msg/stt.h"
+  },
+  {
+   "name": "conversation_msgs::msg::SttPartial",
+   "new_header": "conversation_msgs/msg/Stt.h",
+   "old_header": "conversation_msgs/msg/stt.h"
+  },
+  {
+   "name": "conversation_msgs::msg::SttRequest",
+   "new_header": "conversation_msgs/msg/Stt.h",
+   "old_header": "conversation_msgs/msg/stt.h"
+  },
+  {
+   "name": "conversation_msgs::msg::TtsAudioChunk",
+   "new_header": "conversation_msgs/msg/Tts.h",
+   "old_header": "conversation_msgs/msg/tts.h"
+  },
+  {
+   "name": "conversation_msgs::msg::TtsDone",
+   "new_header": "conversation_msgs/msg/Tts.h",
+   "old_header": "conversation_msgs/msg/tts.h"
+  },
+  {
+   "name": "conversation_msgs::msg::TtsRequest",
+   "new_header": "conversation_msgs/msg/Tts.h",
+   "old_header": "conversation_msgs/msg/tts.h"
+  },
+  {
+   "name": "conversation_msgs::msg::VadEvent",
+   "new_header": "conversation_msgs/msg/Audio.h",
+   "old_header": "conversation_msgs/msg/audio.h"
+  },
+  {
+   "name": "conversation_msgs::rpc::AppServerInfo",
+   "new_header": "conversation_msgs/rpc/Discovery.h",
+   "old_header": "conversation_msgs/rpc/discovery.h"
+  },
+  {
+   "name": "tcnart_msgs::msg::AudioAACProfile",
+   "new_header": "tcnart_msgs/msg/MediaTypes.h",
+   "old_header": "tcnart_msgs/msg/Types.h"
+  },
+  {
+   "name": "tcnart_msgs::msg::Handedness",
+   "new_header": "tcnart_msgs/msg/HandTracking.h",
+   "old_header": "tcnart_msgs/msg/Types.h"
+  },
+  {
+   "name": "tcnart_msgs::msg::SensorType",
+   "new_header": "tcnart_msgs/msg/MediaTypes.h",
+   "old_header": "tcnart_msgs/msg/Types.h"
+  },
+  {
+   "name": "tcnart_msgs::msg::VideoH26xProfile",
+   "new_header": "tcnart_msgs/msg/MediaTypes.h",
+   "old_header": "tcnart_msgs/msg/Types.h"
+  },
+  {
+   "name": "tcnart_msgs::msg::VideoImageCompression",
+   "new_header": "tcnart_msgs/msg/MediaTypes.h",
+   "old_header": "tcnart_msgs/msg/Types.h"
+  },
+  {
+   "name": "tcnart_msgs::msg::VideoPixelFormat",
+   "new_header": "tcnart_msgs/msg/MediaTypes.h",
+   "old_header": "tcnart_msgs/msg/Types.h"
+  },
+  {
+   "name": "tcnart_msgs::msg::XRGazeSpaceType",
+   "new_header": "tcnart_msgs/msg/EyeTracking.h",
+   "old_header": "tcnart_msgs/msg/Types.h"
+  }
+ ]
+}

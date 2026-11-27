@@ -18,8 +18,8 @@
 #include "std_msgs/msg/HeaderCdrAux.hpp"
 #include "tcnart_msgs/msg/PoseTracking.h"
 #include "tcnart_msgs/msg/PoseTrackingCdrAux.hpp"
-#include "tcnart_msgs/msg/SpatialRelations.h"
-#include "tcnart_msgs/msg/SpatialRelationsCdrAux.hpp"
+#include "sqe_msgs/msg/Graph.h"
+#include "sqe_msgs/msg/GraphCdrAux.hpp"
 
 #ifndef TCN_GOLDEN_DIR
 #error "TCN_GOLDEN_DIR must name the directory of the .hex files"
@@ -77,7 +77,7 @@ int main()
 
     tcnart_msgs::msg::TargetTrackingMessage tt;
     tt.header(header());
-    tcnart_msgs::msg::Target target;
+    tcn_types::msg::Target target;
     target.target_id(7);
     target.pose().translation().x(1);
     target.pose().translation().y(2);
@@ -88,18 +88,18 @@ int main()
     tt.targets().push_back(target);
     golden("tcnart_msgs_TargetTrackingMessage", tt);
 
-    tcnart_msgs::msg::SRGraph g;
-    tcnart_msgs::msg::SRNode node;
+    sqe_msgs::msg::SRGraph g;
+    sqe_msgs::msg::SRNode node;
     node.name("a");
     g.nodes().push_back(node);
-    tcnart_msgs::msg::SREdge edge;
+    sqe_msgs::msg::SREdge edge;
     edge.source("a");
     edge.target("b");
-    tcnart_msgs::msg::RigidTransform identity;
+    tcn_types::msg::RigidTransform identity;
     identity.rotation().w(1);
     edge.transform().pose6d(identity);
     g.edges().push_back(edge);
-    golden("tcnart_msgs_SRGraph", g);
+    golden("sqe_msgs_SRGraph", g);
 
     return tcn_test_exit("golden");
 }

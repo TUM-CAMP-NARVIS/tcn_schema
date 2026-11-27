@@ -318,48 +318,46 @@
    ]
   },
   {
-   "name": "tcnart_msgs",
-   "dir": "src/dds/custom/tcnart_msgs",
+   "name": "tcn_types",
+   "dir": "src/dds/tcn/tcn_types",
+   "family": "tcn",
+   "tier": "tcn",
+   "deps": []
+  },
+  {
+   "name": "sqe_msgs",
+   "dir": "src/dds/tcn/sqe_msgs",
    "family": "tcn",
    "tier": "tcn",
    "deps": [
     "builtin_interfaces",
-    "std_msgs"
+    "tcn_types"
+   ]
+  },
+  {
+   "name": "tcnart_msgs",
+   "dir": "src/dds/tcn/tcnart_msgs",
+   "family": "tcn",
+   "tier": "tcn",
+   "deps": [
+    "std_msgs",
+    "tcn_types"
    ]
   },
   {
    "name": "pcpd_msgs",
-   "dir": "src/dds/custom/pcpd_msgs",
+   "dir": "src/dds/tcn/pcpd_msgs",
    "family": "tcn",
    "tier": "tcn",
    "deps": [
     "std_msgs",
-    "tcnart_msgs"
-   ]
-  },
-  {
-   "name": "device_hl2_msgs",
-   "dir": "src/dds/custom/device_hl2_msgs",
-   "family": "tcn",
-   "tier": "tcn",
-   "deps": [
-    "std_msgs",
-    "tcnart_msgs"
-   ]
-  },
-  {
-   "name": "device_orbbec_msgs",
-   "dir": "src/dds/custom/device_orbbec_msgs",
-   "family": "tcn",
-   "tier": "tcn",
-   "deps": [
-    "std_msgs",
+    "tcn_types",
     "tcnart_msgs"
    ]
   },
   {
    "name": "conversation_msgs",
-   "dir": "src/dds/custom/conversation_msgs",
+   "dir": "src/dds/tcn/conversation_msgs",
    "family": "tcn",
    "tier": "tcn",
    "deps": []
@@ -370,7 +368,9 @@
    "family": "header",
    "tier": "header",
    "deps": [
-    "tcnart_msgs"
+    "sqe_msgs",
+    "tcnart_msgs",
+    "tcn_types"
    ]
   },
   {

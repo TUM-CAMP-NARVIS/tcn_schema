@@ -14,9 +14,8 @@ The lint also runs in `ctest` as `idl_lint` when `TCN_SCHEMA_BUILD_MSG_TESTS=ON`
 - The baseline shrinks as the 0.11 plans land, and is empty at 0.11.0.
 
 Two families of packages follow different rules:
-- **tcn:** `tcnart_msgs`, `pcpd_msgs`, `conversation_msgs`, `device_hl2_msgs` and `device_orbbec_msgs` (the last two
-  are deleted in 0.11), and from 0.11 `tcn_types` and `sqe_msgs`. The package table `cmake/tcn_packages.json` is
-  the authority.
+- **tcn** (`src/dds/tcn/`): `tcn_types`, `sqe_msgs`, `tcnart_msgs`, `pcpd_msgs` and `conversation_msgs`. The package
+  table `cmake/tcn_packages.json` is the authority.
 - **ros2:** the copies under `src/dds/ros2/`.
 
 ## Rules checked by the lint
@@ -24,7 +23,8 @@ Two families of packages follow different rules:
 **`basename-unique`**: No file name appears twice in one package, across `msg/`, `rpc/` and `action/`.
 - Generated headers are named after the file.
 - In 0.10, `tcnart_msgs/msg/SpatialRelations.idl` and `tcnart_msgs/rpc/SpatialRelations.idl` produced two
-  `SpatialRelations.h`. The installed `rpc` header was a copy of the `msg` one, so the `rpc` types never shipped.
+  `SpatialRelations.h`. The installed `rpc` header was a copy of the `msg` one, so the `rpc` types never shipped
+  (the file was deleted in 0.11).
 
 **`include-collision`**: No file includes, directly or transitively, a file with the same basename as a file of its
 own `<pkg>/<kind>` directory. fastddsgen 3.0.0 writes the code of every included IDL file into the including run's

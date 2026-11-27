@@ -20,10 +20,10 @@ class RepoSchemaTest(unittest.TestCase):
         cls.decls = _decls(cls.schema)
 
     def test_all_repo_files_parse(self):
-        # 0.11 plan 2: the ROS 2 tree is generated from Jazzy (all tiers committed).
-        self.assertEqual(len(self.schema.files), 476)
+        # 0.11 plan 2: the ROS 2 tree is generated from Jazzy (all tiers committed); plan 3: the tcn layout.
+        self.assertEqual(len(self.schema.files), 469)
         n = sum(1 for f in self.schema.files for d in f.decls if isinstance(d, (Struct, Enum, Union)))
-        self.assertEqual(n, 1279)
+        self.assertEqual(n, 1151)
 
     def test_sensor_type(self):
         e = self.decls["tcnart_msgs::msg::SensorType"]
@@ -38,28 +38,29 @@ class RepoSchemaTest(unittest.TestCase):
         self.assertEqual(h.extensibility, "final")
 
     def test_union(self):
-        u = self.decls["tcnart_msgs::rpc::SRStreamTrigger"]
+        u = self.decls["sqe_msgs::rpc::SRStreamTrigger"]
         self.assertIsInstance(u, Union)
-        self.assertEqual(u.discriminator, "tcnart_msgs::rpc::SRStreamTriggerKind")
+        self.assertEqual(u.discriminator, "sqe_msgs::rpc::SRStreamTriggerKind")
 
     def test_forward_decl_dropped(self):
         names = [d.name for f in self.schema.files for d in f.decls]
-        self.assertEqual(names.count("tcnart_msgs::rpc::ParameterValue"), 1)
+        self.assertEqual(names.count("pcpd_msgs::rpc::ParameterValue"), 1)
 
     def test_forward_decls_recorded(self):
-        f = next(f for f in self.schema.files if f.path == "tcnart_msgs/rpc/Requests.idl")
-        self.assertEqual(set(f.forward_decls), {"tcnart_msgs::rpc::Parameter", "tcnart_msgs::rpc::ParameterValue",
-                                                "tcnart_msgs::rpc::ParameterList"})
+        f = next(f for f in self.schema.files if f.path == "pcpd_msgs/rpc/Parameters.idl")
+        self.assertEqual(set(f.forward_decls), {"pcpd_msgs::rpc::Parameter", "pcpd_msgs::rpc::ParameterValue",
+                                                "pcpd_msgs::rpc::ParameterList"})
 
     def test_ros_fixed_array_member(self):
         m = self.decls["unique_identifier_msgs::msg::UUID"].members[0]
         self.assertEqual((m.type, m.array), ("uint8", [16]))
 
     def test_file_metadata(self):
-        f = next(f for f in self.schema.files if f.path == "tcnart_msgs/msg/Types.idl")
+        f = next(f for f in self.schema.files if f.path == "tcnart_msgs/msg/MediaTypes.idl")
         self.assertEqual((f.package, f.kind), ("tcnart_msgs", "msg"))
         self.assertEqual(self.schema.family["std_msgs"], "ros2")
         self.assertEqual(self.schema.family["tcnart_msgs"], "tcn")
+        self.assertEqual(self.schema.family["sqe_msgs"], "tcn")
         hdr = next(f for f in self.schema.files if f.path == "std_msgs/msg/Header.idl")
         self.assertEqual(hdr.includes, ["builtin_interfaces/msg/Time.idl"])
 

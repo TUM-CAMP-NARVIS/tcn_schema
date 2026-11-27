@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: internal
 //
-// Minimal stand-ins for the generated `tcnart_msgs` types, and a codec over
+// Minimal stand-ins for the generated `sqe_msgs` types, and a codec over
 // them.
 //
 // These are **definitions of types the library only forward-declares**, which
@@ -25,7 +25,7 @@
 #include "tcn/sqe/result.h"
 #include "tcn/sqe/transport.h"
 
-namespace tcnart_msgs {
+namespace sqe_msgs {
 namespace rpc {
 
 class SISJoinRequest
@@ -217,7 +217,7 @@ public:
 };
 
 }  // namespace rpc
-}  // namespace tcnart_msgs
+}  // namespace sqe_msgs
 
 namespace tcn {
 namespace sqe {
@@ -273,9 +273,9 @@ inline bool StubCodec::decode_fails = false;
 inline std::string StubCodec::last_decoded_marker;
 
 /// Builds a reply the way the engine would.
-inline ::tcnart_msgs::rpc::SISRelationStreamReply make_reply(Status s, const char* topic)
+inline ::sqe_msgs::rpc::SISRelationStreamReply make_reply(Status s, const char* topic)
 {
-    ::tcnart_msgs::rpc::SISRelationStreamReply r;
+    ::sqe_msgs::rpc::SISRelationStreamReply r;
     r.status_ = static_cast<std::int32_t>(s);
     if (carries_handle(s))
     {
