@@ -56,7 +56,7 @@ file(GLOB_RECURSE TCN_IDL_TOOLS CONFIGURE_DEPENDS "${CMAKE_CURRENT_SOURCE_DIR}/t
 set(TCN_TABLES_DIR "${PROJECT_BINARY_DIR}/share")
 add_custom_command(
         OUTPUT "${TCN_TABLES_DIR}/types.json" "${TCN_TABLES_DIR}/enums.json"
-        COMMAND "${Python3_EXECUTABLE}" -I "${CMAKE_CURRENT_SOURCE_DIR}/tools/idl_cli.py" tables
+        COMMAND "${Python3_EXECUTABLE}" -I -B "${CMAKE_CURRENT_SOURCE_DIR}/tools/idl_cli.py" tables
                 --dds-root "${CMAKE_CURRENT_SOURCE_DIR}/src/dds" --version "${PROJECT_VERSION}" --out "${TCN_TABLES_DIR}"
         DEPENDS ${TCN_IDL_FILES} ${TCN_IDL_TOOLS} "${CMAKE_CURRENT_SOURCE_DIR}/tools/idl_cli.py"
         COMMENT "Generating types.json and enums.json"
@@ -68,9 +68,9 @@ option(TCN_SCHEMA_BUILD_MSG_TESTS "Build the message tests: round trips of every
 if(TCN_SCHEMA_BUILD_MSG_TESTS)
   add_subdirectory(test)
   # The IDL style rules (docs/idl-style.md) against tools/idl/lint_baseline.txt, and the Python tools' own tests.
-  add_test(NAME idl_lint COMMAND "${Python3_EXECUTABLE}" -I "${CMAKE_CURRENT_SOURCE_DIR}/tools/idl_cli.py" lint
+  add_test(NAME idl_lint COMMAND "${Python3_EXECUTABLE}" -I -B "${CMAKE_CURRENT_SOURCE_DIR}/tools/idl_cli.py" lint
            --dds-root "${CMAKE_CURRENT_SOURCE_DIR}/src/dds" --baseline "${CMAKE_CURRENT_SOURCE_DIR}/tools/idl/lint_baseline.txt")
-  add_test(NAME idl_tools COMMAND "${Python3_EXECUTABLE}" -m unittest discover -s tools -p "test_*.py" -t .
+  add_test(NAME idl_tools COMMAND "${Python3_EXECUTABLE}" -B -m unittest discover -s tools -p "test_*.py" -t .
            WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}")
 endif()
 

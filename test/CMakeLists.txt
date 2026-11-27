@@ -17,7 +17,7 @@ foreach(i RANGE ${last})
     set(out "${CMAKE_CURRENT_BINARY_DIR}/roundtrip_${pkg}.cpp")
     add_custom_command(
             OUTPUT "${out}"
-            COMMAND "${Python3_EXECUTABLE}" -I "${PROJECT_SOURCE_DIR}/tools/idl_cli.py" roundtrip
+            COMMAND "${Python3_EXECUTABLE}" -I -B "${PROJECT_SOURCE_DIR}/tools/idl_cli.py" roundtrip
                     --types "${TCN_TABLES_DIR}/types.json" --package ${pkg} --out "${out}"
             DEPENDS "${TCN_TABLES_DIR}/types.json" "${PROJECT_SOURCE_DIR}/tools/idl/roundtrip.py"
             COMMENT "Generating the round-trip test of ${pkg}"

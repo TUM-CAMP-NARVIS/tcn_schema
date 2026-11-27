@@ -37,7 +37,8 @@ to do. Items marked *(wire)* need the lockstep cut-over; all others can be done 
   - **Only a build that uses the source tree directly** (for example `add_subdirectory(tcn_schema)`, or include paths
     into a tcn_schema checkout) must use the `tcn_schema_<pkg>` targets, which carry the right include directory,
     instead of `<repo>/include`.
-  - Delete a stale `<repo>/include/` left from older builds.
+  - Delete a stale `<repo>/include/` left from older builds. It stays in `.gitignore` until 0.12, so it cannot be
+    committed by accident.
 - **`tf2_msgs` LookupTransform moved from `msg/` to `action/`:** `include/tf2_msgs/action/LookupTransform.h` and
   `share/tcn_schema/dds/tf2_msgs/action/LookupTransform.idl`. This fixes the install path of an action type. None of
   the five consumers uses it.
@@ -53,15 +54,20 @@ to do. Items marked *(wire)* need the lockstep cut-over; all others can be done 
     - tcnart's Unreal ordinals;
     - HTA's FlatBuffers mirrors.
   - The format is stable from 0.11.0 on. Fields are only added, never removed.
-- **Conan components follow the IDL includes** (one table, `cmake/tcn_packages.json`, installed as
-  `share/tcn_schema/packages.json`, drives CMake and conan):
-  - `std_msgs` now requires `builtin_interfaces`; this was missing, although `Header` contains `Time`.
-  - `tcnart_msgs` no longer requires `geometry_msgs`, which its IDL never includes. **A consumer that links
-    `tcn_schema::tcnart_msgs` and uses `geometry_msgs` types must require `tcn_schema::geometry_msgs` itself.** None of
-    the five consumers is affected: HTA links `tcn_schema::tcn_schema`, and only tcnart's deprecated v2 names
-    components, `geometry_msgs` included.
-  - The ROS packages require only what their IDL includes (for example `geometry_msgs` → `std_msgs`, `shape_msgs` →
-    `geometry_msgs`).
+- **Conan components follow the IDL includes.** One table, `cmake/tcn_packages.json`, drives CMake and conan, and is
+  installed as `share/tcn_schema/packages.json`. Each component now requires exactly the packages its IDL includes.
+  - **Requirements that were dropped,** and that are no longer reachable through another requirement:
+    - `geometry_msgs` from `tcnart_msgs`, `pcpd_msgs`, `device_hl2_msgs` and `device_orbbec_msgs`;
+    - `std_msgs` from `rosgraph_msgs`.
+
+    **A consumer that requires one of these components and uses types of the dropped package must now require that
+    package's component itself** (for example `tcn_schema::geometry_msgs`). None of the five consumers is affected:
+    HTA links `tcn_schema::tcn_schema` (everything), and only tcnart's deprecated v2 names components, with
+    `geometry_msgs` listed explicitly.
+  - `shape_msgs` and `tf2_msgs` no longer require `std_msgs` directly. They still get it through `geometry_msgs`.
+  - Requirements were added where the IDL needs them: `builtin_interfaces` for `sensor_msgs`, `tf2_msgs`,
+    `statistics_msgs` and `tcnart_msgs`.
+  - The CMake config files exported per library (`share/tcn_schema_<pkg>/cmake`) follow the same table.
 - **fast-cdr headers are now visible to consumers** (`transitive_headers=True`).
   - Every generated header includes fastcdr headers. Before, a Conan 2 consumer had to require `fast-cdr` itself, as
     HTA does; that is no longer needed, though keeping it does no harm.
@@ -87,17 +93,29 @@ to do. Items marked *(wire)* need the lockstep cut-over; all others can be done 
 - **New: round-trip tests of every struct and union** (`ctest`: `roundtrip`), generated from `types.json`.
   `tcnart_msgs/rpc/SpatialRelations.idl` is skipped, because its types never existed in C++ (the header collision;
   the file is deleted in Plan 3).
-- **Known generator defect, with a workaround for C++ users.** fastddsgen 3.0.0 stores a member whose type was
-  forward-declared in its IDL file as a **raw pointer**, and the generated `operator==` compares those pointers.
-  - Affected: `tcnart_msgs::rpc::Parameter`, `ParameterValue`, `GenericParameterRequest`, `GenericParameterReply`,
-    `ParameterDescriptor` and `ParameterChanged` (`Requests.idl`).
-  - **`a == b` on these types is `false` for equal values.** Compare fields, or the encoded bytes, instead.
-  - The wire is not affected. `types.json` marks such types with `"forward_declared": true`.
-  - HTA's and tcnart's parameter services, and IVA's mirror, should check that they never use `==` on these types.
-- **Building tcn_schema** needs Python 3 (standard library only) at build time.
+- **Known generator defect, with a workaround for C++ users: `operator==` of the parameter types compares
+  pointers.** fastddsgen 3.0.0 stores a member whose type is a *forward-declared union* as a raw pointer. In
+  `tcnart_msgs/rpc/Requests.idl` that is `ParameterValue`, so `Parameter::value` and `ParameterDescriptor::minimum`,
+  `maximum`, `step` and `default_value` are pointers. The generated `operator==` compares those pointers, and the
+  error spreads to every type that contains such a member, directly or through a sequence or union case.
+  - **`a == b` can be `false` for equal values** in these 14 types:
+    - `tcnart_msgs::rpc::`: `Parameter`, `ParameterValue`, `ParameterList`, `ParameterChanged`,
+      `GenericParameterRequest`, `GenericParameterReply`, `ParameterDescriptor`, `ParameterDescriptorList`,
+      `ParameterDescriptorReply`, `ParameterSchema`, `ParameterListSchema`, `ParameterSchemaReply`;
+    - `pcpd_msgs::rpc::`: `ComponentInfoReply`, `ServiceInfoReply`.
+  - **What to do:** compare fields, or the encoded bytes, instead of using `==` on these types.
+  - The wire is not affected.
+  - `types.json` lists the pointer members per type (`pointer_members`) and marks the 14 types with
+    `"eq_by_pointer": true`. `"forward_declared": true` only says that a type is forward-declared in its file.
+  - **HTA's and tcnart's parameter services** (and code that compares `ServiceInfoReply` / `ComponentInfoReply`)
+    should check that they never use `==` on these types. IVA's Rust mirror is not affected.
 - **Building tcn_schema:**
+  - it needs Python 3 (standard library only) at build time;
   - it builds in parallel again (the forced serial build is gone);
   - `ctest` works from the build root when `TCN_SCHEMA_BUILD_MSG_TESTS` or `TCN_SCHEMA_BUILD_SQE_TESTS` is on.
+  - Changing an IDL file now regenerates every package that includes it, directly or transitively. Before, only the
+    file's own package was regenerated, and incremental builds could compile stale code.
+  - `conan editable add` works: `package_info()` falls back to the source table.
 
 ## 2. Per consumer
 
@@ -117,13 +135,13 @@ their plan), so that each team can prepare.
 ### tcnart (v3)
 
 - *Plan 1:*
-  - Check that no C++ code uses `operator==` on the parameter types listed in §1 (it compares pointers).
+  - Check that no C++ code uses `operator==` on the 14 parameter and service-info types listed in §1 (it compares pointers).
   - Optional: point the C# codec tests at `test/golden/*.hex`.
 
 ### HTA (holoscan-tcn-applications)
 
 - *Plan 1:*
-  - Check that no C++ code uses `operator==` on the parameter types listed in §1 (it compares pointers).
+  - Check that no C++ code uses `operator==` on the 14 parameter and service-info types listed in §1 (it compares pointers).
   - Requiring `fast-cdr` yourself is no longer necessary (it is harmless to keep).
 
 ### tcn web controller

@@ -8,3 +8,9 @@ build/
 /.idea/tcn_schema.iml
 /cmake-build-debug/.cmake/api/v1/query/toolchains-v1
 /.idea/vcs.xml
+# Python bytecode of tools/
+__pycache__/
+*.pyc
+# fastddsgen output of builds before 0.11 (generation now happens in the build directory). Kept until 0.12 so a stale
+# tree is not committed by accident; delete <repo>/include/ once.
+/include/

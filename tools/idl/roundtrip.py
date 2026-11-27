@@ -15,13 +15,6 @@ SKIPPED_FILES = {
 }
 
 
-def _has_pointer_member(t: dict, forward: set) -> bool:
-    """fastddsgen 3.0.0 stores a member whose type was forward-declared as a pointer, and the generated operator==
-    compares the pointers. Such types are checked by bytes only (TCN_ROUNDTRIP_BYTES)."""
-    members = t.get("members") or [c["member"] for c in t.get("cases", [])]
-    return any(m["type"] in forward for m in members)
-
-
 def generate(types: dict, package: str) -> str:
     entries = [t for t in types["types"] if t["package"] == package and t["kind"] in ("struct", "union")
                and t["file"] not in SKIPPED_FILES]
@@ -40,10 +33,10 @@ def generate(types: dict, package: str) -> str:
         stem = str(p.with_suffix(""))
         lines.append(f'#include "{stem}.h"')
         lines.append(f'#include "{stem}CdrAux.hpp"')
-    forward = {t["name"] for t in types["types"] if t.get("forward_declared")}
     lines += ["", f"void roundtrip_{package}()", "{"]
     for t in entries:
-        macro = "TCN_ROUNDTRIP_BYTES" if _has_pointer_member(t, forward) else "TCN_ROUNDTRIP"
+        # operator== of these types compares pointers (types.json "eq_by_pointer"): check the bytes only.
+        macro = "TCN_ROUNDTRIP_BYTES" if t.get("eq_by_pointer") else "TCN_ROUNDTRIP"
         lines.append(f"    {macro}({t['name']});")
     lines += ["}", ""]
     return "\n".join(lines)

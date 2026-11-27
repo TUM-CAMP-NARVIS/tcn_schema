@@ -50,6 +50,23 @@ class TablesTest(unittest.TestCase):
         self.assertTrue(self._type("tcnart_msgs::rpc::ParameterValue")["forward_declared"])
         self.assertFalse(self._type("std_msgs::msg::Header")["forward_declared"])
 
+    def test_pointer_members(self):
+        # fastddsgen 3.0.0 stores members whose type is a forward-declared union as raw pointers.
+        self.assertEqual(self._type("tcnart_msgs::rpc::Parameter")["pointer_members"], ["value"])
+        self.assertEqual(self._type("tcnart_msgs::rpc::ParameterDescriptor")["pointer_members"],
+                         ["minimum", "maximum", "step", "default_value"])
+        self.assertEqual(self._type("tcnart_msgs::rpc::GenericParameterRequest")["pointer_members"], [])
+
+    def test_eq_by_pointer_is_transitive(self):
+        for name in ("tcnart_msgs::rpc::Parameter", "tcnart_msgs::rpc::ParameterList",
+                     "tcnart_msgs::rpc::ParameterValue", "tcnart_msgs::rpc::GenericParameterRequest",
+                     "tcnart_msgs::rpc::ParameterDescriptorList", "pcpd_msgs::rpc::ComponentInfoReply",
+                     "pcpd_msgs::rpc::ServiceInfoReply"):
+            self.assertTrue(self._type(name)["eq_by_pointer"], name)
+        for name in ("tcnart_msgs::msg::TargetTrackingMessage", "std_msgs::msg::Header",
+                     "tcnart_msgs::rpc::ParameterValueType"):
+            self.assertFalse(self._type(name).get("eq_by_pointer", False), name)
+
     def test_deterministic_cli(self):
         with tempfile.TemporaryDirectory() as d:
             outs = []

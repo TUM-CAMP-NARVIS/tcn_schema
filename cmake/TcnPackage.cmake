@@ -43,6 +43,43 @@ function(tcn_package_deps pkg out)
   message(FATAL_ERROR "package '${pkg}' is not in ${TCN_PACKAGE_TABLE}")
 endfunction()
 
+# tcn_package_dir(<pkg> <out-var>): the source directory of <pkg> (absolute), from the package table.
+function(tcn_package_dir pkg out)
+  string(JSON n LENGTH "${TCN_PACKAGE_TABLE_JSON}" packages)
+  math(EXPR last "${n} - 1")
+  foreach(i RANGE ${last})
+    string(JSON name GET "${TCN_PACKAGE_TABLE_JSON}" packages ${i} name)
+    if(name STREQUAL pkg)
+      string(JSON dir GET "${TCN_PACKAGE_TABLE_JSON}" packages ${i} dir)
+      set(${out} "${PROJECT_SOURCE_DIR}/${dir}" PARENT_SCOPE)
+      return()
+    endif()
+  endforeach()
+  message(FATAL_ERROR "package '${pkg}' is not in ${TCN_PACKAGE_TABLE}")
+endfunction()
+
+# tcn_package_idl_closure(<pkg> <out-var>): every IDL file of <pkg> and of its transitive dependencies. fastddsgen
+# reads all of them when it generates <pkg> (a generated header bakes in sizes of included types), so a change to any
+# of them must regenerate <pkg>.
+function(tcn_package_idl_closure pkg out)
+  set(todo ${pkg})
+  set(done)
+  set(files)
+  while(todo)
+    list(POP_FRONT todo p)
+    if(p IN_LIST done)
+      continue()
+    endif()
+    list(APPEND done ${p})
+    tcn_package_dir(${p} dir)
+    file(GLOB_RECURSE idl CONFIGURE_DEPENDS "${dir}/*.idl")
+    list(APPEND files ${idl})
+    tcn_package_deps(${p} deps)
+    list(APPEND todo ${deps})
+  endwhile()
+  set(${out} ${files} PARENT_SCOPE)
+endfunction()
+
 # tcn_add_packages_from_table(): add_subdirectory() for every IDL package (family ros2 or tcn), in table order.
 function(tcn_add_packages_from_table)
   string(JSON n LENGTH "${TCN_PACKAGE_TABLE_JSON}" packages)
@@ -73,13 +110,15 @@ function(tcn_add_idl_package)
   set(FASTDDSGEN_SRC_PREFIX "${CMAKE_CURRENT_SOURCE_DIR}")
   set(FASTDDS_INCLUDE_DIRECTORY "${PROJECT_SOURCE_DIR}/src/dds")
 
+  tcn_package_idl_closure(${ARG_NAME} idl_inputs)
+
   set(all_src)
   set(all_hdr)
   set(all_export)
   foreach(kind msg rpc action)
     string(TOUPPER "${kind}" KIND)
     if(ARG_${KIND})
-      FASTDDS_GENERATE_CPP("${ARG_NAME}" "${kind}" src_${kind} hdr_${kind} export_${kind} "" ${ARG_${KIND}})
+      FASTDDS_GENERATE_CPP("${ARG_NAME}" "${kind}" src_${kind} hdr_${kind} export_${kind} "${idl_inputs}" ${ARG_${KIND}})
       list(APPEND all_src ${src_${kind}})
       list(APPEND all_hdr ${hdr_${kind}})
       list(APPEND all_export ${export_${kind}})
@@ -96,8 +135,8 @@ function(tcn_add_idl_package)
   endforeach()
   target_link_libraries(${lib} ${dep_libs} ${DDS_LIBRARIES})
 
-  # Generation of this package reads the IDL of its dependencies; make sure their code exists first, so a parallel
-  # build never compiles against a header that is still being written.
+  # Belt and braces for compile order: dependencies' generated headers exist before this package compiles
+  # (target_link_libraries already implies the order for linking).
   foreach(dep ${dep_libs})
     add_dependencies(${lib} ${dep})
   endforeach()

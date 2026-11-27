@@ -14,7 +14,9 @@ The lint also runs in `ctest` as `idl_lint` when `TCN_SCHEMA_BUILD_MSG_TESTS=ON`
 - The baseline shrinks as the 0.11 plans land, and is empty at 0.11.0.
 
 Two families of packages follow different rules:
-- **tcn:** `tcnart_msgs`, `pcpd_msgs`, `conversation_msgs`, and from 0.11 `tcn_types` and `sqe_msgs`.
+- **tcn:** `tcnart_msgs`, `pcpd_msgs`, `conversation_msgs`, `device_hl2_msgs` and `device_orbbec_msgs` (the last two
+  are deleted in 0.11), and from 0.11 `tcn_types` and `sqe_msgs`. The package table `cmake/tcn_packages.json` is
+  the authority.
 - **ros2:** the copies under `src/dds/ros2/`.
 
 ## Rules checked by the lint

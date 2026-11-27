@@ -2,6 +2,7 @@ from conan import ConanFile
 from conan.tools.files import apply_conandata_patches, collect_libs, copy, export_conandata_patches, get, rename, replace_in_file, rmdir, save
 from conan.tools.env import VirtualRunEnv
 from conan.tools.cmake import CMake, CMakeToolchain, cmake_layout, CMakeDeps
+from conan.errors import ConanException
 import json
 import os
 
@@ -83,7 +84,14 @@ class TcnSchemaConan(ConanFile):
         # One component per entry of the package table (cmake/tcn_packages.json, installed as
         # share/tcn_schema/packages.json); CMake builds from the same table. `header` entries (the SQE contract
         # library) have no library.
-        table = os.path.join(self.package_folder, "share", "tcn_schema", "packages.json")
+        # Installed package: share/tcn_schema/packages.json. Editable mode (package_folder is the source tree): the
+        # source table cmake/tcn_packages.json.
+        candidates = [os.path.join(self.package_folder, "share", "tcn_schema", "packages.json"),
+                      os.path.join(self.package_folder, "cmake", "tcn_packages.json"),
+                      os.path.join(self.recipe_folder, "cmake", "tcn_packages.json")]
+        table = next((c for c in candidates if os.path.isfile(c)), None)
+        if table is None:
+            raise ConanException("tcn_schema: package table not found in " + ", ".join(candidates))
         with open(table, encoding="utf-8") as f:
             packages = json.load(f)["packages"]
         for p in packages:

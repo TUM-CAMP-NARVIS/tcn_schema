@@ -37,7 +37,9 @@ class RoundtripGenTest(unittest.TestCase):
         # and its operator== compares the pointers.
         self.assertIn("TCN_ROUNDTRIP_BYTES(tcnart_msgs::rpc::Parameter)", src)
         self.assertNotIn("TCN_ROUNDTRIP(tcnart_msgs::rpc::Parameter)", src)
-        self.assertIn("TCN_ROUNDTRIP(tcnart_msgs::rpc::ParameterList)", src)
+        self.assertIn("TCN_ROUNDTRIP_BYTES(tcnart_msgs::rpc::ParameterList)", src)
+        self.assertIn("TCN_ROUNDTRIP(tcnart_msgs::msg::TargetTrackingMessage)", src)
+        self.assertIn("TCN_ROUNDTRIP_BYTES(pcpd_msgs::rpc::ServiceInfoReply)", generate(self.types, "pcpd_msgs"))
 
     def test_skips_known_broken_file(self):
         src = generate(self.types, "tcnart_msgs")
