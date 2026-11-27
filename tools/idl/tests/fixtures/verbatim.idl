@@ -1,0 +1,15 @@
+module fx {
+  module msg {
+    @verbatim (language="comment", text=
+      "line one" "\n"
+      "line two")
+    struct V {
+      @verbatim (language="comment", text=
+        "about a")
+      @unit (value="m")
+      float a;
+      @default (value=0.0)
+      double b;
+    };
+  };
+};

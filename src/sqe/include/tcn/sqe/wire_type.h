@@ -3,7 +3,7 @@
 // WireType<T> — the `application/cdr;{TYPE};tcn_schema={M.m}` annotation,
 // derived from the message type so it cannot be forgotten or misspelled.
 //
-// See docs/2026-08-31-sqe-contract-library-design.md §4.7.
+// See docs/design/2026-08-31-sqe-contract-library-design.md §4.7.
 #ifndef TCN_SQE_WIRE_TYPE_H
 #define TCN_SQE_WIRE_TYPE_H
 

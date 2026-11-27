@@ -2,6 +2,8 @@ from conan import ConanFile
 from conan.tools.files import apply_conandata_patches, collect_libs, copy, export_conandata_patches, get, rename, replace_in_file, rmdir, save
 from conan.tools.env import VirtualRunEnv
 from conan.tools.cmake import CMake, CMakeToolchain, cmake_layout, CMakeDeps
+from conan.errors import ConanException
+import json
 import os
 
 class TcnSchemaConan(ConanFile):
@@ -33,6 +35,8 @@ class TcnSchemaConan(ConanFile):
         copy(self, "3rdparty/*", src=self.recipe_folder, dst=self.export_sources_folder, keep_path=True)
         copy(self, "cmake/*", src=self.recipe_folder, dst=self.export_sources_folder, keep_path=True)
         copy(self, "src/*", src=self.recipe_folder, dst=self.export_sources_folder, keep_path=True)
+        copy(self, "tools/*.py", src=self.recipe_folder, dst=self.export_sources_folder, keep_path=True)
+        copy(self, "tools/idl/*.py", src=self.recipe_folder, dst=self.export_sources_folder, keep_path=True)
         copy(self, "CMakeLists.txt", src=self.recipe_folder, dst=self.export_sources_folder, keep_path=True)
 
     def build_requirements(self):
@@ -40,9 +44,10 @@ class TcnSchemaConan(ConanFile):
         self.tool_requires("zulu-openjdk/11.0.15")
 
     def requirements(self):
-        self.requires("fast-cdr/2.0.0@camposs/stable")
+        # The generated headers include fastcdr headers, so consumers need them on their include path.
+        self.requires("fast-cdr/2.0.0@camposs/stable", transitive_headers=True)
         if self.options.with_dds:
-            self.requires("fast-dds/2.11.1")
+            self.requires("fast-dds/2.11.1", transitive_headers=True)
 
     def configure(self):
         if self.options.shared:
@@ -74,100 +79,28 @@ class TcnSchemaConan(ConanFile):
         self.cpp_info.names["cmake_find_package"] = "tcn_schema"
         self.cpp_info.names["cmake_find_package_multi"] = "tcn_schema"
 
-        def dds_dep():
-            if self.options.with_dds:
-                return ["fast-dds::fast-dds"]
+        dds_dep = ["fast-dds::fast-dds"] if self.options.with_dds else ["fast-cdr::fast-cdr"]
+
+        # One component per entry of the package table (cmake/tcn_packages.json, installed as
+        # share/tcn_schema/packages.json); CMake builds from the same table. `header` entries (the SQE contract
+        # library) have no library.
+        # Installed package: share/tcn_schema/packages.json. Editable mode (package_folder is the source tree): the
+        # source table cmake/tcn_packages.json.
+        candidates = [os.path.join(self.package_folder, "share", "tcn_schema", "packages.json"),
+                      os.path.join(self.package_folder, "cmake", "tcn_packages.json"),
+                      os.path.join(self.recipe_folder, "cmake", "tcn_packages.json")]
+        table = next((c for c in candidates if os.path.isfile(c)), None)
+        if table is None:
+            raise ConanException("tcn_schema: package table not found in " + ", ".join(candidates))
+        with open(table, encoding="utf-8") as f:
+            packages = json.load(f)["packages"]
+        for p in packages:
+            c = self.cpp_info.components[p["name"]]
+            c.names["cmake_find_package"] = p["name"]
+            c.defines = []
+            if p["family"] == "header":
+                c.libs = []
+                c.requires = list(p["deps"])
             else:
-                return ["fast-cdr::fast-cdr"]
-
-        # ROS2 default messages
-
-        self.cpp_info.components["builtin_interfaces"].names["cmake_find_package"] = "builtin_interfaces"
-        self.cpp_info.components["builtin_interfaces"].libs = ["tcn_schema_builtin_interfaces"]
-        self.cpp_info.components["builtin_interfaces"].requires = dds_dep() + []
-
-        self.cpp_info.components["std_msgs"].names["cmake_find_package"] = "std_msgs"
-        self.cpp_info.components["std_msgs"].libs = ["tcn_schema_std_msgs"]
-        self.cpp_info.components["std_msgs"].requires = dds_dep() + ["builtin_interfaces", ]
-
-        self.cpp_info.components["geometry_msgs"].names["cmake_find_package"] = "geometry_msgs"
-        self.cpp_info.components["geometry_msgs"].libs = ["tcn_schema_geometry_msgs"]
-        self.cpp_info.components["geometry_msgs"].defines = []
-        self.cpp_info.components["geometry_msgs"].requires = dds_dep() + ["std_msgs"]
-
-        self.cpp_info.components["sensor_msgs"].names["cmake_find_package"] = "sensor_msgs"
-        self.cpp_info.components["sensor_msgs"].libs = ["tcn_schema_sensor_msgs"]
-        self.cpp_info.components["sensor_msgs"].defines = []
-        self.cpp_info.components["sensor_msgs"].requires = dds_dep() + ["std_msgs", "geometry_msgs"]
-
-        self.cpp_info.components["shape_msgs"].names["cmake_find_package"] = "shape_msgs"
-        self.cpp_info.components["shape_msgs"].libs = ["tcn_schema_shape_msgs"]
-        self.cpp_info.components["shape_msgs"].defines = []
-        self.cpp_info.components["shape_msgs"].requires = dds_dep() + ["std_msgs", "geometry_msgs"]
-
-        self.cpp_info.components["tf2_msgs"].names["cmake_find_package"] = "tf2_msgs"
-        self.cpp_info.components["tf2_msgs"].libs = ["tcn_schema_tf2_msgs"]
-        self.cpp_info.components["tf2_msgs"].defines = []
-        self.cpp_info.components["tf2_msgs"].requires = dds_dep() + ["std_msgs", "geometry_msgs"]
-
-        self.cpp_info.components["rosgraph_msgs"].names["cmake_find_package"] = "rosgraph_msgs"
-        self.cpp_info.components["rosgraph_msgs"].libs = ["tcn_schema_rosgraph_msgs"]
-        self.cpp_info.components["rosgraph_msgs"].defines = []
-        self.cpp_info.components["rosgraph_msgs"].requires = dds_dep() + ["std_msgs"]
-
-        self.cpp_info.components["statistics_msgs"].names["cmake_find_package"] = "statistics_msgs"
-        self.cpp_info.components["statistics_msgs"].libs = ["tcn_schema_statistics_msgs"]
-        self.cpp_info.components["statistics_msgs"].defines = []
-        self.cpp_info.components["statistics_msgs"].requires = dds_dep() + []
-
-        self.cpp_info.components["unique_identifier_msgs"].names["cmake_find_package"] = "unique_identifier_msgs"
-        self.cpp_info.components["unique_identifier_msgs"].libs = ["tcn_schema_unique_identifier_msgs"]
-        self.cpp_info.components["unique_identifier_msgs"].defines = []
-        self.cpp_info.components["unique_identifier_msgs"].requires = dds_dep() + []
-
-
-        # Custom messages
-        self.cpp_info.components["pcpd_msgs"].names["cmake_find_package"] = "pcpd_msgs"
-        self.cpp_info.components["pcpd_msgs"].libs = ["tcn_schema_pcpd_msgs"]
-        self.cpp_info.components["pcpd_msgs"].defines = []
-        self.cpp_info.components["pcpd_msgs"].requires = dds_dep() + ["std_msgs", "geometry_msgs", "tcnart_msgs"]
-
-        self.cpp_info.components["tcnart_msgs"].names["cmake_find_package"] = "tcnart_msgs"
-        self.cpp_info.components["tcnart_msgs"].libs = ["tcn_schema_tcnart_msgs"]
-        self.cpp_info.components["tcnart_msgs"].defines = []
-        self.cpp_info.components["tcnart_msgs"].requires = dds_dep() + ["std_msgs", "geometry_msgs"]
-
-        self.cpp_info.components["device_hl2_msgs"].names["cmake_find_package"] = "device_hl2_msgs"
-        self.cpp_info.components["device_hl2_msgs"].libs = ["tcn_schema_device_hl2_msgs"]
-        self.cpp_info.components["device_hl2_msgs"].defines = []
-        self.cpp_info.components["device_hl2_msgs"].requires = dds_dep() + ["std_msgs", "geometry_msgs", "tcnart_msgs"]
-
-        # The SQE contract core: header-only, so no `libs`. It is not behind an
-        # option -- it adds no library to any link line and pulls in no new
-        # dependency, and an option would only create a configuration where one
-        # consumer has it and the other does not.
-        self.cpp_info.components["sqe_contract"].names["cmake_find_package"] = "sqe_contract"
-        self.cpp_info.components["sqe_contract"].libs = []
-        self.cpp_info.components["sqe_contract"].defines = []
-        self.cpp_info.components["sqe_contract"].requires = ["tcnart_msgs"]
-
-        # The SIS protocol over an abstract transport. Header-only too, and it
-        # deliberately does **not** require zenoh: the two consumers move to new
-        # zenoh-cpp versions on their own schedules, so the adapter lives in the
-        # repository that owns the pin and this component names no zenoh type.
-        self.cpp_info.components["sqe_session"].names["cmake_find_package"] = "sqe_session"
-        self.cpp_info.components["sqe_session"].libs = []
-        self.cpp_info.components["sqe_session"].defines = []
-        self.cpp_info.components["sqe_session"].requires = ["sqe_contract"]
-
-        self.cpp_info.components["device_orbbec_msgs"].names["cmake_find_package"] = "device_orbbec_msgs"
-        self.cpp_info.components["device_orbbec_msgs"].libs = ["tcn_schema_device_orbbec_msgs"]
-        self.cpp_info.components["device_orbbec_msgs"].defines = []
-        self.cpp_info.components["device_orbbec_msgs"].requires = dds_dep() + ["std_msgs", "geometry_msgs", "tcnart_msgs"]
-
-        # The conversational pipeline's voice-client protocol (0.10.2). Plain CDR on the wire (no encapsulation
-        # header, MIGRATION-0.10.2.md); depends on no other package.
-        self.cpp_info.components["conversation_msgs"].names["cmake_find_package"] = "conversation_msgs"
-        self.cpp_info.components["conversation_msgs"].libs = ["tcn_schema_conversation_msgs"]
-        self.cpp_info.components["conversation_msgs"].defines = []
-        self.cpp_info.components["conversation_msgs"].requires = dds_dep() + []
+                c.libs = ["tcn_schema_" + p["name"]]
+                c.requires = dds_dep + list(p["deps"])

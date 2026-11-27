@@ -2,7 +2,7 @@
 //
 // Handle — constructible only from a reply.
 //
-// See docs/2026-08-31-sqe-contract-library-design.md §4.4.
+// See docs/design/2026-08-31-sqe-contract-library-design.md §4.4.
 #ifndef TCN_SQE_HANDLE_H
 #define TCN_SQE_HANDLE_H
 

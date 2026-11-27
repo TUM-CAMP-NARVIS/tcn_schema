@@ -2,7 +2,7 @@
 //
 // NodeName / LocalNodeId / GlobalNodeId / DomainNodeId — the two alphabets, kept apart.
 //
-// See docs/2026-08-31-sqe-contract-library-design.md §4.3.
+// See docs/design/2026-08-31-sqe-contract-library-design.md §4.3.
 #ifndef TCN_SQE_NODE_NAME_H
 #define TCN_SQE_NODE_NAME_H
 

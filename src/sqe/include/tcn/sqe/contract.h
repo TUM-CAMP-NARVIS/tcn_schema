@@ -3,7 +3,7 @@
 // tcn::sqe — the SQE contract core. Header-only, C++17, dependency-free.
 //
 // One include for the whole component. See
-// docs/2026-08-31-sqe-contract-library-design.md.
+// docs/design/2026-08-31-sqe-contract-library-design.md.
 //
 // What this header does NOT do, deliberately:
 //   * it does not compute a relation handle (the FNV-1a algorithm is
