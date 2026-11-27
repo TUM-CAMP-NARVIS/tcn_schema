@@ -2,7 +2,7 @@ import tempfile
 import unittest
 from pathlib import Path
 
-from check_links import find_broken_links
+from tools.check_links import find_broken_links
 
 
 class CheckLinksTest(unittest.TestCase):
