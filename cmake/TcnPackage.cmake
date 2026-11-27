@@ -1,10 +1,10 @@
 # tcn_add_idl_package(): one IDL package -> one library `tcn_schema_<NAME>`.
 #
 #   tcn_add_idl_package(NAME <pkg>
-#                       [MSG <idl>...] [RPC <idl>...] [ACTION <idl>...]
+#                       [MSG <idl>...] [SRV <idl>...] [RPC <idl>...] [ACTION <idl>...]
 #                       [EXTRA_INSTALL <file>...])
 #
-# * Code is generated into ${PROJECT_BINARY_DIR}/generated/<pkg>/<msg|rpc|action>/ (never into the source tree).
+# * Code is generated into ${PROJECT_BINARY_DIR}/generated/<pkg>/<msg|srv|rpc|action>/ (never into the source tree).
 # * Consumers of the build tree include ${PROJECT_BINARY_DIR}/generated; consumers of the installed package include
 #   <prefix>/include. Header paths are the same in both: `<pkg>/<kind>/<File>.h`.
 # * Headers install to include/<pkg>/<kind>/, IDL files to share/tcn_schema/dds/<pkg>/<kind>/.
@@ -94,7 +94,7 @@ function(tcn_add_packages_from_table)
 endfunction()
 
 function(tcn_add_idl_package)
-  cmake_parse_arguments(ARG "" "NAME" "MSG;RPC;ACTION;DEPS;EXTRA_INSTALL" ${ARGN})
+  cmake_parse_arguments(ARG "" "NAME" "MSG;SRV;RPC;ACTION;DEPS;EXTRA_INSTALL" ${ARGN})
   if(NOT ARG_NAME)
     message(FATAL_ERROR "tcn_add_idl_package: NAME is required")
   endif()
@@ -115,7 +115,7 @@ function(tcn_add_idl_package)
   set(all_src)
   set(all_hdr)
   set(all_export)
-  foreach(kind msg rpc action)
+  foreach(kind msg srv rpc action)
     string(TOUPPER "${kind}" KIND)
     if(ARG_${KIND})
       FASTDDS_GENERATE_CPP("${ARG_NAME}" "${kind}" src_${kind} hdr_${kind} export_${kind} "${idl_inputs}" ${ARG_${KIND}})

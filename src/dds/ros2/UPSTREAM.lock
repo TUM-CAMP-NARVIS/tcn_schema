@@ -1,0 +1,654 @@
+{
+ "distro": "jazzy",
+ "hash_distros": {
+  "kilted": {
+   "distro": "kilted",
+   "packages": {
+    "action_msgs": {
+     "path": "action_msgs",
+     "repo": "https://github.com/ros2/rcl_interfaces.git",
+     "tier": "core"
+    },
+    "builtin_interfaces": {
+     "path": "builtin_interfaces",
+     "repo": "https://github.com/ros2/rcl_interfaces.git",
+     "tier": "base"
+    },
+    "control_msgs": {
+     "path": "control_msgs",
+     "repo": "https://github.com/ros-controls/control_msgs.git",
+     "tier": "manipulation"
+    },
+    "controller_manager_msgs": {
+     "path": "controller_manager_msgs",
+     "repo": "https://github.com/ros-controls/ros2_control.git",
+     "tier": "manipulation"
+    },
+    "diagnostic_msgs": {
+     "path": "diagnostic_msgs",
+     "repo": "https://github.com/ros2/common_interfaces.git",
+     "tier": "core"
+    },
+    "geographic_msgs": {
+     "path": "geographic_msgs",
+     "repo": "https://github.com/ros-geographic-info/geographic_info.git",
+     "tier": "navigation"
+    },
+    "geometry_msgs": {
+     "path": "geometry_msgs",
+     "repo": "https://github.com/ros2/common_interfaces.git",
+     "tier": "base"
+    },
+    "lifecycle_msgs": {
+     "path": "lifecycle_msgs",
+     "repo": "https://github.com/ros2/rcl_interfaces.git",
+     "tier": "core"
+    },
+    "moveit_msgs": {
+     "path": ".",
+     "repo": "https://github.com/ros-planning/moveit_msgs.git",
+     "tier": "manipulation"
+    },
+    "nav2_msgs": {
+     "path": "nav2_msgs",
+     "repo": "https://github.com/ros-planning/navigation2.git",
+     "tier": "navigation"
+    },
+    "nav_msgs": {
+     "path": "nav_msgs",
+     "repo": "https://github.com/ros2/common_interfaces.git",
+     "tier": "core"
+    },
+    "object_recognition_msgs": {
+     "path": ".",
+     "repo": "https://github.com/wg-perception/object_recognition_msgs.git",
+     "tier": "manipulation"
+    },
+    "octomap_msgs": {
+     "path": ".",
+     "repo": "https://github.com/octomap/octomap_msgs.git",
+     "tier": "manipulation"
+    },
+    "pcl_msgs": {
+     "path": ".",
+     "repo": "https://github.com/ros-perception/pcl_msgs.git",
+     "tier": "perception"
+    },
+    "rcl_interfaces": {
+     "path": "rcl_interfaces",
+     "repo": "https://github.com/ros2/rcl_interfaces.git",
+     "tier": "core"
+    },
+    "rosgraph_msgs": {
+     "path": "rosgraph_msgs",
+     "repo": "https://github.com/ros2/rcl_interfaces.git",
+     "tier": "core"
+    },
+    "sensor_msgs": {
+     "path": "sensor_msgs",
+     "repo": "https://github.com/ros2/common_interfaces.git",
+     "tier": "base"
+    },
+    "service_msgs": {
+     "path": "service_msgs",
+     "repo": "https://github.com/ros2/rcl_interfaces.git",
+     "tier": "core"
+    },
+    "shape_msgs": {
+     "path": "shape_msgs",
+     "repo": "https://github.com/ros2/common_interfaces.git",
+     "tier": "core"
+    },
+    "statistics_msgs": {
+     "path": "statistics_msgs",
+     "repo": "https://github.com/ros2/rcl_interfaces.git",
+     "tier": "core"
+    },
+    "std_msgs": {
+     "path": "std_msgs",
+     "repo": "https://github.com/ros2/common_interfaces.git",
+     "tier": "base"
+    },
+    "std_srvs": {
+     "path": "std_srvs",
+     "repo": "https://github.com/ros2/common_interfaces.git",
+     "tier": "core"
+    },
+    "stereo_msgs": {
+     "path": "stereo_msgs",
+     "repo": "https://github.com/ros2/common_interfaces.git",
+     "tier": "core"
+    },
+    "tf2_msgs": {
+     "path": "tf2_msgs",
+     "repo": "https://github.com/ros2/geometry2.git",
+     "tier": "core"
+    },
+    "trajectory_msgs": {
+     "path": "trajectory_msgs",
+     "repo": "https://github.com/ros2/common_interfaces.git",
+     "tier": "core"
+    },
+    "type_description_interfaces": {
+     "path": "type_description_interfaces",
+     "repo": "https://github.com/ros2/rcl_interfaces.git",
+     "tier": "core"
+    },
+    "unique_identifier_msgs": {
+     "path": ".",
+     "repo": "https://github.com/ros2/unique_identifier_msgs.git",
+     "tier": "core"
+    },
+    "vision_msgs": {
+     "path": "vision_msgs",
+     "repo": "https://github.com/ros-perception/vision_msgs.git",
+     "tier": "perception"
+    },
+    "visualization_msgs": {
+     "path": "visualization_msgs",
+     "repo": "https://github.com/ros2/common_interfaces.git",
+     "tier": "core"
+    }
+   },
+   "repos": {
+    "https://github.com/octomap/octomap_msgs.git": {
+     "commit": "50eece2bfc2f3163b2fb70b9157356e12d375dff",
+     "release_version": "2.0.1-2",
+     "version": "2.0.1"
+    },
+    "https://github.com/ros-controls/control_msgs.git": {
+     "commit": "bafde7e613448f182694fbfe8f3189da1944bc90",
+     "release_version": "6.11.0-1",
+     "version": "6.11.0"
+    },
+    "https://github.com/ros-controls/ros2_control.git": {
+     "commit": "7f9546cbf9ad797a49fe0e229e24d4df965c3e01",
+     "release_version": "5.21.0-1",
+     "version": "5.21.0"
+    },
+    "https://github.com/ros-geographic-info/geographic_info.git": {
+     "commit": "24806adc767414eb3a34a58aefeb648ee415b09a",
+     "release_version": "1.0.6-2",
+     "version": "1.0.6"
+    },
+    "https://github.com/ros-perception/pcl_msgs.git": {
+     "commit": "16c4174b4903982c8b031672c8cfcdd16a7430dc",
+     "release_version": "1.0.0-9",
+     "version": "1.0.0"
+    },
+    "https://github.com/ros-perception/vision_msgs.git": {
+     "commit": "286066f17659d70dd8181ad3ac7cd725f0e33551",
+     "release_version": "4.2.0-1",
+     "version": "4.2.0"
+    },
+    "https://github.com/ros-planning/moveit_msgs.git": {
+     "commit": "a76e0d67f356735b0a59313eca2c9a3fe2e17da7",
+     "release_version": "2.7.1-1",
+     "version": "2.7.1"
+    },
+    "https://github.com/ros-planning/navigation2.git": {
+     "commit": "3478badb7e2802c9ff1f805fb5493dc1d0792a5a",
+     "release_version": "1.4.2-1",
+     "version": "1.4.2"
+    },
+    "https://github.com/ros2/common_interfaces.git": {
+     "commit": "7532fccbc3538582c6c1d187c5a809a99d8937df",
+     "release_version": "5.5.3-1",
+     "version": "5.5.3"
+    },
+    "https://github.com/ros2/geometry2.git": {
+     "commit": "f72bbbac29e326cfa47fca2482c569353351990b",
+     "release_version": "0.41.10-1",
+     "version": "0.41.10"
+    },
+    "https://github.com/ros2/rcl_interfaces.git": {
+     "commit": "45871bf69f1e5f281cd8684393b03412fe340aeb",
+     "release_version": "2.3.2-1",
+     "version": "2.3.2"
+    },
+    "https://github.com/ros2/unique_identifier_msgs.git": {
+     "commit": "21bb7a23157e5408db4a46d72dbf29980e6bb206",
+     "release_version": "2.7.1-1",
+     "version": "2.7.1"
+    },
+    "https://github.com/wg-perception/object_recognition_msgs.git": {
+     "commit": "811fb385ec4c1919dce2b30334fe9f49639073fd",
+     "release_version": "2.0.0-5",
+     "version": "2.0.0"
+    }
+   }
+  },
+  "lyrical": {
+   "distro": "lyrical",
+   "packages": {
+    "action_msgs": {
+     "path": "action_msgs",
+     "repo": "https://github.com/ros2/rcl_interfaces.git",
+     "tier": "core"
+    },
+    "builtin_interfaces": {
+     "path": "builtin_interfaces",
+     "repo": "https://github.com/ros2/rcl_interfaces.git",
+     "tier": "base"
+    },
+    "control_msgs": {
+     "path": "control_msgs",
+     "repo": "https://github.com/ros-controls/control_msgs.git",
+     "tier": "manipulation"
+    },
+    "controller_manager_msgs": {
+     "path": "controller_manager_msgs",
+     "repo": "https://github.com/ros-controls/ros2_control.git",
+     "tier": "manipulation"
+    },
+    "diagnostic_msgs": {
+     "path": "diagnostic_msgs",
+     "repo": "https://github.com/ros2/common_interfaces.git",
+     "tier": "core"
+    },
+    "geographic_msgs": {
+     "path": "geographic_msgs",
+     "repo": "https://github.com/ros-geographic-info/geographic_info.git",
+     "tier": "navigation"
+    },
+    "geometry_msgs": {
+     "path": "geometry_msgs",
+     "repo": "https://github.com/ros2/common_interfaces.git",
+     "tier": "base"
+    },
+    "lifecycle_msgs": {
+     "path": "lifecycle_msgs",
+     "repo": "https://github.com/ros2/rcl_interfaces.git",
+     "tier": "core"
+    },
+    "moveit_msgs": {
+     "path": ".",
+     "repo": "https://github.com/ros-planning/moveit_msgs.git",
+     "tier": "manipulation"
+    },
+    "nav2_msgs": {
+     "path": "nav2_msgs",
+     "repo": "https://github.com/ros-planning/navigation2.git",
+     "tier": "navigation"
+    },
+    "nav_msgs": {
+     "path": "nav_msgs",
+     "repo": "https://github.com/ros2/common_interfaces.git",
+     "tier": "core"
+    },
+    "object_recognition_msgs": {
+     "path": ".",
+     "repo": "https://github.com/wg-perception/object_recognition_msgs.git",
+     "tier": "manipulation"
+    },
+    "octomap_msgs": {
+     "path": ".",
+     "repo": "https://github.com/octomap/octomap_msgs.git",
+     "tier": "manipulation"
+    },
+    "pcl_msgs": {
+     "path": ".",
+     "repo": "https://github.com/ros-perception/pcl_msgs.git",
+     "tier": "perception"
+    },
+    "rcl_interfaces": {
+     "path": "rcl_interfaces",
+     "repo": "https://github.com/ros2/rcl_interfaces.git",
+     "tier": "core"
+    },
+    "rosgraph_msgs": {
+     "path": "rosgraph_msgs",
+     "repo": "https://github.com/ros2/rcl_interfaces.git",
+     "tier": "core"
+    },
+    "sensor_msgs": {
+     "path": "sensor_msgs",
+     "repo": "https://github.com/ros2/common_interfaces.git",
+     "tier": "base"
+    },
+    "service_msgs": {
+     "path": "service_msgs",
+     "repo": "https://github.com/ros2/rcl_interfaces.git",
+     "tier": "core"
+    },
+    "shape_msgs": {
+     "path": "shape_msgs",
+     "repo": "https://github.com/ros2/common_interfaces.git",
+     "tier": "core"
+    },
+    "statistics_msgs": {
+     "path": "statistics_msgs",
+     "repo": "https://github.com/ros2/rcl_interfaces.git",
+     "tier": "core"
+    },
+    "std_msgs": {
+     "path": "std_msgs",
+     "repo": "https://github.com/ros2/common_interfaces.git",
+     "tier": "base"
+    },
+    "std_srvs": {
+     "path": "std_srvs",
+     "repo": "https://github.com/ros2/common_interfaces.git",
+     "tier": "core"
+    },
+    "stereo_msgs": {
+     "path": "stereo_msgs",
+     "repo": "https://github.com/ros2/common_interfaces.git",
+     "tier": "core"
+    },
+    "tf2_msgs": {
+     "path": "tf2_msgs",
+     "repo": "https://github.com/ros2/geometry2.git",
+     "tier": "core"
+    },
+    "trajectory_msgs": {
+     "path": "trajectory_msgs",
+     "repo": "https://github.com/ros2/common_interfaces.git",
+     "tier": "core"
+    },
+    "type_description_interfaces": {
+     "path": "type_description_interfaces",
+     "repo": "https://github.com/ros2/rcl_interfaces.git",
+     "tier": "core"
+    },
+    "unique_identifier_msgs": {
+     "path": ".",
+     "repo": "https://github.com/ros2/unique_identifier_msgs.git",
+     "tier": "core"
+    },
+    "vision_msgs": {
+     "path": "vision_msgs",
+     "repo": "https://github.com/ros-perception/vision_msgs.git",
+     "tier": "perception"
+    },
+    "visualization_msgs": {
+     "path": "visualization_msgs",
+     "repo": "https://github.com/ros2/common_interfaces.git",
+     "tier": "core"
+    }
+   },
+   "repos": {
+    "https://github.com/octomap/octomap_msgs.git": {
+     "commit": "50eece2bfc2f3163b2fb70b9157356e12d375dff",
+     "release_version": "2.0.1-3",
+     "version": "2.0.1"
+    },
+    "https://github.com/ros-controls/control_msgs.git": {
+     "commit": "bafde7e613448f182694fbfe8f3189da1944bc90",
+     "release_version": "6.11.0-1",
+     "version": "6.11.0"
+    },
+    "https://github.com/ros-controls/ros2_control.git": {
+     "commit": "de472cd59309a55849d1a43d00bb6fdd72b90799",
+     "release_version": "6.13.0-1",
+     "version": "6.13.0"
+    },
+    "https://github.com/ros-geographic-info/geographic_info.git": {
+     "commit": "24806adc767414eb3a34a58aefeb648ee415b09a",
+     "release_version": "1.0.6-3",
+     "version": "1.0.6"
+    },
+    "https://github.com/ros-perception/pcl_msgs.git": {
+     "commit": "16c4174b4903982c8b031672c8cfcdd16a7430dc",
+     "release_version": "1.0.0-10",
+     "version": "1.0.0"
+    },
+    "https://github.com/ros-perception/vision_msgs.git": {
+     "commit": "93d20163186c0e53fd5ed58cbdbaf9b398f2a483",
+     "release_version": "4.3.0-1",
+     "version": "4.3.0"
+    },
+    "https://github.com/ros-planning/moveit_msgs.git": {
+     "commit": "15daf790c8008665f1e577755562f14b43bbd410",
+     "release_version": "2.7.2-1",
+     "version": "2.7.2"
+    },
+    "https://github.com/ros-planning/navigation2.git": {
+     "commit": "ae23216fd4d0178f456975b644b842cb482a452e",
+     "release_version": "1.5.3-1",
+     "version": "1.5.3"
+    },
+    "https://github.com/ros2/common_interfaces.git": {
+     "commit": "ea081d8a282f08f4df5f93527c3248674aed954b",
+     "release_version": "5.9.4-1",
+     "version": "5.9.4"
+    },
+    "https://github.com/ros2/geometry2.git": {
+     "commit": "0b06614aaf3a50ddd1298cb0d95224b0e3821b25",
+     "release_version": "0.45.10-1",
+     "version": "0.45.10"
+    },
+    "https://github.com/ros2/rcl_interfaces.git": {
+     "commit": "b90e36e4adf5ed878efa2f365a84798f782618cd",
+     "release_version": "2.4.5-1",
+     "version": "2.4.5"
+    },
+    "https://github.com/ros2/unique_identifier_msgs.git": {
+     "commit": "b4779af6b3d3c45e710802a0e7f86113da281ae8",
+     "release_version": "2.8.1-3",
+     "version": "2.8.1"
+    },
+    "https://github.com/wg-perception/object_recognition_msgs.git": {
+     "commit": "811fb385ec4c1919dce2b30334fe9f49639073fd",
+     "release_version": "2.0.0-6",
+     "version": "2.0.0"
+    }
+   }
+  }
+ },
+ "packages": {
+  "action_msgs": {
+   "path": "action_msgs",
+   "repo": "https://github.com/ros2/rcl_interfaces.git",
+   "tier": "core"
+  },
+  "builtin_interfaces": {
+   "path": "builtin_interfaces",
+   "repo": "https://github.com/ros2/rcl_interfaces.git",
+   "tier": "base"
+  },
+  "control_msgs": {
+   "path": "control_msgs",
+   "repo": "https://github.com/ros-controls/control_msgs.git",
+   "tier": "manipulation"
+  },
+  "controller_manager_msgs": {
+   "path": "controller_manager_msgs",
+   "repo": "https://github.com/ros-controls/ros2_control.git",
+   "tier": "manipulation"
+  },
+  "diagnostic_msgs": {
+   "path": "diagnostic_msgs",
+   "repo": "https://github.com/ros2/common_interfaces.git",
+   "tier": "core"
+  },
+  "geographic_msgs": {
+   "path": "geographic_msgs",
+   "repo": "https://github.com/ros-geographic-info/geographic_info.git",
+   "tier": "navigation"
+  },
+  "geometry_msgs": {
+   "path": "geometry_msgs",
+   "repo": "https://github.com/ros2/common_interfaces.git",
+   "tier": "base"
+  },
+  "lifecycle_msgs": {
+   "path": "lifecycle_msgs",
+   "repo": "https://github.com/ros2/rcl_interfaces.git",
+   "tier": "core"
+  },
+  "moveit_msgs": {
+   "path": ".",
+   "repo": "https://github.com/ros-planning/moveit_msgs.git",
+   "tier": "manipulation"
+  },
+  "nav2_msgs": {
+   "path": "nav2_msgs",
+   "repo": "https://github.com/ros-planning/navigation2.git",
+   "tier": "navigation"
+  },
+  "nav_msgs": {
+   "path": "nav_msgs",
+   "repo": "https://github.com/ros2/common_interfaces.git",
+   "tier": "core"
+  },
+  "object_recognition_msgs": {
+   "path": ".",
+   "repo": "https://github.com/wg-perception/object_recognition_msgs.git",
+   "tier": "manipulation"
+  },
+  "octomap_msgs": {
+   "path": ".",
+   "repo": "https://github.com/octomap/octomap_msgs.git",
+   "tier": "manipulation"
+  },
+  "pcl_msgs": {
+   "path": ".",
+   "repo": "https://github.com/ros-perception/pcl_msgs.git",
+   "tier": "perception"
+  },
+  "rcl_interfaces": {
+   "path": "rcl_interfaces",
+   "repo": "https://github.com/ros2/rcl_interfaces.git",
+   "tier": "core"
+  },
+  "rosgraph_msgs": {
+   "path": "rosgraph_msgs",
+   "repo": "https://github.com/ros2/rcl_interfaces.git",
+   "tier": "core"
+  },
+  "sensor_msgs": {
+   "path": "sensor_msgs",
+   "repo": "https://github.com/ros2/common_interfaces.git",
+   "tier": "base"
+  },
+  "service_msgs": {
+   "path": "service_msgs",
+   "repo": "https://github.com/ros2/rcl_interfaces.git",
+   "tier": "core"
+  },
+  "shape_msgs": {
+   "path": "shape_msgs",
+   "repo": "https://github.com/ros2/common_interfaces.git",
+   "tier": "core"
+  },
+  "statistics_msgs": {
+   "path": "statistics_msgs",
+   "repo": "https://github.com/ros2/rcl_interfaces.git",
+   "tier": "core"
+  },
+  "std_msgs": {
+   "path": "std_msgs",
+   "repo": "https://github.com/ros2/common_interfaces.git",
+   "tier": "base"
+  },
+  "std_srvs": {
+   "path": "std_srvs",
+   "repo": "https://github.com/ros2/common_interfaces.git",
+   "tier": "core"
+  },
+  "stereo_msgs": {
+   "path": "stereo_msgs",
+   "repo": "https://github.com/ros2/common_interfaces.git",
+   "tier": "core"
+  },
+  "tf2_msgs": {
+   "path": "tf2_msgs",
+   "repo": "https://github.com/ros2/geometry2.git",
+   "tier": "core"
+  },
+  "trajectory_msgs": {
+   "path": "trajectory_msgs",
+   "repo": "https://github.com/ros2/common_interfaces.git",
+   "tier": "core"
+  },
+  "type_description_interfaces": {
+   "path": "type_description_interfaces",
+   "repo": "https://github.com/ros2/rcl_interfaces.git",
+   "tier": "core"
+  },
+  "unique_identifier_msgs": {
+   "path": ".",
+   "repo": "https://github.com/ros2/unique_identifier_msgs.git",
+   "tier": "core"
+  },
+  "vision_msgs": {
+   "path": "vision_msgs",
+   "repo": "https://github.com/ros-perception/vision_msgs.git",
+   "tier": "perception"
+  },
+  "visualization_msgs": {
+   "path": "visualization_msgs",
+   "repo": "https://github.com/ros2/common_interfaces.git",
+   "tier": "core"
+  }
+ },
+ "repos": {
+  "https://github.com/octomap/octomap_msgs.git": {
+   "commit": "50eece2bfc2f3163b2fb70b9157356e12d375dff",
+   "release_version": "2.0.1-1",
+   "version": "2.0.1"
+  },
+  "https://github.com/ros-controls/control_msgs.git": {
+   "commit": "ab911bf0746fb064b1a88a2c0d364d6b7abd477b",
+   "release_version": "5.11.0-1",
+   "version": "5.11.0"
+  },
+  "https://github.com/ros-controls/ros2_control.git": {
+   "commit": "1089078218e6fa392020dc711c46129639cef7fc",
+   "release_version": "4.50.0-1",
+   "version": "4.50.0"
+  },
+  "https://github.com/ros-geographic-info/geographic_info.git": {
+   "commit": "24806adc767414eb3a34a58aefeb648ee415b09a",
+   "release_version": "1.0.6-2",
+   "version": "1.0.6"
+  },
+  "https://github.com/ros-perception/pcl_msgs.git": {
+   "commit": "16c4174b4903982c8b031672c8cfcdd16a7430dc",
+   "release_version": "1.0.0-9",
+   "version": "1.0.0"
+  },
+  "https://github.com/ros-perception/vision_msgs.git": {
+   "commit": "e77fa2d97d69abaaa546592892d2d5d16cec9977",
+   "release_version": "4.1.1-3",
+   "version": "4.1.1"
+  },
+  "https://github.com/ros-planning/moveit_msgs.git": {
+   "commit": "55f802fe3ac455123efcdba1037d3abf2c8e4dcb",
+   "release_version": "2.6.0-1",
+   "version": "2.6.0"
+  },
+  "https://github.com/ros-planning/navigation2.git": {
+   "commit": "58e4019eb149ed4387938d9cd13f38659b86f754",
+   "release_version": "1.3.14-1",
+   "version": "1.3.14"
+  },
+  "https://github.com/ros2/common_interfaces.git": {
+   "commit": "a941f14bb318d8d904505ed935ccbb97f24a70a4",
+   "release_version": "5.3.8-1",
+   "version": "5.3.8"
+  },
+  "https://github.com/ros2/geometry2.git": {
+   "commit": "f702874b1c8535d6a038230ab2cda0ba5d521ebd",
+   "release_version": "0.36.23-1",
+   "version": "0.36.23"
+  },
+  "https://github.com/ros2/rcl_interfaces.git": {
+   "commit": "7aa3caf43377ea6ad615bc1040832e2c7566bfbe",
+   "release_version": "2.0.4-1",
+   "version": "2.0.4"
+  },
+  "https://github.com/ros2/unique_identifier_msgs.git": {
+   "commit": "901599ee92c2ee949f42a5c5d821c92b3e515d69",
+   "release_version": "2.5.1-1",
+   "version": "2.5.1"
+  },
+  "https://github.com/wg-perception/object_recognition_msgs.git": {
+   "commit": "811fb385ec4c1919dce2b30334fe9f49639073fd",
+   "release_version": "2.0.0-5",
+   "version": "2.0.0"
+  }
+ },
+ "rosdistro_commit": "bf18ec414f7cf57ab167e4caa9ff4acf5fb07ca9"
+}
