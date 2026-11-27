@@ -19,10 +19,19 @@ def main(argv) -> int:
     li.add_argument("--baseline", type=Path, required=True)
     li.add_argument("--update-baseline", action="store_true")
 
+    rt = sub.add_parser("roundtrip", help="generate the C++ round-trip test of one package")
+    rt.add_argument("--types", type=Path, required=True)
+    rt.add_argument("--package", required=True)
+    rt.add_argument("--out", type=Path, required=True)
+
     args = ap.parse_args(argv)
     if args.cmd == "tables":
         from .tables import write_tables
         write_tables(load_schema(args.dds_root), args.version, args.out)
+        return 0
+    if args.cmd == "roundtrip":
+        from .roundtrip import write
+        write(args.types, args.package, args.out)
         return 0
     if args.cmd == "lint":
         return _lint(args)

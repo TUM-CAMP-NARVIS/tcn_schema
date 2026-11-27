@@ -66,6 +66,7 @@ class IdlFile:
     includes: List[str]
     decls: List[Decl]
     family: str = "tcn"   # "ros2" | "tcn"
+    forward_decls: List[str] = field(default_factory=list)  # fq names forward-declared in this file
 
 
 @dataclass

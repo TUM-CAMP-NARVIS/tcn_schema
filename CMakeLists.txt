@@ -64,7 +64,9 @@ add_custom_command(
 add_custom_target(tcn_schema_tables ALL DEPENDS "${TCN_TABLES_DIR}/types.json" "${TCN_TABLES_DIR}/enums.json")
 install(FILES "${TCN_TABLES_DIR}/types.json" "${TCN_TABLES_DIR}/enums.json" DESTINATION share/tcn_schema)
 
+option(TCN_SCHEMA_BUILD_MSG_TESTS "Build the message tests: round trips of every type, golden bytes, IDL lint" OFF)
 if(TCN_SCHEMA_BUILD_MSG_TESTS)
+  add_subdirectory(test)
   # The IDL style rules (docs/idl-style.md) against tools/idl/lint_baseline.txt, and the Python tools' own tests.
   add_test(NAME idl_lint COMMAND "${Python3_EXECUTABLE}" -I "${CMAKE_CURRENT_SOURCE_DIR}/tools/idl_cli.py" lint
            --dds-root "${CMAKE_CURRENT_SOURCE_DIR}/src/dds" --baseline "${CMAKE_CURRENT_SOURCE_DIR}/tools/idl/lint_baseline.txt")

@@ -70,6 +70,8 @@ class _Parser:
         self.i = 0
         # raw declarations: (kind, fqname, scope, payload)
         self.decls: List[tuple] = []
+        # forward declarations (scope + [name]); fastddsgen 3.0.0 stores members of these types as pointers
+        self.forwards: List[List[str]] = []
 
     # -- token helpers -----------------------------------------------------------------------------------------
     def peek(self, k: int = 0):
@@ -179,6 +181,7 @@ class _Parser:
         self.expect("struct")
         name = self.next()[1]
         if self.accept(";"):
+            self.forwards.append(scope + [name])
             return  # forward declaration
         if self.accept(":"):
             self.next()  # base type (unused in this repository)
@@ -230,6 +233,7 @@ class _Parser:
         self.expect("union")
         name = self.next()[1]
         if self.accept(";"):
+            self.forwards.append(scope + [name])
             return  # forward declaration
         self.expect("switch")
         self.expect("(")
@@ -372,7 +376,7 @@ def parse_file(path: Path, rel: str, family: str = "tcn") -> IdlFile:
     p = _parse_raw(path)
     known = {"::".join(s + [n]) for _, s, n, _ in p.decls}
     pkg, kind = _file_meta(rel)
-    return IdlFile(rel, pkg, kind, p.includes, _build(p.decls, known), family)
+    return IdlFile(rel, pkg, kind, p.includes, _build(p.decls, known), family, ["::".join(x) for x in p.forwards])
 
 
 def load_schema(dds_root: Path) -> Schema:
@@ -391,5 +395,5 @@ def load_schema(dds_root: Path) -> Schema:
     files = []
     for rel, fam, p in raws:
         pkg, kind = _file_meta(rel)
-        files.append(IdlFile(rel, pkg, kind, p.includes, _build(p.decls, known), fam))
+        files.append(IdlFile(rel, pkg, kind, p.includes, _build(p.decls, known), fam, ["::".join(x) for x in p.forwards]))
     return Schema(files, family)

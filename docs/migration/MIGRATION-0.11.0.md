@@ -75,6 +75,25 @@ to do. Items marked *(wire)* need the lockstep cut-over; all others can be done 
   - enumerators prefixed with the enum name;
   - include guards;
   - PascalCase file names, unique within a package.
+- **New: golden byte files** in [test/golden/](../../test/golden/), as space-separated hex. They are the shared
+  contract for every hand-written codec (Rust, TypeScript, C#, Python):
+  - `std_msgs_Header`;
+  - `tcnart_msgs_TargetTrackingMessage`;
+  - `tcnart_msgs_SRGraph`.
+
+  The values that produced them are in `test/golden/golden_test.cpp`. Today they are XCDR1 (`00 01`). Plan 4
+  regenerates them, deliberately, when tcn types move to XCDR2; Plan 4 also adds an appendable evolution pair. Point
+  your codec tests at these files.
+- **New: round-trip tests of every struct and union** (`ctest`: `roundtrip`), generated from `types.json`.
+  `tcnart_msgs/rpc/SpatialRelations.idl` is skipped, because its types never existed in C++ (the header collision;
+  the file is deleted in Plan 3).
+- **Known generator defect, with a workaround for C++ users.** fastddsgen 3.0.0 stores a member whose type was
+  forward-declared in its IDL file as a **raw pointer**, and the generated `operator==` compares those pointers.
+  - Affected: `tcnart_msgs::rpc::Parameter`, `ParameterValue`, `GenericParameterRequest`, `GenericParameterReply`,
+    `ParameterDescriptor` and `ParameterChanged` (`Requests.idl`).
+  - **`a == b` on these types is `false` for equal values.** Compare fields, or the encoded bytes, instead.
+  - The wire is not affected. `types.json` marks such types with `"forward_declared": true`.
+  - HTA's and tcnart's parameter services, and IVA's mirror, should check that they never use `==` on these types.
 - **Building tcn_schema** needs Python 3 (standard library only) at build time.
 - **Building tcn_schema:**
   - it builds in parallel again (the forced serial build is gone);
@@ -87,7 +106,9 @@ their plan), so that each team can prepare.
 
 ### SQE engine (spatial_query_engine_rs, sqe-calibrate)
 
-- *Plan 1:* nothing to do.
+- *Plan 1:* optional:
+  - check the Rust codec against `test/golden/*.hex`;
+  - start checking the `messages.rs` registry against `share/tcn_schema/types.json`.
 
 ### sqe_client_cpp
 
@@ -95,19 +116,27 @@ their plan), so that each team can prepare.
 
 ### tcnart (v3)
 
-- *Plan 1:* nothing to do.
+- *Plan 1:*
+  - Check that no C++ code uses `operator==` on the parameter types listed in §1 (it compares pointers).
+  - Optional: point the C# codec tests at `test/golden/*.hex`.
 
 ### HTA (holoscan-tcn-applications)
 
-- *Plan 1:* nothing to do.
+- *Plan 1:*
+  - Check that no C++ code uses `operator==` on the parameter types listed in §1 (it compares pointers).
+  - Requiring `fast-cdr` yourself is no longer necessary (it is harmless to keep).
 
 ### tcn web controller
 
-- *Plan 1:* nothing to do.
+- *Plan 1:* optional:
+  - check `@tcn-web/cdr` against `test/golden/*.hex`;
+  - start generating `packages/sqe/src/schemas.ts` from `types.json` and `enums.json` (O7). The fields you asked for (member order, extensibility, `@optional`, bounds, union labels, fully qualified names) are in `types.json`.
 
 ### IVA (realtime conversational pipeline)
 
-- *Plan 1:* nothing to do.
+- *Plan 1:* optional:
+  - check the `tcn-wire` mirrors against `types.json`;
+  - the parameter types in `tcn-wire` are not affected by the C++ `operator==` defect.
 
 ## 3. Coming, decided (not yet on `main`)
 

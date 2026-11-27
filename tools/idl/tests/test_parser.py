@@ -45,6 +45,11 @@ class RepoSchemaTest(unittest.TestCase):
         names = [d.name for f in self.schema.files for d in f.decls]
         self.assertEqual(names.count("tcnart_msgs::rpc::ParameterValue"), 1)
 
+    def test_forward_decls_recorded(self):
+        f = next(f for f in self.schema.files if f.path == "tcnart_msgs/rpc/Requests.idl")
+        self.assertEqual(set(f.forward_decls), {"tcnart_msgs::rpc::Parameter", "tcnart_msgs::rpc::ParameterValue",
+                                                "tcnart_msgs::rpc::ParameterList"})
+
     def test_typedef_array(self):
         t = self.decls["unique_identifier_msgs::msg::uint8__16"]
         self.assertIsInstance(t, Typedef)

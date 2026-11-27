@@ -46,6 +46,10 @@ class TablesTest(unittest.TestCase):
         self.assertEqual(u["discriminator"], "tcnart_msgs::rpc::SRStreamTriggerKind")
         self.assertTrue(all("labels" in c and "member" in c for c in u["cases"]))
 
+    def test_forward_declared_flag(self):
+        self.assertTrue(self._type("tcnart_msgs::rpc::ParameterValue")["forward_declared"])
+        self.assertFalse(self._type("std_msgs::msg::Header")["forward_declared"])
+
     def test_deterministic_cli(self):
         with tempfile.TemporaryDirectory() as d:
             outs = []

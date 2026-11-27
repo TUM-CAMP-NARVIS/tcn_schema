@@ -11,6 +11,10 @@ def _member(m: Member) -> dict:
 
 def _entry(decl, f) -> dict:
     base = {"name": decl.name, "package": f.package, "family": f.family, "file": f.path}
+    if isinstance(decl, (Struct, Union)):
+        # fastddsgen 3.0.0 stores members whose type is forward-declared as pointers; their operator== compares the
+        # pointers (see tools/idl/roundtrip.py).
+        base["forward_declared"] = decl.name in f.forward_decls
     if isinstance(decl, Struct):
         return {**base, "kind": "struct", "extensibility": decl.extensibility,
                 "members": [_member(m) for m in decl.members]}
