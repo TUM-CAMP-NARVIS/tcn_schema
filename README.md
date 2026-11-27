@@ -14,7 +14,7 @@ library (`tcn::sqe`).
 
 | Package | Family | Content |
 |---|---|---|
-| `builtin_interfaces`, `std_msgs`, `geometry_msgs`, `sensor_msgs`, `shape_msgs`, `tf2_msgs`, `rosgraph_msgs`, `statistics_msgs`, `unique_identifier_msgs` | ros2 | Copies of the ROS 2 interfaces (rolling, late 2022). They are regenerated from ROS 2 Jazzy in 0.11 (decisions §5). |
+| 29 ROS 2 packages in tiers: `base` (builtin_interfaces, std_msgs, geometry_msgs, sensor_msgs, service_msgs) and `core` (nav_msgs, tf2_msgs, visualization_msgs, std_srvs, action_msgs, rcl_interfaces, …) built by default; `manipulation`, `navigation`, `perception` on request | ros2 | Generated from **ROS 2 Jazzy** by `tools/ros2`, with services and actions complete, `@final` (XCDR1, byte-compatible with ROS 2), and `share/tcn_schema/ros2_types.json` (ROS names, DDS names, RIHS01 hashes). See [src/dds/ros2/UPSTREAM.md](src/dds/ros2/UPSTREAM.md). |
 | `tcnart_msgs` | tcn | Streams (video, poses, eye/hand/person tracking, IMU), stream descriptors, presence, logging, the parameter RPC, and the SQE protocol (`SpatialRelations.idl`, `rpc/SIS.idl`). |
 | `pcpd_msgs` | tcn | Camera sensors and calibration, mesh bitstreams, and the service-controller RPC (discovery, process info, stream announcements). |
 | `conversation_msgs` | tcn | The realtime conversational pipeline's protocol. See below. |
@@ -38,6 +38,7 @@ cmake --build build/Release -j
 - fastddsgen writes the generated code to `build/<config>/generated/<pkg>/<msg|rpc|action>/`, never into the source
   tree. The installed package has the headers at `include/<pkg>/<kind>/<File>.h`.
 - Building needs Java (fastddsgen, via conan) and Python 3 (standard library only, for the tools below).
+- ROS 2 tiers: `-DTCN_SCHEMA_ROS2_TIERS="base;core"` (default), or conan `-o tcn_schema/*:ros2_tiers=…`.
 
 **Tests** (off by default):
 
@@ -66,6 +67,7 @@ All tools are standard-library Python and run under `python3 -I`.
 | `python3 -I tools/idl_cli.py lint --dds-root src/dds --baseline tools/idl/lint_baseline.txt` | The IDL style rules of [docs/idl-style.md](docs/idl-style.md). `--update-baseline` rewrites the baseline, which may only shrink. |
 | `python3 -I tools/idl_cli.py roundtrip --types <types.json> --package <pkg> --out <file.cpp>` | Generates a package's round-trip test (used by the build). |
 | `python3 -I tools/check_links.py .` | Checks the relative links in all Markdown files. |
+| `python3 -I tools/ros2_cli.py refresh` / `check` | Regenerates the ROS 2 tree from the pinned Jazzy sources / fails if the committed tree differs (needs network). |
 
 The installed package also contains `share/tcn_schema/packages.json` (the package table) and the IDL itself,
 under `share/tcn_schema/dds/`.
