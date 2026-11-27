@@ -79,8 +79,8 @@ static msg::Person make_person(uint32_t id, std::size_t joints, std::size_t bone
     p.role_confidence(0.f);
     p.has_root_orientation(true);
     p.root_orientation().x(0.0); p.root_orientation().y(0.0); p.root_orientation().z(0.6); p.root_orientation().w(0.8);
-    msg::Quaternion q; q.w(1.0);
-    p.joint_rotations(std::vector<msg::Quaternion>(joints, q));
+    ::tcn_types::msg::Quaternion q; q.w(1.0);
+    p.joint_rotations(std::vector<::tcn_types::msg::Quaternion>(joints, q));
     p.joint_rotation_confidence(std::vector<float>(joints, 0.5f));
     return p;
 }

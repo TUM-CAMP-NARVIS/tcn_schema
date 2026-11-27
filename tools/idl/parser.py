@@ -420,7 +420,7 @@ def parse_file(path: Path, rel: str, family: str = "tcn") -> IdlFile:
 
 
 def load_schema(dds_root: Path) -> Schema:
-    """Parse every *.idl under dds_root/{ros2,custom,tcn}; resolve names across all files."""
+    """Parse every *.idl under dds_root/{ros2,tcn} (and custom, the pre-0.11 location); resolve names across all files."""
     raws = []
     family: Dict[str, str] = {}
     for sub, fam in FAMILY_DIRS.items():

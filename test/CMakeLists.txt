@@ -43,7 +43,7 @@ add_test(NAME roundtrip COMMAND tcn_schema_roundtrip_tests)
 add_executable(tcn_schema_golden_tests golden/golden_test.cpp)
 target_include_directories(tcn_schema_golden_tests PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}")
 target_compile_definitions(tcn_schema_golden_tests PRIVATE TCN_GOLDEN_DIR="${CMAKE_CURRENT_SOURCE_DIR}/golden")
-target_link_libraries(tcn_schema_golden_tests PRIVATE tcn_schema_tcnart_msgs tcn_schema_std_msgs ${DDS_LIBRARIES})
+target_link_libraries(tcn_schema_golden_tests PRIVATE tcn_schema_sqe_msgs tcn_schema_tcnart_msgs tcn_schema_std_msgs ${DDS_LIBRARIES})
 set_target_properties(tcn_schema_golden_tests PROPERTIES CXX_STANDARD 17)
 add_test(NAME golden COMMAND tcn_schema_golden_tests)
 

@@ -7,7 +7,7 @@ so 0.10.x peers talk to each other unchanged. 0.10.5 builds on 0.10.4 and includ
 A joint release of holoscan-tcn-applications (design 70, person tracking that can drive avatars) and tcnart (roadmap
 4.6: the persons its `human_pose` feature publishes; time-sync: the time-reference payloads). The joint sets both
 person messages use, their units, frames, clocks and rotations are in one registry:
-[src/dds/custom/tcnart_msgs/msg/JointSets.md](../../src/dds/custom/tcnart_msgs/msg/JointSets.md) (installed next to the
+[src/dds/custom/tcnart_msgs/msg/JointSets.md](../../src/dds/tcn/tcnart_msgs/msg/JointSets.md) (installed next to the
 IDL).
 
 ## `tcnart_msgs::msg::PersonTrackingMessage` (PersonTracking.idl), extended in place

@@ -16,9 +16,10 @@ class PackageTableTest(unittest.TestCase):
 
     def test_include_deps_known_cases(self):
         self.assertEqual(self.deps["std_msgs"], {"builtin_interfaces"})
-        self.assertEqual(self.deps["tcnart_msgs"], {"builtin_interfaces", "std_msgs"})
+        self.assertEqual(self.deps["tcnart_msgs"], {"std_msgs", "tcn_types"})
         self.assertEqual(self.deps["conversation_msgs"], set())
-        self.assertEqual(self.deps["pcpd_msgs"], {"std_msgs", "tcnart_msgs"})
+        self.assertEqual(self.deps["pcpd_msgs"], {"std_msgs", "tcn_types", "tcnart_msgs"})
+        self.assertEqual(self.deps["sqe_msgs"], {"builtin_interfaces", "tcn_types"})
 
     def test_table_matches_includes(self):
         idl_entries = [p for p in self.table if p["family"] in ("ros2", "tcn")]

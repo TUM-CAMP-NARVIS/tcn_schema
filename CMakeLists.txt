@@ -50,6 +50,8 @@ tcn_add_packages_from_table()
 install(FILES "${PROJECT_BINARY_DIR}/share/packages.json" DESTINATION share/tcn_schema)
 # ROS names, DDS names and RIHS01 hashes of every ROS 2 type (decisions §5 R3), for every tier.
 install(FILES "${CMAKE_CURRENT_SOURCE_DIR}/src/dds/ros2/ros2_types.json" DESTINATION share/tcn_schema)
+# The 0.11 type moves (old -> new fully qualified names and headers), for consumers updating their code and mirrors.
+install(FILES "${CMAKE_CURRENT_SOURCE_DIR}/src/dds/tcn/type_map_0_11.json" DESTINATION share/tcn_schema)
 
 # The SQE contract core. Header-only and dependency-free, so it adds nothing to
 # a link line; it is added last because its INTERFACE target names

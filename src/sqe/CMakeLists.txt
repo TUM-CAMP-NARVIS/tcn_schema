@@ -36,9 +36,11 @@ target_compile_features(${TCN_SQE_CONTRACT_TARGET} INTERFACE cxx_std_17)
 # it registers -- but a consumer that passes a generated message to it needs
 # the message library, so the component depends on it. Guarded so the core
 # still configures on its own.
-if(TARGET tcn_schema_tcnart_msgs)
-  target_link_libraries(${TCN_SQE_CONTRACT_TARGET} INTERFACE tcn_schema_tcnart_msgs)
-endif()
+foreach(dep tcn_schema_sqe_msgs tcn_schema_tcnart_msgs tcn_schema_tcn_types)
+  if(TARGET ${dep})
+    target_link_libraries(${TCN_SQE_CONTRACT_TARGET} INTERFACE ${dep})
+  endif()
+endforeach()
 
 install(DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/include/tcn
         DESTINATION ${CMAKE_INSTALL_INCLUDEDIR})

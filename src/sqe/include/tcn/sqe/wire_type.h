@@ -32,9 +32,15 @@ namespace tcnart_msgs {
 namespace msg {
 
 class Pose6DMessage;
-class Pose6DMapMessage;
 class TargetTrackingMessage;
 class StreamDescriptorMessage;
+
+}  // namespace msg
+}  // namespace tcnart_msgs
+
+namespace sqe_msgs {
+namespace msg {
+
 class SRGraph;
 class SRNode;
 class SREdge;
@@ -117,7 +123,7 @@ enum SISPlanInputSource : std::uint32_t;
 enum SISExplainKind : std::uint32_t;
 
 }  // namespace rpc
-}  // namespace tcnart_msgs
+}  // namespace sqe_msgs
 
 namespace tcn {
 namespace sqe {
@@ -178,122 +184,121 @@ struct WireType;
 
 // tcnart_msgs/msg/PoseTracking.idl
 TCN_SQE_REGISTER_WIRE_TYPE(::tcnart_msgs::msg::Pose6DMessage,          "tcnart_msgs::msg::Pose6DMessage");
-TCN_SQE_REGISTER_WIRE_TYPE(::tcnart_msgs::msg::Pose6DMapMessage,       "tcnart_msgs::msg::Pose6DMapMessage");
 TCN_SQE_REGISTER_WIRE_TYPE(::tcnart_msgs::msg::TargetTrackingMessage,  "tcnart_msgs::msg::TargetTrackingMessage");
 
 // tcnart_msgs/msg/StreamDescriptor.idl
 TCN_SQE_REGISTER_WIRE_TYPE(::tcnart_msgs::msg::StreamDescriptorMessage, "tcnart_msgs::msg::StreamDescriptorMessage");
 
-// tcnart_msgs/msg/SpatialRelations.idl
-TCN_SQE_REGISTER_WIRE_TYPE(::tcnart_msgs::msg::SRGraph, "tcnart_msgs::msg::SRGraph");
-TCN_SQE_REGISTER_WIRE_TYPE(::tcnart_msgs::msg::SRNode,  "tcnart_msgs::msg::SRNode");
-TCN_SQE_REGISTER_WIRE_TYPE(::tcnart_msgs::msg::SREdge,  "tcnart_msgs::msg::SREdge");
+// sqe_msgs/msg/Graph.idl
+TCN_SQE_REGISTER_WIRE_TYPE(::sqe_msgs::msg::SRGraph, "sqe_msgs::msg::SRGraph");
+TCN_SQE_REGISTER_WIRE_TYPE(::sqe_msgs::msg::SRNode,  "sqe_msgs::msg::SRNode");
+TCN_SQE_REGISTER_WIRE_TYPE(::sqe_msgs::msg::SREdge,  "sqe_msgs::msg::SREdge");
 // The read side of the same file: a declaration qualified by the fragment that
 // made it. `::msg::` and `SR*`, not `::rpc::` and `SIS*`, because these are
 // graph types and the namespace decides the wire name a peer must match.
-TCN_SQE_REGISTER_WIRE_TYPE(::tcnart_msgs::msg::SRNodeView, "tcnart_msgs::msg::SRNodeView");
-TCN_SQE_REGISTER_WIRE_TYPE(::tcnart_msgs::msg::SREdgeView, "tcnart_msgs::msg::SREdgeView");
+TCN_SQE_REGISTER_WIRE_TYPE(::sqe_msgs::msg::SRNodeView, "sqe_msgs::msg::SRNodeView");
+TCN_SQE_REGISTER_WIRE_TYPE(::sqe_msgs::msg::SREdgeView, "sqe_msgs::msg::SREdgeView");
 
-// tcnart_msgs/rpc/SIS.idl
-TCN_SQE_REGISTER_WIRE_TYPE(::tcnart_msgs::rpc::SISJoinRequest,                "tcnart_msgs::rpc::SISJoinRequest");
-TCN_SQE_REGISTER_WIRE_TYPE(::tcnart_msgs::rpc::SISLeaveRequest,               "tcnart_msgs::rpc::SISLeaveRequest");
-TCN_SQE_REGISTER_WIRE_TYPE(::tcnart_msgs::rpc::SISNodeUpdateRequest,          "tcnart_msgs::rpc::SISNodeUpdateRequest");
-TCN_SQE_REGISTER_WIRE_TYPE(::tcnart_msgs::rpc::SISNodeRemoveRequest,          "tcnart_msgs::rpc::SISNodeRemoveRequest");
-TCN_SQE_REGISTER_WIRE_TYPE(::tcnart_msgs::rpc::SISEdgeUpdateRequest,          "tcnart_msgs::rpc::SISEdgeUpdateRequest");
-TCN_SQE_REGISTER_WIRE_TYPE(::tcnart_msgs::rpc::SISEdgeRemoveRequest,          "tcnart_msgs::rpc::SISEdgeRemoveRequest");
-TCN_SQE_REGISTER_WIRE_TYPE(::tcnart_msgs::rpc::SISRelationStreamStartRequest, "tcnart_msgs::rpc::SISRelationStreamStartRequest");
-TCN_SQE_REGISTER_WIRE_TYPE(::tcnart_msgs::rpc::SISRelationStreamStopRequest,  "tcnart_msgs::rpc::SISRelationStreamStopRequest");
-TCN_SQE_REGISTER_WIRE_TYPE(::tcnart_msgs::rpc::SISRelationStreamStatus,       "tcnart_msgs::rpc::SISRelationStreamStatus");
-TCN_SQE_REGISTER_WIRE_TYPE(::tcnart_msgs::rpc::SISRelationStreamHandle,       "tcnart_msgs::rpc::SISRelationStreamHandle");
+// sqe_msgs/rpc/*.idl
+TCN_SQE_REGISTER_WIRE_TYPE(::sqe_msgs::rpc::SISJoinRequest,                "sqe_msgs::rpc::SISJoinRequest");
+TCN_SQE_REGISTER_WIRE_TYPE(::sqe_msgs::rpc::SISLeaveRequest,               "sqe_msgs::rpc::SISLeaveRequest");
+TCN_SQE_REGISTER_WIRE_TYPE(::sqe_msgs::rpc::SISNodeUpdateRequest,          "sqe_msgs::rpc::SISNodeUpdateRequest");
+TCN_SQE_REGISTER_WIRE_TYPE(::sqe_msgs::rpc::SISNodeRemoveRequest,          "sqe_msgs::rpc::SISNodeRemoveRequest");
+TCN_SQE_REGISTER_WIRE_TYPE(::sqe_msgs::rpc::SISEdgeUpdateRequest,          "sqe_msgs::rpc::SISEdgeUpdateRequest");
+TCN_SQE_REGISTER_WIRE_TYPE(::sqe_msgs::rpc::SISEdgeRemoveRequest,          "sqe_msgs::rpc::SISEdgeRemoveRequest");
+TCN_SQE_REGISTER_WIRE_TYPE(::sqe_msgs::rpc::SISRelationStreamStartRequest, "sqe_msgs::rpc::SISRelationStreamStartRequest");
+TCN_SQE_REGISTER_WIRE_TYPE(::sqe_msgs::rpc::SISRelationStreamStopRequest,  "sqe_msgs::rpc::SISRelationStreamStopRequest");
+TCN_SQE_REGISTER_WIRE_TYPE(::sqe_msgs::rpc::SISRelationStreamStatus,       "sqe_msgs::rpc::SISRelationStreamStatus");
+TCN_SQE_REGISTER_WIRE_TYPE(::sqe_msgs::rpc::SISRelationStreamHandle,       "sqe_msgs::rpc::SISRelationStreamHandle");
 // The re-optimisation policy a start request carries (B51). Nested inside that
 // request rather than published alone, and registered for the same reason
 // SISRelationStreamStatus is: it is the one field of the request that is *not*
 // stream identity, a caller reasons about it on its own, and a name spelled by
 // hand is a name that can be spelled wrong.
-TCN_SQE_REGISTER_WIRE_TYPE(::tcnart_msgs::rpc::SISReoptimisePolicy,           "tcnart_msgs::rpc::SISReoptimisePolicy");
+TCN_SQE_REGISTER_WIRE_TYPE(::sqe_msgs::rpc::SISReoptimisePolicy,           "sqe_msgs::rpc::SISReoptimisePolicy");
 // The relation a pending stream is waiting on. Nested inside the reply and the
 // notification below rather than published alone, and registered anyway for the
 // same reason SRNodeView and SREdgeView are: a calibration tool passes one of
 // these around on its own, and a name it has to spell by hand is a name it can
 // spell wrong.
-TCN_SQE_REGISTER_WIRE_TYPE(::tcnart_msgs::rpc::SISBlockingRelation,           "tcnart_msgs::rpc::SISBlockingRelation");
-TCN_SQE_REGISTER_WIRE_TYPE(::tcnart_msgs::rpc::SISRelationStreamReply,        "tcnart_msgs::rpc::SISRelationStreamReply");
-TCN_SQE_REGISTER_WIRE_TYPE(::tcnart_msgs::rpc::SISRelationStreamStatusNotification,
-                           "tcnart_msgs::rpc::SISRelationStreamStatusNotification");
-TCN_SQE_REGISTER_WIRE_TYPE(::tcnart_msgs::rpc::SISMutationStatus,   "tcnart_msgs::rpc::SISMutationStatus");
-TCN_SQE_REGISTER_WIRE_TYPE(::tcnart_msgs::rpc::SISMutationReply,    "tcnart_msgs::rpc::SISMutationReply");
-TCN_SQE_REGISTER_WIRE_TYPE(::tcnart_msgs::rpc::SISGraphQueryKind,   "tcnart_msgs::rpc::SISGraphQueryKind");
-TCN_SQE_REGISTER_WIRE_TYPE(::tcnart_msgs::rpc::SISGraphQueryStatus, "tcnart_msgs::rpc::SISGraphQueryStatus");
-TCN_SQE_REGISTER_WIRE_TYPE(::tcnart_msgs::rpc::SISGraphQueryRequest,
-                           "tcnart_msgs::rpc::SISGraphQueryRequest");
-TCN_SQE_REGISTER_WIRE_TYPE(::tcnart_msgs::rpc::SISGraphQueryReply,
-                           "tcnart_msgs::rpc::SISGraphQueryReply");
+TCN_SQE_REGISTER_WIRE_TYPE(::sqe_msgs::rpc::SISBlockingRelation,           "sqe_msgs::rpc::SISBlockingRelation");
+TCN_SQE_REGISTER_WIRE_TYPE(::sqe_msgs::rpc::SISRelationStreamReply,        "sqe_msgs::rpc::SISRelationStreamReply");
+TCN_SQE_REGISTER_WIRE_TYPE(::sqe_msgs::rpc::SISRelationStreamStatusNotification,
+                           "sqe_msgs::rpc::SISRelationStreamStatusNotification");
+TCN_SQE_REGISTER_WIRE_TYPE(::sqe_msgs::rpc::SISMutationStatus,   "sqe_msgs::rpc::SISMutationStatus");
+TCN_SQE_REGISTER_WIRE_TYPE(::sqe_msgs::rpc::SISMutationReply,    "sqe_msgs::rpc::SISMutationReply");
+TCN_SQE_REGISTER_WIRE_TYPE(::sqe_msgs::rpc::SISGraphQueryKind,   "sqe_msgs::rpc::SISGraphQueryKind");
+TCN_SQE_REGISTER_WIRE_TYPE(::sqe_msgs::rpc::SISGraphQueryStatus, "sqe_msgs::rpc::SISGraphQueryStatus");
+TCN_SQE_REGISTER_WIRE_TYPE(::sqe_msgs::rpc::SISGraphQueryRequest,
+                           "sqe_msgs::rpc::SISGraphQueryRequest");
+TCN_SQE_REGISTER_WIRE_TYPE(::sqe_msgs::rpc::SISGraphQueryReply,
+                           "sqe_msgs::rpc::SISGraphQueryReply");
 // The pattern query (B63), on `/sis/pattern/query`. The engine answered it
 // since B63 and this table could not name either half until 0.9.0 -- the same
 // gap the graph read sat in before B46 was registered. The reply reuses
 // SISGraphQueryStatus, so the annotation is the only thing that separates a
 // pattern reply from a graph reply: both open with that enum.
-TCN_SQE_REGISTER_WIRE_TYPE(::tcnart_msgs::rpc::SRPatternExpansion,     "tcnart_msgs::rpc::SRPatternExpansion");
-TCN_SQE_REGISTER_WIRE_TYPE(::tcnart_msgs::rpc::SISPatternQueryRequest, "tcnart_msgs::rpc::SISPatternQueryRequest");
-TCN_SQE_REGISTER_WIRE_TYPE(::tcnart_msgs::rpc::SISPatternQueryReply,   "tcnart_msgs::rpc::SISPatternQueryReply");
+TCN_SQE_REGISTER_WIRE_TYPE(::sqe_msgs::rpc::SRPatternExpansion,     "sqe_msgs::rpc::SRPatternExpansion");
+TCN_SQE_REGISTER_WIRE_TYPE(::sqe_msgs::rpc::SISPatternQueryRequest, "sqe_msgs::rpc::SISPatternQueryRequest");
+TCN_SQE_REGISTER_WIRE_TYPE(::sqe_msgs::rpc::SISPatternQueryReply,   "sqe_msgs::rpc::SISPatternQueryReply");
 // The global target registry (B78). `SISTargetAlias` and `SISGlobalTarget` are
 // nested, never published alone, and registered for the reason
 // SISBlockingRelation is: a tool that seeds or exports the registry passes
 // them around by themselves. `SISTargetChange` is published by the engine on
 // `sqe/{engine_id}/targets/changed` (topics.h); the mutation is answered with
 // the ordinary SISMutationReply, not a registry-specific reply.
-TCN_SQE_REGISTER_WIRE_TYPE(::tcnart_msgs::rpc::SISTargetKind,            "tcnart_msgs::rpc::SISTargetKind");
-TCN_SQE_REGISTER_WIRE_TYPE(::tcnart_msgs::rpc::SISTargetAlias,           "tcnart_msgs::rpc::SISTargetAlias");
-TCN_SQE_REGISTER_WIRE_TYPE(::tcnart_msgs::rpc::SISGlobalTarget,          "tcnart_msgs::rpc::SISGlobalTarget");
-TCN_SQE_REGISTER_WIRE_TYPE(::tcnart_msgs::rpc::SISTargetQueryKind,       "tcnart_msgs::rpc::SISTargetQueryKind");
-TCN_SQE_REGISTER_WIRE_TYPE(::tcnart_msgs::rpc::SISTargetQueryRequest,    "tcnart_msgs::rpc::SISTargetQueryRequest");
-TCN_SQE_REGISTER_WIRE_TYPE(::tcnart_msgs::rpc::SISTargetQueryStatus,     "tcnart_msgs::rpc::SISTargetQueryStatus");
-TCN_SQE_REGISTER_WIRE_TYPE(::tcnart_msgs::rpc::SISTargetQueryReply,      "tcnart_msgs::rpc::SISTargetQueryReply");
-TCN_SQE_REGISTER_WIRE_TYPE(::tcnart_msgs::rpc::SISTargetMutationKind,    "tcnart_msgs::rpc::SISTargetMutationKind");
-TCN_SQE_REGISTER_WIRE_TYPE(::tcnart_msgs::rpc::SISTargetMutationRequest, "tcnart_msgs::rpc::SISTargetMutationRequest");
-TCN_SQE_REGISTER_WIRE_TYPE(::tcnart_msgs::rpc::SISTargetChange,          "tcnart_msgs::rpc::SISTargetChange");
+TCN_SQE_REGISTER_WIRE_TYPE(::sqe_msgs::rpc::SISTargetKind,            "sqe_msgs::rpc::SISTargetKind");
+TCN_SQE_REGISTER_WIRE_TYPE(::sqe_msgs::rpc::SISTargetAlias,           "sqe_msgs::rpc::SISTargetAlias");
+TCN_SQE_REGISTER_WIRE_TYPE(::sqe_msgs::rpc::SISGlobalTarget,          "sqe_msgs::rpc::SISGlobalTarget");
+TCN_SQE_REGISTER_WIRE_TYPE(::sqe_msgs::rpc::SISTargetQueryKind,       "sqe_msgs::rpc::SISTargetQueryKind");
+TCN_SQE_REGISTER_WIRE_TYPE(::sqe_msgs::rpc::SISTargetQueryRequest,    "sqe_msgs::rpc::SISTargetQueryRequest");
+TCN_SQE_REGISTER_WIRE_TYPE(::sqe_msgs::rpc::SISTargetQueryStatus,     "sqe_msgs::rpc::SISTargetQueryStatus");
+TCN_SQE_REGISTER_WIRE_TYPE(::sqe_msgs::rpc::SISTargetQueryReply,      "sqe_msgs::rpc::SISTargetQueryReply");
+TCN_SQE_REGISTER_WIRE_TYPE(::sqe_msgs::rpc::SISTargetMutationKind,    "sqe_msgs::rpc::SISTargetMutationKind");
+TCN_SQE_REGISTER_WIRE_TYPE(::sqe_msgs::rpc::SISTargetMutationRequest, "sqe_msgs::rpc::SISTargetMutationRequest");
+TCN_SQE_REGISTER_WIRE_TYPE(::sqe_msgs::rpc::SISTargetChange,          "sqe_msgs::rpc::SISTargetChange");
 // The operator surface (B82, 0.9.2): sqe/{engine_id}/op/* (topics.h). The
 // graph read there answers the ordinary SISGraphQueryReply, the update the
 // ordinary SISMutationReply.
-TCN_SQE_REGISTER_WIRE_TYPE(::tcnart_msgs::rpc::SISOperatorRef,               "tcnart_msgs::rpc::SISOperatorRef");
-TCN_SQE_REGISTER_WIRE_TYPE(::tcnart_msgs::rpc::SISEngineInfoRequest,         "tcnart_msgs::rpc::SISEngineInfoRequest");
-TCN_SQE_REGISTER_WIRE_TYPE(::tcnart_msgs::rpc::SISStoreHealth,               "tcnart_msgs::rpc::SISStoreHealth");
-TCN_SQE_REGISTER_WIRE_TYPE(::tcnart_msgs::rpc::SISReadLimits,                "tcnart_msgs::rpc::SISReadLimits");
-TCN_SQE_REGISTER_WIRE_TYPE(::tcnart_msgs::rpc::SISEngineInfoReply,           "tcnart_msgs::rpc::SISEngineInfoReply");
-TCN_SQE_REGISTER_WIRE_TYPE(::tcnart_msgs::rpc::SISFragmentListRequest,       "tcnart_msgs::rpc::SISFragmentListRequest");
-TCN_SQE_REGISTER_WIRE_TYPE(::tcnart_msgs::rpc::SISFragmentSummary,           "tcnart_msgs::rpc::SISFragmentSummary");
-TCN_SQE_REGISTER_WIRE_TYPE(::tcnart_msgs::rpc::SISFragmentListReply,         "tcnart_msgs::rpc::SISFragmentListReply");
-TCN_SQE_REGISTER_WIRE_TYPE(::tcnart_msgs::rpc::SISOperatorGraphQueryRequest, "tcnart_msgs::rpc::SISOperatorGraphQueryRequest");
-TCN_SQE_REGISTER_WIRE_TYPE(::tcnart_msgs::rpc::SISGraphChangeKind,           "tcnart_msgs::rpc::SISGraphChangeKind");
-TCN_SQE_REGISTER_WIRE_TYPE(::tcnart_msgs::rpc::SISGraphChangeNotification,   "tcnart_msgs::rpc::SISGraphChangeNotification");
-TCN_SQE_REGISTER_WIRE_TYPE(::tcnart_msgs::rpc::SISOperatorMutationKind,      "tcnart_msgs::rpc::SISOperatorMutationKind");
-TCN_SQE_REGISTER_WIRE_TYPE(::tcnart_msgs::rpc::SISOperatorMutation,          "tcnart_msgs::rpc::SISOperatorMutation");
-TCN_SQE_REGISTER_WIRE_TYPE(::tcnart_msgs::rpc::SISOperatorMutationRequest,   "tcnart_msgs::rpc::SISOperatorMutationRequest");
+TCN_SQE_REGISTER_WIRE_TYPE(::sqe_msgs::rpc::SISOperatorRef,               "sqe_msgs::rpc::SISOperatorRef");
+TCN_SQE_REGISTER_WIRE_TYPE(::sqe_msgs::rpc::SISEngineInfoRequest,         "sqe_msgs::rpc::SISEngineInfoRequest");
+TCN_SQE_REGISTER_WIRE_TYPE(::sqe_msgs::rpc::SISStoreHealth,               "sqe_msgs::rpc::SISStoreHealth");
+TCN_SQE_REGISTER_WIRE_TYPE(::sqe_msgs::rpc::SISReadLimits,                "sqe_msgs::rpc::SISReadLimits");
+TCN_SQE_REGISTER_WIRE_TYPE(::sqe_msgs::rpc::SISEngineInfoReply,           "sqe_msgs::rpc::SISEngineInfoReply");
+TCN_SQE_REGISTER_WIRE_TYPE(::sqe_msgs::rpc::SISFragmentListRequest,       "sqe_msgs::rpc::SISFragmentListRequest");
+TCN_SQE_REGISTER_WIRE_TYPE(::sqe_msgs::rpc::SISFragmentSummary,           "sqe_msgs::rpc::SISFragmentSummary");
+TCN_SQE_REGISTER_WIRE_TYPE(::sqe_msgs::rpc::SISFragmentListReply,         "sqe_msgs::rpc::SISFragmentListReply");
+TCN_SQE_REGISTER_WIRE_TYPE(::sqe_msgs::rpc::SISOperatorGraphQueryRequest, "sqe_msgs::rpc::SISOperatorGraphQueryRequest");
+TCN_SQE_REGISTER_WIRE_TYPE(::sqe_msgs::rpc::SISGraphChangeKind,           "sqe_msgs::rpc::SISGraphChangeKind");
+TCN_SQE_REGISTER_WIRE_TYPE(::sqe_msgs::rpc::SISGraphChangeNotification,   "sqe_msgs::rpc::SISGraphChangeNotification");
+TCN_SQE_REGISTER_WIRE_TYPE(::sqe_msgs::rpc::SISOperatorMutationKind,      "sqe_msgs::rpc::SISOperatorMutationKind");
+TCN_SQE_REGISTER_WIRE_TYPE(::sqe_msgs::rpc::SISOperatorMutation,          "sqe_msgs::rpc::SISOperatorMutation");
+TCN_SQE_REGISTER_WIRE_TYPE(::sqe_msgs::rpc::SISOperatorMutationRequest,   "sqe_msgs::rpc::SISOperatorMutationRequest");
 // Explain (B89, 0.9.3): sqe/{engine_id}/op/explain (topics.h).
-TCN_SQE_REGISTER_WIRE_TYPE(::tcnart_msgs::rpc::SISEvaluationMode,           "tcnart_msgs::rpc::SISEvaluationMode");
-TCN_SQE_REGISTER_WIRE_TYPE(::tcnart_msgs::rpc::SISPlanOpKind,                "tcnart_msgs::rpc::SISPlanOpKind");
-TCN_SQE_REGISTER_WIRE_TYPE(::tcnart_msgs::rpc::SISPlanDynamicOp,             "tcnart_msgs::rpc::SISPlanDynamicOp");
-TCN_SQE_REGISTER_WIRE_TYPE(::tcnart_msgs::rpc::SISPlanCoordSwapOp,           "tcnart_msgs::rpc::SISPlanCoordSwapOp");
-TCN_SQE_REGISTER_WIRE_TYPE(::tcnart_msgs::rpc::SISPlanOp,                    "tcnart_msgs::rpc::SISPlanOp");
-TCN_SQE_REGISTER_WIRE_TYPE(::tcnart_msgs::rpc::SISPlanInstance,              "tcnart_msgs::rpc::SISPlanInstance");
-TCN_SQE_REGISTER_WIRE_TYPE(::tcnart_msgs::rpc::SISPlanInputSource,           "tcnart_msgs::rpc::SISPlanInputSource");
-TCN_SQE_REGISTER_WIRE_TYPE(::tcnart_msgs::rpc::SISPlanInput,                 "tcnart_msgs::rpc::SISPlanInput");
-TCN_SQE_REGISTER_WIRE_TYPE(::tcnart_msgs::rpc::SISPlanHop,                   "tcnart_msgs::rpc::SISPlanHop");
-TCN_SQE_REGISTER_WIRE_TYPE(::tcnart_msgs::rpc::SISTranslationPlan,           "tcnart_msgs::rpc::SISTranslationPlan");
-TCN_SQE_REGISTER_WIRE_TYPE(::tcnart_msgs::rpc::SISExplainKind,               "tcnart_msgs::rpc::SISExplainKind");
-TCN_SQE_REGISTER_WIRE_TYPE(::tcnart_msgs::rpc::SISExplainRequest,            "tcnart_msgs::rpc::SISExplainRequest");
-TCN_SQE_REGISTER_WIRE_TYPE(::tcnart_msgs::rpc::SISPlanLive,                  "tcnart_msgs::rpc::SISPlanLive");
-TCN_SQE_REGISTER_WIRE_TYPE(::tcnart_msgs::rpc::SISExplainReply,              "tcnart_msgs::rpc::SISExplainReply");
+TCN_SQE_REGISTER_WIRE_TYPE(::sqe_msgs::rpc::SISEvaluationMode,           "sqe_msgs::rpc::SISEvaluationMode");
+TCN_SQE_REGISTER_WIRE_TYPE(::sqe_msgs::rpc::SISPlanOpKind,                "sqe_msgs::rpc::SISPlanOpKind");
+TCN_SQE_REGISTER_WIRE_TYPE(::sqe_msgs::rpc::SISPlanDynamicOp,             "sqe_msgs::rpc::SISPlanDynamicOp");
+TCN_SQE_REGISTER_WIRE_TYPE(::sqe_msgs::rpc::SISPlanCoordSwapOp,           "sqe_msgs::rpc::SISPlanCoordSwapOp");
+TCN_SQE_REGISTER_WIRE_TYPE(::sqe_msgs::rpc::SISPlanOp,                    "sqe_msgs::rpc::SISPlanOp");
+TCN_SQE_REGISTER_WIRE_TYPE(::sqe_msgs::rpc::SISPlanInstance,              "sqe_msgs::rpc::SISPlanInstance");
+TCN_SQE_REGISTER_WIRE_TYPE(::sqe_msgs::rpc::SISPlanInputSource,           "sqe_msgs::rpc::SISPlanInputSource");
+TCN_SQE_REGISTER_WIRE_TYPE(::sqe_msgs::rpc::SISPlanInput,                 "sqe_msgs::rpc::SISPlanInput");
+TCN_SQE_REGISTER_WIRE_TYPE(::sqe_msgs::rpc::SISPlanHop,                   "sqe_msgs::rpc::SISPlanHop");
+TCN_SQE_REGISTER_WIRE_TYPE(::sqe_msgs::rpc::SISTranslationPlan,           "sqe_msgs::rpc::SISTranslationPlan");
+TCN_SQE_REGISTER_WIRE_TYPE(::sqe_msgs::rpc::SISExplainKind,               "sqe_msgs::rpc::SISExplainKind");
+TCN_SQE_REGISTER_WIRE_TYPE(::sqe_msgs::rpc::SISExplainRequest,            "sqe_msgs::rpc::SISExplainRequest");
+TCN_SQE_REGISTER_WIRE_TYPE(::sqe_msgs::rpc::SISPlanLive,                  "sqe_msgs::rpc::SISPlanLive");
+TCN_SQE_REGISTER_WIRE_TYPE(::sqe_msgs::rpc::SISExplainReply,              "sqe_msgs::rpc::SISExplainReply");
 // Transaction log (B92, 0.10.1): sqe/{engine_id}/op/txlog (topics.h).
-TCN_SQE_REGISTER_WIRE_TYPE(::tcnart_msgs::rpc::SISTransactionLogAction,      "tcnart_msgs::rpc::SISTransactionLogAction");
-TCN_SQE_REGISTER_WIRE_TYPE(::tcnart_msgs::rpc::SISTransactionLogRequest,     "tcnart_msgs::rpc::SISTransactionLogRequest");
-TCN_SQE_REGISTER_WIRE_TYPE(::tcnart_msgs::rpc::SISTransactionLogReply,       "tcnart_msgs::rpc::SISTransactionLogReply");
+TCN_SQE_REGISTER_WIRE_TYPE(::sqe_msgs::rpc::SISTransactionLogAction,      "sqe_msgs::rpc::SISTransactionLogAction");
+TCN_SQE_REGISTER_WIRE_TYPE(::sqe_msgs::rpc::SISTransactionLogRequest,     "sqe_msgs::rpc::SISTransactionLogRequest");
+TCN_SQE_REGISTER_WIRE_TYPE(::sqe_msgs::rpc::SISTransactionLogReply,       "sqe_msgs::rpc::SISTransactionLogReply");
 // Relation sample (B93, 0.10.6): {client}/sis/relation/sample (client_id.h, session.h).
-TCN_SQE_REGISTER_WIRE_TYPE(::tcnart_msgs::rpc::SISRelationSampleInstant,     "tcnart_msgs::rpc::SISRelationSampleInstant");
-TCN_SQE_REGISTER_WIRE_TYPE(::tcnart_msgs::rpc::SISRelationSampleRequest,     "tcnart_msgs::rpc::SISRelationSampleRequest");
-TCN_SQE_REGISTER_WIRE_TYPE(::tcnart_msgs::rpc::SISRelationSampleStatus,      "tcnart_msgs::rpc::SISRelationSampleStatus");
-TCN_SQE_REGISTER_WIRE_TYPE(::tcnart_msgs::rpc::SISSampleInput,               "tcnart_msgs::rpc::SISSampleInput");
-TCN_SQE_REGISTER_WIRE_TYPE(::tcnart_msgs::rpc::SISRelationSampleReply,       "tcnart_msgs::rpc::SISRelationSampleReply");
+TCN_SQE_REGISTER_WIRE_TYPE(::sqe_msgs::rpc::SISRelationSampleInstant,     "sqe_msgs::rpc::SISRelationSampleInstant");
+TCN_SQE_REGISTER_WIRE_TYPE(::sqe_msgs::rpc::SISRelationSampleRequest,     "sqe_msgs::rpc::SISRelationSampleRequest");
+TCN_SQE_REGISTER_WIRE_TYPE(::sqe_msgs::rpc::SISRelationSampleStatus,      "sqe_msgs::rpc::SISRelationSampleStatus");
+TCN_SQE_REGISTER_WIRE_TYPE(::sqe_msgs::rpc::SISSampleInput,               "sqe_msgs::rpc::SISSampleInput");
+TCN_SQE_REGISTER_WIRE_TYPE(::sqe_msgs::rpc::SISRelationSampleReply,       "sqe_msgs::rpc::SISRelationSampleReply");
 
 namespace detail {
 

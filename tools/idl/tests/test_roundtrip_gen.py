@@ -16,11 +16,10 @@ class RoundtripGenTest(unittest.TestCase):
 
     def test_emits_every_struct_and_union(self):
         src = generate(self.types, "tcnart_msgs")
-        self.assertIn("TCN_ROUNDTRIP(tcnart_msgs::rpc::SRStreamTrigger)", src)
+        self.assertIn("TCN_ROUNDTRIP(tcnart_msgs::msg::Pose6DMessage)", src)
         self.assertIn("TCN_ROUNDTRIP(tcnart_msgs::msg::TargetTrackingMessage)", src)
         want = sum(1 for t in self.types["types"]
-                   if t["package"] == "tcnart_msgs" and t["kind"] in ("struct", "union")
-                   and t["file"] != "tcnart_msgs/rpc/SpatialRelations.idl")
+                   if t["package"] == "tcnart_msgs" and t["kind"] in ("struct", "union"))
         self.assertEqual(src.count("TCN_ROUNDTRIP(") + src.count("TCN_ROUNDTRIP_BYTES("), want)
         self.assertIn("void roundtrip_tcnart_msgs()", src)
 
@@ -32,20 +31,20 @@ class RoundtripGenTest(unittest.TestCase):
             self.assertIn(f'#include "{h}CdrAux.hpp"', src)
 
     def test_forward_referenced_members_compare_bytes_only(self):
-        src = generate(self.types, "tcnart_msgs")
+        src = generate(self.types, "pcpd_msgs")
         # Parameter.value is a ParameterValue declared later in Requests.idl: fastddsgen 3.0.0 stores it as a pointer
         # and its operator== compares the pointers.
-        self.assertIn("TCN_ROUNDTRIP_BYTES(tcnart_msgs::rpc::Parameter)", src)
-        self.assertNotIn("TCN_ROUNDTRIP(tcnart_msgs::rpc::Parameter)", src)
-        self.assertIn("TCN_ROUNDTRIP_BYTES(tcnart_msgs::rpc::ParameterList)", src)
-        self.assertIn("TCN_ROUNDTRIP(tcnart_msgs::msg::TargetTrackingMessage)", src)
-        self.assertIn("TCN_ROUNDTRIP_BYTES(pcpd_msgs::rpc::ServiceInfoReply)", generate(self.types, "pcpd_msgs"))
+        self.assertIn("TCN_ROUNDTRIP_BYTES(pcpd_msgs::rpc::Parameter)", src)
+        self.assertNotIn("TCN_ROUNDTRIP(pcpd_msgs::rpc::Parameter)", src)
+        self.assertIn("TCN_ROUNDTRIP_BYTES(pcpd_msgs::rpc::ParameterList)", src)
+        self.assertIn("TCN_ROUNDTRIP_BYTES(pcpd_msgs::rpc::ServiceInfoReply)", src)
+        self.assertIn("TCN_ROUNDTRIP(tcnart_msgs::msg::TargetTrackingMessage)", generate(self.types, "tcnart_msgs"))
 
-    def test_skips_known_broken_file(self):
+    def test_enum_only_file_has_no_cdraux(self):
+        # fastddsgen writes no CdrAux.hpp for a file without structs or unions (tcnart_msgs/msg/MediaTypes.idl).
         src = generate(self.types, "tcnart_msgs")
-        self.assertNotIn("SRGraphPublishRequest", src)
-        self.assertNotIn('#include "tcnart_msgs/rpc/SpatialRelations.h"', src)
-        self.assertIn("skipped: tcnart_msgs/rpc/SpatialRelations.idl", src)
+        self.assertIn('#include "tcnart_msgs/msg/MediaTypes.h"', src)
+        self.assertNotIn('#include "tcnart_msgs/msg/MediaTypesCdrAux.hpp"', src)
 
     def test_no_enums_or_typedefs(self):
         src = generate(self.types, "unique_identifier_msgs")

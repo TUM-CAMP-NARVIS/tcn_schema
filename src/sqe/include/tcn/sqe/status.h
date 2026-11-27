@@ -17,7 +17,7 @@ namespace sqe {
 
 /// The answer to a relation-stream start or stop.
 ///
-/// The ordinals are the wire's, taken from `tcnart_msgs/rpc/SIS.idl` and
+/// The ordinals are the wire's, taken from `sqe_msgs/rpc/*.idl` and
 /// `sqe-core/src/messages.rs`. They are spelled out rather than left implicit
 /// so that a renumbering upstream is a visible diff here rather than an
 /// unwalkable edge nobody notices.

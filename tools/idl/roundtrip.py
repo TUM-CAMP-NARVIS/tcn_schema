@@ -8,11 +8,7 @@ from pathlib import Path, PurePosixPath
 
 
 # Files whose generated code cannot be compiled, with the reason. Each entry is removed by the change that fixes it.
-SKIPPED_FILES = {
-    "tcnart_msgs/rpc/SpatialRelations.idl":
-        "its generated header collides with tcnart_msgs/msg/SpatialRelations.h (same basename), so these types "
-        "never existed in C++; the file is deleted in 0.11 plan 3 (decisions XA1)",
-}
+SKIPPED_FILES: dict = {}
 
 
 def generate(types: dict, package: str) -> str:
@@ -28,11 +24,13 @@ def generate(types: dict, package: str) -> str:
         if f in SKIPPED_FILES:
             lines.append(f"// skipped: {f}: {SKIPPED_FILES[f]}")
     files = [f for f in files if f not in SKIPPED_FILES]
+    with_aggregates = {t["file"] for t in types["types"] if t["kind"] in ("struct", "union")}
     for f in files:
         p = PurePosixPath(f)
         stem = str(p.with_suffix(""))
         lines.append(f'#include "{stem}.h"')
-        lines.append(f'#include "{stem}CdrAux.hpp"')
+        if f in with_aggregates:  # fastddsgen writes no CdrAux.hpp for a file of enums and consts only
+            lines.append(f'#include "{stem}CdrAux.hpp"')
     lines += ["", f"void roundtrip_{package}()", "{"]
     for t in entries:
         # operator== of these types compares pointers (types.json "eq_by_pointer"): check the bytes only.
