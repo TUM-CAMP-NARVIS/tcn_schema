@@ -11,7 +11,7 @@ note.
 
 | Plan | Content | Wire change | Status |
 |---|---|---|---|
-| 1 | Layout and tooling: docs, out-of-tree generation, package table, `types.json`/`enums.json`, lint, round-trip tests | **none** | in progress |
+| 1 | Layout and tooling: docs, out-of-tree generation, package table, `types.json`/`enums.json`, lint, round-trip tests | **none** | in review (branch `0.11-plan1-layout`) |
 | 2 | ROS 2 tree regenerated from Jazzy, `@final`, service/action types, `ros2_types.json` | ROS types only (`Range.variance`) | planned |
 | 3 | Moves and deletions: `sqe_msgs`, `tcn_types`, parameter RPC → `pcpd_msgs`, `custom/` → `tcn/`, deleted types | type names, removals | planned |
 | 4 | XCDR2 (E1–E9), field removals (F1–F5), #35 SQE changes | **yes** | planned |
