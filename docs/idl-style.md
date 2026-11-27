@@ -26,6 +26,12 @@ Two families of packages follow different rules:
 - In 0.10, `tcnart_msgs/msg/SpatialRelations.idl` and `tcnart_msgs/rpc/SpatialRelations.idl` produced two
   `SpatialRelations.h`. The installed `rpc` header was a copy of the `msg` one, so the `rpc` types never shipped.
 
+**`include-collision`**: No file includes, directly or transitively, a file with the same basename as a file of its
+own `<pkg>/<kind>` directory. fastddsgen 3.0.0 writes the code of every included IDL file into the including run's
+output directory, so the included file's header overwrites the other one. `tools/ros2` avoids this for ROS services
+and actions by naming such a file `<Name>Service.idl` / `<Name>Action.idl` (for example
+`control_msgs/action/GripperCommandAction.idl`). The type names are unchanged.
+
 **`file-pascalcase`** (tcn): File names are PascalCase (`PoseTracking.idl`, not `pose_tracking.idl`).
 
 **`include-guard`**: Every file has an include guard named after its path: `<PKG>_<KIND>_<FILE>_IDL`, upper case.
@@ -65,5 +71,7 @@ SENSOR_TYPE_NONE, SENSOR_TYPE_VIDEO_COLOR, … }`. This keeps the generated C++ 
 - **Payload last.** In messages that zero-copy encoders write (`VideoStreamMessage`, point clouds, meshes), the
   payload is the last member, so its offset follows from the members before it.
 - **Every top-level message documents its key or topic and its encoding** in a comment above it.
-- **ROS 2 types are never edited by hand.** They are regenerated from upstream (from 0.11, by `tools/ros2/refresh.py`).
-  What ROS does not cover belongs in a tcn type, which may embed ROS types.
+- **ROS 2 types are never edited by hand.** `src/dds/ros2/` is generated from ROS 2 Jazzy by
+  `python3 -I tools/ros2_cli.py refresh` (see [src/dds/ros2/UPSTREAM.md](../src/dds/ros2/UPSTREAM.md)). The generated
+  files carry their include guards and `@final`, and fields named like IDL keywords are written as escaped
+  identifiers (`_map` is the field `map`). What ROS does not cover belongs in a tcn type, which may embed ROS types.

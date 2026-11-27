@@ -19,6 +19,8 @@ else()
 endif()
 
 include(GNUInstallDirs)
+# The IDL tools (tools/) and the generator post-processing need Python 3 (standard library only).
+find_package(Python3 COMPONENTS Interpreter REQUIRED)
 include(${CMAKE_CURRENT_SOURCE_DIR}/cmake/FastDDSGeneratorMacros.cmake)
 include(${CMAKE_CURRENT_SOURCE_DIR}/cmake/TcnPackage.cmake)
 
@@ -36,10 +38,18 @@ if(TCN_SCHEMA_BUILD_MSG_TESTS OR TCN_SCHEMA_BUILD_SQE_TESTS)
   enable_testing()
 endif()
 
+# ROS 2 tiers to build (decisions §5 R-D2); the others are generated and committed, and built on request.
+set(TCN_SCHEMA_ROS2_TIERS "base;core" CACHE STRING
+    "ROS 2 interface tiers to build: base;core (default), manipulation, navigation, perception")
+tcn_validate_ros2_tiers()
+message(STATUS "tcn_schema: ROS 2 tiers: ${TCN_SCHEMA_ROS2_TIERS}")
+
 # Every IDL package, in the build order of the package table (cmake/tcn_packages.json).
 tcn_add_packages_from_table()
 
-install(FILES "${CMAKE_CURRENT_SOURCE_DIR}/cmake/tcn_packages.json" DESTINATION share/tcn_schema RENAME packages.json)
+install(FILES "${PROJECT_BINARY_DIR}/share/packages.json" DESTINATION share/tcn_schema)
+# ROS names, DDS names and RIHS01 hashes of every ROS 2 type (decisions §5 R3), for every tier.
+install(FILES "${CMAKE_CURRENT_SOURCE_DIR}/src/dds/ros2/ros2_types.json" DESTINATION share/tcn_schema)
 
 # The SQE contract core. Header-only and dependency-free, so it adds nothing to
 # a link line; it is added last because its INTERFACE target names
@@ -50,7 +60,6 @@ add_subdirectory(src/sqe)
 
 
 # Machine-readable tables of every IDL declaration (decisions O7): share/tcn_schema/{types,enums}.json.
-find_package(Python3 COMPONENTS Interpreter REQUIRED)
 file(GLOB_RECURSE TCN_IDL_FILES CONFIGURE_DEPENDS "${CMAKE_CURRENT_SOURCE_DIR}/src/dds/*.idl")
 file(GLOB_RECURSE TCN_IDL_TOOLS CONFIGURE_DEPENDS "${CMAKE_CURRENT_SOURCE_DIR}/tools/idl/*.py")
 set(TCN_TABLES_DIR "${PROJECT_BINARY_DIR}/share")

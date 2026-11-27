@@ -12,7 +12,8 @@ string(JSON n LENGTH "${TCN_PACKAGE_TABLE_JSON}" packages)
 math(EXPR last "${n} - 1")
 foreach(i RANGE ${last})
   string(JSON family GET "${TCN_PACKAGE_TABLE_JSON}" packages ${i} family)
-  if(family STREQUAL "ros2" OR family STREQUAL "tcn")
+  tcn_package_built(${i} built)  # ROS 2 tiers that are not selected have no library to test
+  if(built AND (family STREQUAL "ros2" OR family STREQUAL "tcn"))
     string(JSON pkg GET "${TCN_PACKAGE_TABLE_JSON}" packages ${i} name)
     set(out "${CMAKE_CURRENT_BINARY_DIR}/roundtrip_${pkg}.cpp")
     add_custom_command(

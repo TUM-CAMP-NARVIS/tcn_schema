@@ -1,10 +1,10 @@
 # tcn_add_idl_package(): one IDL package -> one library `tcn_schema_<NAME>`.
 #
 #   tcn_add_idl_package(NAME <pkg>
-#                       [MSG <idl>...] [RPC <idl>...] [ACTION <idl>...]
+#                       [MSG <idl>...] [SRV <idl>...] [RPC <idl>...] [ACTION <idl>...]
 #                       [EXTRA_INSTALL <file>...])
 #
-# * Code is generated into ${PROJECT_BINARY_DIR}/generated/<pkg>/<msg|rpc|action>/ (never into the source tree).
+# * Code is generated into ${PROJECT_BINARY_DIR}/generated/<pkg>/<msg|srv|rpc|action>/ (never into the source tree).
 # * Consumers of the build tree include ${PROJECT_BINARY_DIR}/generated; consumers of the installed package include
 #   <prefix>/include. Header paths are the same in both: `<pkg>/<kind>/<File>.h`.
 # * Headers install to include/<pkg>/<kind>/, IDL files to share/tcn_schema/dds/<pkg>/<kind>/.
@@ -80,21 +80,84 @@ function(tcn_package_idl_closure pkg out)
   set(${out} ${files} PARENT_SCOPE)
 endfunction()
 
-# tcn_add_packages_from_table(): add_subdirectory() for every IDL package (family ros2 or tcn), in table order.
-function(tcn_add_packages_from_table)
+# tcn_validate_ros2_tiers(): TCN_SCHEMA_ROS2_TIERS names only known tiers, includes `base` (the tcn packages need
+# it), and every selected ROS package's dependencies are selected too. Whitespace around names is ignored.
+function(tcn_validate_ros2_tiers)
+  set(known base core manipulation navigation perception)
+  set(tiers)
+  foreach(t ${TCN_SCHEMA_ROS2_TIERS})
+    string(STRIP "${t}" t)
+    if(NOT t IN_LIST known)
+      message(FATAL_ERROR "TCN_SCHEMA_ROS2_TIERS: unknown tier '${t}' (known: ${known})")
+    endif()
+    list(APPEND tiers ${t})
+  endforeach()
+  if(NOT "base" IN_LIST tiers)
+    message(FATAL_ERROR "TCN_SCHEMA_ROS2_TIERS must include 'base': the tcn packages need its types")
+  endif()
+  set(TCN_SCHEMA_ROS2_TIERS ${tiers} PARENT_SCOPE)
+  # name -> tier of every ROS package
   string(JSON n LENGTH "${TCN_PACKAGE_TABLE_JSON}" packages)
   math(EXPR last "${n} - 1")
   foreach(i RANGE ${last})
+    string(JSON name GET "${TCN_PACKAGE_TABLE_JSON}" packages ${i} name)
+    string(JSON tier GET "${TCN_PACKAGE_TABLE_JSON}" packages ${i} tier)
+    set(_tier_${name} ${tier})
+  endforeach()
+  foreach(i RANGE ${last})
     string(JSON family GET "${TCN_PACKAGE_TABLE_JSON}" packages ${i} family)
-    if(family STREQUAL "ros2" OR family STREQUAL "tcn")
-      string(JSON dir GET "${TCN_PACKAGE_TABLE_JSON}" packages ${i} dir)
-      add_subdirectory("${PROJECT_SOURCE_DIR}/${dir}")
+    string(JSON tier GET "${TCN_PACKAGE_TABLE_JSON}" packages ${i} tier)
+    if(family STREQUAL "ros2" AND tier IN_LIST tiers)
+      string(JSON name GET "${TCN_PACKAGE_TABLE_JSON}" packages ${i} name)
+      tcn_package_deps(${name} deps)
+      foreach(d ${deps})
+        if(NOT _tier_${d} IN_LIST tiers AND NOT _tier_${d} STREQUAL "tcn")
+          message(FATAL_ERROR "TCN_SCHEMA_ROS2_TIERS: tier '${tier}' needs tier '${_tier_${d}}' "
+                              "(${name} uses ${d}); add it to the selection")
+        endif()
+      endforeach()
     endif()
   endforeach()
 endfunction()
 
+# tcn_package_built(<index> <out-var>): whether the table entry is built in this configuration. tcn packages always
+# are; ROS 2 packages when their tier is in TCN_SCHEMA_ROS2_TIERS; header entries (the SQE library) always.
+function(tcn_package_built i out)
+  string(JSON family GET "${TCN_PACKAGE_TABLE_JSON}" packages ${i} family)
+  set(built TRUE)
+  if(family STREQUAL "ros2")
+    string(JSON tier GET "${TCN_PACKAGE_TABLE_JSON}" packages ${i} tier)
+    if(NOT tier IN_LIST TCN_SCHEMA_ROS2_TIERS)
+      set(built FALSE)
+    endif()
+  endif()
+  set(${out} ${built} PARENT_SCOPE)
+endfunction()
+
+# tcn_add_packages_from_table(): add_subdirectory() for every IDL package that is built, in table order, and write
+# ${PROJECT_BINARY_DIR}/share/packages.json: the table with "built": true/false per entry (installed for conan).
+function(tcn_add_packages_from_table)
+  set(table "${TCN_PACKAGE_TABLE_JSON}")
+  string(JSON n LENGTH "${table}" packages)
+  math(EXPR last "${n} - 1")
+  foreach(i RANGE ${last})
+    string(JSON family GET "${table}" packages ${i} family)
+    tcn_package_built(${i} built)
+    if(built)
+      string(JSON table SET "${table}" packages ${i} built true)
+      if(family STREQUAL "ros2" OR family STREQUAL "tcn")
+        string(JSON dir GET "${table}" packages ${i} dir)
+        add_subdirectory("${PROJECT_SOURCE_DIR}/${dir}")
+      endif()
+    else()
+      string(JSON table SET "${table}" packages ${i} built false)
+    endif()
+  endforeach()
+  file(WRITE "${PROJECT_BINARY_DIR}/share/packages.json" "${table}\n")
+endfunction()
+
 function(tcn_add_idl_package)
-  cmake_parse_arguments(ARG "" "NAME" "MSG;RPC;ACTION;DEPS;EXTRA_INSTALL" ${ARGN})
+  cmake_parse_arguments(ARG "" "NAME" "MSG;SRV;RPC;ACTION;DEPS;EXTRA_INSTALL" ${ARGN})
   if(NOT ARG_NAME)
     message(FATAL_ERROR "tcn_add_idl_package: NAME is required")
   endif()
@@ -115,7 +178,7 @@ function(tcn_add_idl_package)
   set(all_src)
   set(all_hdr)
   set(all_export)
-  foreach(kind msg rpc action)
+  foreach(kind msg srv rpc action)
     string(TOUPPER "${kind}" KIND)
     if(ARG_${KIND})
       FASTDDS_GENERATE_CPP("${ARG_NAME}" "${kind}" src_${kind} hdr_${kind} export_${kind} "${idl_inputs}" ${ARG_${KIND}})

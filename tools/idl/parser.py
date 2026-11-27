@@ -352,6 +352,8 @@ def _build(raw_decls, known: Set[str]):
 
 def _member(m, res) -> Member:
     name, ty, dims, ann = m
+    if name.startswith("_"):
+        name = name[1:]  # IDL 4.2 7.2.3: an escaped identifier is the name without the leading underscore
     ann = dict(ann)
     optional = "optional" in ann
     return Member(name, _render(ty, res), optional, dims, ann)

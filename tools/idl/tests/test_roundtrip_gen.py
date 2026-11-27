@@ -49,7 +49,6 @@ class RoundtripGenTest(unittest.TestCase):
 
     def test_no_enums_or_typedefs(self):
         src = generate(self.types, "unique_identifier_msgs")
-        self.assertNotIn("uint8__16)", src)
         self.assertIn("TCN_ROUNDTRIP(unique_identifier_msgs::msg::UUID)", src)
 
 

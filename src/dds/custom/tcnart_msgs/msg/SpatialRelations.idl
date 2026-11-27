@@ -1,7 +1,7 @@
 #ifndef TCNART_MSG_SRG
 #define TCNART_MSG_SRG
 
-#include "builtin_interfaces/msg/Time_.idl"
+#include "builtin_interfaces/msg/Time.idl"
 #include "tcnart_msgs/msg/Types.idl"
 
 module tcnart_msgs {

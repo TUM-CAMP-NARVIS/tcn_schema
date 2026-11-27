@@ -1,16 +1,18 @@
 {
- "_comment": "The package table: build order, family and direct dependencies of every component. Read by CMakeLists.txt (cmake/TcnPackage.cmake) and conanfile.py; tools/idl/tests/test_deps.py checks it against the IDL #includes.",
+ "_comment": "The package table: build order, family, tier and direct dependencies of every component. Read by CMakeLists.txt (cmake/TcnPackage.cmake) and conanfile.py; tools/idl/tests/test_deps.py checks it against the IDL #includes and the ROS 2 tiers (tools/ros2/tiers.py). ROS packages are built when their tier is in TCN_SCHEMA_ROS2_TIERS.",
  "packages": [
   {
    "name": "builtin_interfaces",
    "dir": "src/dds/ros2/builtin_interfaces",
    "family": "ros2",
+   "tier": "base",
    "deps": []
   },
   {
    "name": "std_msgs",
    "dir": "src/dds/ros2/std_msgs",
    "family": "ros2",
+   "tier": "base",
    "deps": [
     "builtin_interfaces"
    ]
@@ -19,14 +21,49 @@
    "name": "geometry_msgs",
    "dir": "src/dds/ros2/geometry_msgs",
    "family": "ros2",
+   "tier": "base",
    "deps": [
     "std_msgs"
+   ]
+  },
+  {
+   "name": "service_msgs",
+   "dir": "src/dds/ros2/service_msgs",
+   "family": "ros2",
+   "tier": "base",
+   "deps": [
+    "builtin_interfaces"
    ]
   },
   {
    "name": "sensor_msgs",
    "dir": "src/dds/ros2/sensor_msgs",
    "family": "ros2",
+   "tier": "base",
+   "deps": [
+    "builtin_interfaces",
+    "geometry_msgs",
+    "service_msgs",
+    "std_msgs"
+   ]
+  },
+  {
+   "name": "nav_msgs",
+   "dir": "src/dds/ros2/nav_msgs",
+   "family": "ros2",
+   "tier": "core",
+   "deps": [
+    "builtin_interfaces",
+    "geometry_msgs",
+    "service_msgs",
+    "std_msgs"
+   ]
+  },
+  {
+   "name": "trajectory_msgs",
+   "dir": "src/dds/ros2/trajectory_msgs",
+   "family": "ros2",
+   "tier": "core",
    "deps": [
     "builtin_interfaces",
     "geometry_msgs",
@@ -34,48 +71,257 @@
    ]
   },
   {
+   "name": "diagnostic_msgs",
+   "dir": "src/dds/ros2/diagnostic_msgs",
+   "family": "ros2",
+   "tier": "core",
+   "deps": [
+    "service_msgs",
+    "std_msgs"
+   ]
+  },
+  {
+   "name": "visualization_msgs",
+   "dir": "src/dds/ros2/visualization_msgs",
+   "family": "ros2",
+   "tier": "core",
+   "deps": [
+    "builtin_interfaces",
+    "geometry_msgs",
+    "sensor_msgs",
+    "service_msgs",
+    "std_msgs"
+   ]
+  },
+  {
    "name": "shape_msgs",
    "dir": "src/dds/ros2/shape_msgs",
    "family": "ros2",
+   "tier": "core",
    "deps": [
     "geometry_msgs"
    ]
   },
   {
-   "name": "tf2_msgs",
-   "dir": "src/dds/ros2/tf2_msgs",
+   "name": "std_srvs",
+   "dir": "src/dds/ros2/std_srvs",
    "family": "ros2",
+   "tier": "core",
    "deps": [
-    "builtin_interfaces",
-    "geometry_msgs"
+    "service_msgs"
    ]
   },
   {
-   "name": "rosgraph_msgs",
-   "dir": "src/dds/ros2/rosgraph_msgs",
+   "name": "stereo_msgs",
+   "dir": "src/dds/ros2/stereo_msgs",
    "family": "ros2",
+   "tier": "core",
    "deps": [
-    "builtin_interfaces"
-   ]
-  },
-  {
-   "name": "statistics_msgs",
-   "dir": "src/dds/ros2/statistics_msgs",
-   "family": "ros2",
-   "deps": [
-    "builtin_interfaces"
+    "sensor_msgs",
+    "std_msgs"
    ]
   },
   {
    "name": "unique_identifier_msgs",
    "dir": "src/dds/ros2/unique_identifier_msgs",
    "family": "ros2",
+   "tier": "core",
    "deps": []
+  },
+  {
+   "name": "action_msgs",
+   "dir": "src/dds/ros2/action_msgs",
+   "family": "ros2",
+   "tier": "core",
+   "deps": [
+    "builtin_interfaces",
+    "service_msgs",
+    "unique_identifier_msgs"
+   ]
+  },
+  {
+   "name": "rcl_interfaces",
+   "dir": "src/dds/ros2/rcl_interfaces",
+   "family": "ros2",
+   "tier": "core",
+   "deps": [
+    "builtin_interfaces",
+    "service_msgs"
+   ]
+  },
+  {
+   "name": "lifecycle_msgs",
+   "dir": "src/dds/ros2/lifecycle_msgs",
+   "family": "ros2",
+   "tier": "core",
+   "deps": [
+    "service_msgs"
+   ]
+  },
+  {
+   "name": "rosgraph_msgs",
+   "dir": "src/dds/ros2/rosgraph_msgs",
+   "family": "ros2",
+   "tier": "core",
+   "deps": [
+    "builtin_interfaces",
+    "rcl_interfaces"
+   ]
+  },
+  {
+   "name": "statistics_msgs",
+   "dir": "src/dds/ros2/statistics_msgs",
+   "family": "ros2",
+   "tier": "core",
+   "deps": [
+    "builtin_interfaces"
+   ]
+  },
+  {
+   "name": "tf2_msgs",
+   "dir": "src/dds/ros2/tf2_msgs",
+   "family": "ros2",
+   "tier": "core",
+   "deps": [
+    "builtin_interfaces",
+    "geometry_msgs",
+    "service_msgs",
+    "unique_identifier_msgs"
+   ]
+  },
+  {
+   "name": "type_description_interfaces",
+   "dir": "src/dds/ros2/type_description_interfaces",
+   "family": "ros2",
+   "tier": "core",
+   "deps": [
+    "service_msgs"
+   ]
+  },
+  {
+   "name": "control_msgs",
+   "dir": "src/dds/ros2/control_msgs",
+   "family": "ros2",
+   "tier": "manipulation",
+   "deps": [
+    "builtin_interfaces",
+    "geometry_msgs",
+    "sensor_msgs",
+    "service_msgs",
+    "std_msgs",
+    "trajectory_msgs",
+    "unique_identifier_msgs"
+   ]
+  },
+  {
+   "name": "controller_manager_msgs",
+   "dir": "src/dds/ros2/controller_manager_msgs",
+   "family": "ros2",
+   "tier": "manipulation",
+   "deps": [
+    "builtin_interfaces",
+    "lifecycle_msgs",
+    "service_msgs",
+    "std_msgs"
+   ]
+  },
+  {
+   "name": "object_recognition_msgs",
+   "dir": "src/dds/ros2/object_recognition_msgs",
+   "family": "ros2",
+   "tier": "manipulation",
+   "deps": [
+    "builtin_interfaces",
+    "geometry_msgs",
+    "sensor_msgs",
+    "service_msgs",
+    "shape_msgs",
+    "std_msgs",
+    "unique_identifier_msgs"
+   ]
+  },
+  {
+   "name": "octomap_msgs",
+   "dir": "src/dds/ros2/octomap_msgs",
+   "family": "ros2",
+   "tier": "manipulation",
+   "deps": [
+    "geometry_msgs",
+    "service_msgs",
+    "std_msgs"
+   ]
+  },
+  {
+   "name": "moveit_msgs",
+   "dir": "src/dds/ros2/moveit_msgs",
+   "family": "ros2",
+   "tier": "manipulation",
+   "deps": [
+    "builtin_interfaces",
+    "geometry_msgs",
+    "object_recognition_msgs",
+    "octomap_msgs",
+    "sensor_msgs",
+    "service_msgs",
+    "shape_msgs",
+    "std_msgs",
+    "trajectory_msgs",
+    "unique_identifier_msgs"
+   ]
+  },
+  {
+   "name": "geographic_msgs",
+   "dir": "src/dds/ros2/geographic_msgs",
+   "family": "ros2",
+   "tier": "navigation",
+   "deps": [
+    "geometry_msgs",
+    "service_msgs",
+    "std_msgs",
+    "unique_identifier_msgs"
+   ]
+  },
+  {
+   "name": "nav2_msgs",
+   "dir": "src/dds/ros2/nav2_msgs",
+   "family": "ros2",
+   "tier": "navigation",
+   "deps": [
+    "builtin_interfaces",
+    "geographic_msgs",
+    "geometry_msgs",
+    "nav_msgs",
+    "service_msgs",
+    "std_msgs",
+    "unique_identifier_msgs"
+   ]
+  },
+  {
+   "name": "vision_msgs",
+   "dir": "src/dds/ros2/vision_msgs",
+   "family": "ros2",
+   "tier": "perception",
+   "deps": [
+    "geometry_msgs",
+    "std_msgs"
+   ]
+  },
+  {
+   "name": "pcl_msgs",
+   "dir": "src/dds/ros2/pcl_msgs",
+   "family": "ros2",
+   "tier": "perception",
+   "deps": [
+    "sensor_msgs",
+    "service_msgs",
+    "std_msgs"
+   ]
   },
   {
    "name": "tcnart_msgs",
    "dir": "src/dds/custom/tcnart_msgs",
    "family": "tcn",
+   "tier": "tcn",
    "deps": [
     "builtin_interfaces",
     "std_msgs"
@@ -85,6 +331,7 @@
    "name": "pcpd_msgs",
    "dir": "src/dds/custom/pcpd_msgs",
    "family": "tcn",
+   "tier": "tcn",
    "deps": [
     "std_msgs",
     "tcnart_msgs"
@@ -94,6 +341,7 @@
    "name": "device_hl2_msgs",
    "dir": "src/dds/custom/device_hl2_msgs",
    "family": "tcn",
+   "tier": "tcn",
    "deps": [
     "std_msgs",
     "tcnart_msgs"
@@ -103,6 +351,7 @@
    "name": "device_orbbec_msgs",
    "dir": "src/dds/custom/device_orbbec_msgs",
    "family": "tcn",
+   "tier": "tcn",
    "deps": [
     "std_msgs",
     "tcnart_msgs"
@@ -112,12 +361,14 @@
    "name": "conversation_msgs",
    "dir": "src/dds/custom/conversation_msgs",
    "family": "tcn",
+   "tier": "tcn",
    "deps": []
   },
   {
    "name": "sqe_contract",
    "dir": "src/sqe",
    "family": "header",
+   "tier": "header",
    "deps": [
     "tcnart_msgs"
    ]
@@ -126,6 +377,7 @@
    "name": "sqe_session",
    "dir": "src/sqe",
    "family": "header",
+   "tier": "header",
    "deps": [
     "sqe_contract"
    ]

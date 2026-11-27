@@ -11,8 +11,8 @@ note.
 
 | Plan | Content | Wire change | Status |
 |---|---|---|---|
-| 1 | Layout and tooling: docs, out-of-tree generation, package table, `types.json`/`enums.json`, lint, round-trip tests | **none** | in review (branch `0.11-plan1-layout`) |
-| 2 | ROS 2 tree regenerated from Jazzy, `@final`, service/action types, `ros2_types.json` | ROS types only (`Range.variance`) | planned |
+| 1 | Layout and tooling: docs, out-of-tree generation, package table, `types.json`/`enums.json`, lint, round-trip tests | **none** | merged (#41) |
+| 2 | ROS 2 tree regenerated from Jazzy, `@final`, service/action types, `ros2_types.json`, tiers | ROS types only (`Range.variance`) | in review (branch `0.11-plan2-ros2`) |
 | 3 | Moves and deletions: `sqe_msgs`, `tcn_types`, parameter RPC → `pcpd_msgs`, `custom/` → `tcn/`, deleted types | type names, removals | planned |
 | 4 | XCDR2 (E1–E9), field removals (F1–F5), #35 SQE changes | **yes** | planned |
 | 5 | #36, #37, #38 changes, HumanPose and joint sets; `0.11.0-rc1` | **yes** | planned |
@@ -117,6 +117,59 @@ to do. Items marked *(wire)* need the lockstep cut-over; all others can be done 
     file's own package was regenerated, and incremental builds could compile stale code.
   - `conan editable add` works: `package_info()` falls back to the source table.
 
+### Plan 2: ROS 2 interfaces from Jazzy (ROS types only; no tcn type changes on the wire)
+
+- **The ROS 2 tree is generated from ROS 2 Jazzy** by `tools/ros2` and is never edited by hand. Details, tiers and
+  how to refresh: [src/dds/ros2/UPSTREAM.md](../../src/dds/ros2/UPSTREAM.md).
+  - The packages are pinned to their Jazzy release tags (`src/dds/ros2/UPSTREAM.lock`).
+  - Every ROS struct is `@final`, so it stays XCDR1 (`00 01`), byte-compatible with ROS 2.
+- **Wire changes of existing ROS types:**
+  - `sensor_msgs/msg/Range` gains `float variance` at the end;
+  - `sensor_msgs/msg/NavSatStatus` gains the constants `STATUS_UNKNOWN = -2` and `SERVICE_UNKNOWN = 0`, and
+    `status` now defaults to `-2` (unknown) instead of `0` (`STATUS_FIX`).
+
+  Everything else that existed keeps its layout, checked type by type. tcn types are unchanged on the wire: the
+  golden files did not change.
+- **Renamed files and headers** (upstream names, R5). Update `#include`s:
+  - `builtin_interfaces/msg/Time_.h` → `builtin_interfaces/msg/Time.h`;
+  - `Duration_.h` → `Duration.h`;
+  - `std_msgs/msg/String_.h` → `std_msgs/msg/String.h`.
+
+  The same applies to the IDL paths under `share/tcn_schema/dds/`.
+- **Fixed-size arrays** are written as member arrays (`double covariance[36]`) instead of typedefs. The C++ type is
+  still `std::array<double, 36>` and the wire is identical, but the typedef names (`geometry_msgs::msg::double__36`,
+  `sensor_msgs::msg::double__9`, `unique_identifier_msgs::msg::uint8__16`, …) are gone. Use `std::array` directly.
+- **New: 29 ROS packages in tiers.**
+  - `base` and `core` are built by default.
+  - `manipulation` (control_msgs, controller_manager_msgs, moveit_msgs, object_recognition_msgs, octomap_msgs),
+    `navigation` (nav2_msgs, geographic_msgs) and `perception` (vision_msgs, pcl_msgs) are built with
+    `-DTCN_SCHEMA_ROS2_TIERS=…` or conan `-o tcn_schema/*:ros2_tiers="base;core;manipulation"`.
+  - `share/tcn_schema/packages.json` records which components were built.
+  - `service_msgs` is in `base` (decisions §5 had it in `core`), because `sensor_msgs` has a service.
+- **New: complete service and action types**, as rosidl defines them: `Foo_Request/_Response/_Event`; for actions
+  `_Goal`, `_Result`, `_Feedback`, `_SendGoal_*`, `_GetResult_*`, `_FeedbackMessage`.
+  - Two `control_msgs` actions are in `GripperCommandAction.idl` and `JointTrajectoryAction.idl`, so their headers
+    are `control_msgs/action/GripperCommandAction.h` and `JointTrajectoryAction.h`. Otherwise fastddsgen would
+    overwrite them with the same-named message headers. The type names are unchanged.
+  - Fields named like IDL keywords (`map`, `object`, `component`) are escaped in the IDL (`_map`). The C++ accessor
+    is still `map()`.
+- **New: `share/tcn_schema/ros2_types.json`.** For every ROS type it gives the ROS name, the DDS name
+  (`std_msgs::msg::dds_::String_`), the C++ name, and the RIHS01 type hash for Jazzy, Kilted and Lyrical. This is
+  what a future rmw_zenoh adapter needs. The format is in `src/dds/ros2/UPSTREAM.md`.
+- **Generated size constants:** the `…_max_cdr_typesize` values of tcn types that embed `std_msgs/Header` are 8 bytes
+  smaller, because `Header` and `Time` are `@final`.
+  - fastddsgen 3.0.0 computes sizes above 2³² for a few large ROS types (visualization_msgs `InteractiveMarker*`,
+    some moveit_msgs types). Those constants are set to 4294967288, the largest value the generated Fast DDS type
+    support can add its header to without overflowing.
+  - With `with_dds`, keep the default payload pool policy (`PREALLOCATED_WITH_REALLOC`) for these types.
+- **`types.json`: escaped identifiers are listed by their real name.** `conversation_msgs::msg::HealthStatus`'s member
+  appears as `component`, not `_component`, as IDL 4.2 defines (the C++ accessor was already `component()`). No
+  consumer reads it today.
+- **ROS 2 tier selection is checked.** An unknown tier name, a selection without `base`, or a tier without the tiers
+  it needs (`manipulation` needs `core`) fails at configure time with a message saying what to add.
+- **Building tcn_schema:** parallel generation is now race-free, because each fastddsgen run has its own temp
+  directory. Before, concurrent runs could corrupt each other's preprocessed includes.
+
 ## 2. Per consumer
 
 Each list collects the items of §1 that need action from that consumer, plus the decided changes still to come (with
@@ -124,6 +177,7 @@ their plan), so that each team can prepare.
 
 ### SQE engine (spatial_query_engine_rs, sqe-calibrate)
 
+- *Plan 2:* nothing to do. Optional: `ros2_types.json` gives ROS names and hashes for showing ROS frames later.
 - *Plan 1:* optional:
   - check the Rust codec against `test/golden/*.hex`;
   - start checking the `messages.rs` registry against `share/tcn_schema/types.json`.
@@ -134,24 +188,39 @@ their plan), so that each team can prepare.
 
 ### tcnart (v3)
 
+- *Plan 2:*
+  - refresh the vendored snapshot `v3/third_party/tcn_schema_idl` (`Time_.idl` → `Time.idl`, `String_.idl` →
+    `String.idl`, generated ROS files with `@final`, new packages);
+  - `idlgen.py check-package` will report the differences until then;
+  - the new ROS packages are opt-in for idlgen, as before;
+  - C# names of the fixed-array typedefs (`double__36`) disappear: use the array type;
+  - tcnart's own fixtures that name the old files or typedefs need updating with the snapshot:
+    - `v3/tools/idlgen/tests/test_parser.py` (lines 46, 98–103, 120: `geometry_msgs::msg::double__36`, `Time_.idl`);
+    - `v3/tools/idlgen/tests/test_gen.py` (line 147: `builtin_interfaces/msg/Time_.h`);
+    - the C# check's golden `hosts/unity/Tools~/csharp-check/golden/types.json` (`Range`, `NavSatStatus`).
 - *Plan 1:*
   - Check that no C++ code uses `operator==` on the 14 parameter and service-info types listed in §1 (it compares pointers).
   - Optional: point the C# codec tests at `test/golden/*.hex`.
 
 ### HTA (holoscan-tcn-applications)
 
+- *Plan 2:* nothing to do. No HTA code includes the renamed headers or names the removed typedefs. `PointCloud2` and `Header` are byte-identical.
 - *Plan 1:*
   - Check that no C++ code uses `operator==` on the 14 parameter and service-info types listed in §1 (it compares pointers).
   - Requiring `fast-cdr` yourself is no longer necessary (it is harmless to keep).
 
 ### tcn web controller
 
+- *Plan 2:* nothing to do. The type names in `types.json` are unchanged. ROS types are now `"extensibility": "final"` in `types.json` (XCDR1, as before).
 - *Plan 1:* optional:
   - check `@tcn-web/cdr` against `test/golden/*.hex`;
   - start generating `packages/sqe/src/schemas.ts` from `types.json` and `enums.json` (O7). The fields you asked for (member order, extensibility, `@optional`, bounds, union labels, fully qualified names) are in `types.json`.
 
 ### IVA (realtime conversational pipeline)
 
+- *Plan 2:* when you next sync `idl/` from tcn_schema:
+  - the closure has `builtin_interfaces/msg/Time.idl` instead of `Time_.idl`;
+  - update `crates/tcn-wire/tests/alignment.rs` (lines 36 and 85), which name `Time_.idl`.
 - *Plan 1:* optional:
   - check the `tcn-wire` mirrors against `types.json`;
   - the parameter types in `tcn-wire` are not affected by the C++ `operator==` defect.
@@ -161,13 +230,6 @@ their plan), so that each team can prepare.
 Summary of what the later plans bring, so teams can plan their work. The details are in the decisions and will be
 written into §1 and §2 as each plan lands.
 
-- **Plan 2, ROS 2:**
-  - the ROS copies are regenerated from Jazzy and marked `@final`;
-  - they keep XCDR1 (`00 01`);
-  - the file names follow upstream (`builtin_interfaces/msg/Time.idl`, not `Time_.idl`; include paths in IDL change
-    accordingly);
-  - service and action types are complete;
-  - `share/tcn_schema/ros2_types.json` holds the ROS names and RIHS01 hashes.
 - **Plan 3, moves:**
   - SQE types move to `sqe_msgs`, shared types to `tcn_types`;
   - the parameter RPC moves to `pcpd_msgs`;
