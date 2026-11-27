@@ -2,7 +2,7 @@
 //
 // The two naming rules, written once as an allow-list.
 //
-// See docs/2026-08-31-sqe-contract-library-design.md §4.3.
+// See docs/design/2026-08-31-sqe-contract-library-design.md §4.3.
 #ifndef TCN_SQE_VALIDATE_H
 #define TCN_SQE_VALIDATE_H
 

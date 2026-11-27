@@ -18,14 +18,14 @@ cmake --build ./build/Debug --config Debug
 `conversation_msgs::rpc` (discovery, `AppServerInfo`). Type names, field names and order and enum order are the
 pipeline's. **These types travel as plain CDR**: OMG CDR v1 little-endian *without* the 4-byte encapsulation
 header, zenoh encoding `application/cdr`; every other package keeps the encapsulation. Since 0.10.2
-([MIGRATION-0.10.2.md](MIGRATION-0.10.2.md)).
+([MIGRATION-0.10.2.md](docs/migration/MIGRATION-0.10.2.md)).
 `tcnart_msgs::msg::EyeTrackingMessage` carries pupil, eye-expression and gaze-space fields and documented
-`EYE_VALID_*` bits since 0.10.3 ([MIGRATION-0.10.3.md](MIGRATION-0.10.3.md)), the scene-image gaze point since
+`EYE_VALID_*` bits since 0.10.3 ([MIGRATION-0.10.3.md](docs/migration/MIGRATION-0.10.3.md)), the scene-image gaze point since
 0.10.4; `tcnart_msgs::msg::ImuMessage` (accelerometer and gyroscope) is new in 0.10.4
-([MIGRATION-0.10.4.md](MIGRATION-0.10.4.md)); `tcnart_msgs::msg::PersonTrackingMessage` (person
+([MIGRATION-0.10.4.md](docs/migration/MIGRATION-0.10.4.md)); `tcnart_msgs::msg::PersonTrackingMessage` (person
 tracks) joined 0.10.4 as a later revision. 0.10.5 extends it for avatars (joint sets, per-joint age, `previous_id`,
 orientations) and adds tcnart's `HumanPoseMessage` and the `TimeRefRequest`/`TimeRefReply` payloads
-([MIGRATION-0.10.5.md](MIGRATION-0.10.5.md); joint sets:
+([MIGRATION-0.10.5.md](docs/migration/MIGRATION-0.10.5.md); joint sets:
 [tcnart_msgs/msg/JointSets.md](src/dds/custom/tcnart_msgs/msg/JointSets.md)).
 
 ### The SQE wire contract
@@ -54,6 +54,6 @@ What recent releases added:
   notifications and plans.
 - **0.9.3** (B89, additive): explain, `sqe/{engine_id}/op/explain`, and the plan types (`SISTranslationPlan`).
 
-Migration notes, newest first: [MIGRATION-0.10.7.md](MIGRATION-0.10.7.md), [MIGRATION-0.10.6.md](MIGRATION-0.10.6.md), [MIGRATION-0.10.1.md](MIGRATION-0.10.1.md), [MIGRATION-0.10.0.md](MIGRATION-0.10.0.md) (with the steps for tcnart and the
-holoscan apps), [MIGRATION-0.9.3.md](MIGRATION-0.9.3.md), and the older `MIGRATION-*.md` beside them. C++ clients
+Migration notes, newest first: [MIGRATION-0.10.7.md](docs/migration/MIGRATION-0.10.7.md), [MIGRATION-0.10.6.md](docs/migration/MIGRATION-0.10.6.md), [MIGRATION-0.10.1.md](docs/migration/MIGRATION-0.10.1.md), [MIGRATION-0.10.0.md](docs/migration/MIGRATION-0.10.0.md) (with the steps for tcnart and the
+holoscan apps), [MIGRATION-0.9.3.md](docs/migration/MIGRATION-0.9.3.md), and the older `MIGRATION-*.md` beside them. C++ clients
 use sqe_client_cpp (0.4.0 for tcn_schema 0.10.0; 0.6.0 adds the relation sample, for 0.10.6), which builds on this library.

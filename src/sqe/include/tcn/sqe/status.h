@@ -3,7 +3,7 @@
 // Status — the relation-stream statuses, with the ordinals pinned and the
 // semantics named.
 //
-// See docs/2026-08-31-sqe-contract-library-design.md §4.5.
+// See docs/design/2026-08-31-sqe-contract-library-design.md §4.5.
 #ifndef TCN_SQE_STATUS_H
 #define TCN_SQE_STATUS_H
 

@@ -2,7 +2,7 @@
 //
 // Result<T> — a value or an Error, with no exception and no heap.
 //
-// See docs/2026-08-31-sqe-contract-library-design.md §4.1.
+// See docs/design/2026-08-31-sqe-contract-library-design.md §4.1.
 #ifndef TCN_SQE_RESULT_H
 #define TCN_SQE_RESULT_H
 

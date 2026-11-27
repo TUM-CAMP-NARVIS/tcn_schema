@@ -1,6 +1,6 @@
 # tcnart v3: inventory of the tcn_schema elements it uses
 
-2026-11-27. This inventory goes with `docs/2026-11-27-0.11-tcnart-proposal.md`. It covers tcnart v3 on branch
+2026-11-27. This inventory goes with `2026-11-27-0.11-tcnart-proposal.md`. It covers tcnart v3 on branch
 `v3/sqe-b94`, which pins tcn_schema 0.10.7 (an IDL snapshot in `v3/third_party/tcn_schema_idl`, 144 files) and uses the
 wire annotation `;tcn_schema=0.10`. sqe_client_cpp 0.6.3 is a second consumer of the schema inside tcnart.
 

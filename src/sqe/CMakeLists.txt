@@ -1,6 +1,6 @@
 # The SQE contract core: header-only, dependency-free, C++17.
 #
-# See docs/2026-08-31-sqe-contract-library-design.md §5.
+# See docs/design/2026-08-31-sqe-contract-library-design.md §5.
 #
 # Rules this file keeps, each because violating it breaks a real target:
 #   * `target_compile_features(... cxx_std_17)`, never `set(CMAKE_CXX_STANDARD)`
@@ -79,7 +79,7 @@ export(TARGETS ${TCN_SQE_SESSION_TARGET} FILE ${TCN_SQE_SESSION_TARGET}Config.cm
 # target and an obligation, not a second copy of the headers.
 
 # No reference Zenoh adapter ships from this repository, and that is a decision
-# rather than an omission. See docs/2026-08-31-sqe-contract-library-design.md
+# rather than an omission. See docs/design/2026-08-31-sqe-contract-library-design.md
 # and the note at the top of tcn/sqe/transport.h: the two consumers move to new
 # zenoh-cpp versions on their own schedules, and shipping an adapter here would
 # put zenoh-version-dependent code in `tcn_schema` -- the one thing this split

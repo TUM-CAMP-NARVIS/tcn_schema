@@ -1,5 +1,5 @@
 # Joint-set table for tcn_schema 0.11 — DRAFT (tcnart rows; HTA adds COCO17 and HALPE26).
-# Format: see docs/2026-11-27-0.11-joint-sets-draft.md. One file, the single source for the IDL enum JointSet,
+# Format: see 2026-11-27-0.11-joint-sets-draft.md. One file, the single source for the IDL enum JointSet,
 # the C++/C#/Python arrays and the generated docs (replacing tcnart_msgs/msg/JointSets.md).
 
 format: 1
