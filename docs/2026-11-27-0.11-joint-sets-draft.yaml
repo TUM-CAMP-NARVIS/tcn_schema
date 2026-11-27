@@ -95,6 +95,8 @@ joint_sets:
     version: 1
     purpose: the joint order of SmplParams.pose (SMPL, SMPL-H body); no model data, no rest pose (SMPL's own)
     pose_excludes_root: true        # SmplParams.global_orient is joint 0; pose holds joints 1..23 (23 entries)
+    verified: joints 0-21 (names' order and parents) match the SMPL+H model file's kintree_table; 22-23 (hands) per the
+      SMPL documentation, to be checked by HTA against an SMPL model file
     rest_pose: smpl                 # SMPL's own template; not stated here (licensed model data)
     joints:
       - {name: pelvis,         parent: null}
@@ -127,6 +129,8 @@ joint_sets:
     version: 1
     purpose: the joint order of SmplParams.pose for SMPL-X; no model data
     pose_excludes_root: true        # pose holds joints 1..54 (54 entries)
+    verified: joints 0-21 and the hand chains as SMPL+H's (checked); jaw/eyes and the hand offset 25 per the SMPL-X
+      documentation, to be checked by HTA against an SMPL-X model file
     rest_pose: smplx
     joints:
       # 0..21: SMPL_24's joints 0..21 (pelvis .. right_wrist), same names and parents
@@ -138,15 +142,100 @@ joint_sets:
       - {hand: left,  parent: left_wrist,  fingers: [index, middle, pinky, ring, thumb], joints_per_finger: 3}
       - {hand: right, parent: right_wrist, fingers: [index, middle, pinky, ring, thumb], joints_per_finger: 3}
 
-  # ---------------------------------------------------------------- HTA rows (to be drafted by HTA)
+  - id: SMPLH_52
+    ordinal: 7
+    version: 1
+    purpose: the joint order of SmplParams.pose for SMPL+H (AMASS; HTA's pose prior)
+    pose_excludes_root: true        # pose holds joints 1..51 (51 entries)
+    rest_pose: smplh
+    verified: kinematic tree checked against the SMPL+H model file's kintree_table (52 joints), 2026-11-27
+    joints:
+      - {range: "0-21", same_as: SMPL_24}
+      # 22..36 left hand, 37..51 right hand; each finger chain 1 -> 2 -> 3, the first joint parented to the wrist
+      - {hand: left,  parent: left_wrist,  fingers: [index, middle, pinky, ring, thumb], joints_per_finger: 3}
+      - {hand: right, parent: right_wrist, fingers: [index, middle, pinky, ring, thumb], joints_per_finger: 3}
+
+  # ---------------------------------------------------------------- HTA rows (from HTA, #37, 2026-11-27)
   - id: COCO17
     ordinal: 1
     version: 1
-    owner: HTA
-    todo: rows from today's JointSets.md
+    replaces: [coco17]
+    kind: positions
+    purpose: multi-camera person tracking (HTA pose tracker), positions only
+    root: {midpoint: [left_hip, right_hip]}
+    joints:
+      - {name: nose}
+      - {name: left_eye}
+      - {name: right_eye}
+      - {name: left_ear}
+      - {name: right_ear}
+      - {name: left_shoulder}
+      - {name: right_shoulder}
+      - {name: left_elbow}
+      - {name: right_elbow}
+      - {name: left_wrist}
+      - {name: right_wrist}
+      - {name: left_hip}
+      - {name: right_hip}
+      - {name: left_knee}
+      - {name: right_knee}
+      - {name: left_ankle}
+      - {name: right_ankle}
+    bones:                     # bone_lengths order; measured segments
+      - {from: nose,           to: left_eye}
+      - {from: nose,           to: right_eye}
+      - {from: left_eye,       to: left_ear}
+      - {from: right_eye,      to: right_ear}
+      - {from: left_shoulder,  to: right_shoulder}
+      - {from: left_shoulder,  to: left_elbow}
+      - {from: left_elbow,     to: left_wrist}
+      - {from: right_shoulder, to: right_elbow}
+      - {from: right_elbow,    to: right_wrist}
+      - {from: left_shoulder,  to: left_hip}
+      - {from: right_shoulder, to: right_hip}
+      - {from: left_hip,       to: right_hip}
+      - {from: left_hip,       to: left_knee}
+      - {from: left_knee,      to: left_ankle}
+      - {from: right_hip,      to: right_knee}
+      - {from: right_knee,     to: right_ankle}
 
   - id: HALPE26
     ordinal: 2
     version: 1
-    owner: HTA
-    todo: rows from today's JointSets.md
+    replaces: [halpe26]
+    kind: positions
+    extends: COCO17            # joints 0-16 and bones 0-15 are COCO17's
+    root: {midpoint: [left_hip, right_hip]}   # as COCO17; hip_centre is the model's joint, not the root
+    joints:
+      - {range: "0-16", same_as: COCO17}
+      - {name: head_top}
+      - {name: neck}
+      - {name: hip_centre}
+      - {name: left_big_toe}
+      - {name: right_big_toe}
+      - {name: left_small_toe}
+      - {name: right_small_toe}
+      - {name: left_heel}
+      - {name: right_heel}
+    bones:
+      - {range: "0-15", same_as: COCO17}
+      - {from: head_top,    to: neck}
+      - {from: neck,        to: hip_centre}
+      - {from: left_hip,    to: hip_centre}
+      - {from: right_hip,   to: hip_centre}
+      - {from: left_ankle,  to: left_big_toe}
+      - {from: left_ankle,  to: left_small_toe}
+      - {from: left_ankle,  to: left_heel}
+      - {from: right_ankle, to: right_big_toe}
+      - {from: right_ankle, to: right_small_toe}
+      - {from: right_ankle, to: right_heel}
+    maps_to:                   # informational, for the client library's HALPE26 -> TCN_BODY map
+      TCN_BODY:
+        pelvis: hip_centre
+        head_top: head_top
+        left_toe: left_big_toe
+        right_toe: right_big_toe
+        neck: "derived: mid-point of the shoulders (TCN_BODY's definition; HALPE26's neck is the model's own joint)"
+        spine: derived
+        chest: derived
+        head: derived from nose and ears
