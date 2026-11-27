@@ -142,7 +142,7 @@ exec xcrun clang -E -x c "$@" -o "$out"
             COMMAND "${Java_JAVA_EXECUTABLE}"
             ARGS ${CMDARGS}
             # fastddsgen 3.0.0 can write size constants that overflow uint32_t (tools/fastddsgen_fixup.py)
-            COMMAND "${Python3_EXECUTABLE}" -I -B "${PROJECT_SOURCE_DIR}/tools/fastddsgen_fixup.py" ${${HEADERS}}
+            COMMAND "${Python3_EXECUTABLE}" -I -B "${PROJECT_SOURCE_DIR}/tools/fastddsgen_fixup.py" "${MODOUTDIR}"
             DEPENDS ${SCHEMAS} ${tool_depends} ${GEN_DEPENDENCY}
             COMMENT "Compiling IDL Files: ${SCHEMAS}"
             VERBATIM USES_TERMINAL

@@ -26,7 +26,8 @@ edited by hand (decisions §5, R2–R6). What it contains:
 | `perception` | vision_msgs, pcl_msgs | no |
 
 - **Selecting tiers:** CMake `-DTCN_SCHEMA_ROS2_TIERS="base;core;manipulation"`, or conan
-  `-o tcn_schema/*:ros2_tiers="base;core;manipulation"`.
+  `-o tcn_schema/*:ros2_tiers="base;core;manipulation"`. The selection must include `base`, and every tier it needs
+  (`manipulation`, `navigation` and `perception` need `core`); configure fails otherwise.
 - **All tiers** are generated and committed; only the selected ones are built.
 - **`service_msgs` is in `base`:** `sensor_msgs` has a service, and every service's `_Event` type needs it.
 

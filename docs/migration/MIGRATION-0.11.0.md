@@ -157,7 +157,16 @@ to do. Items marked *(wire)* need the lockstep cut-over; all others can be done 
   (`std_msgs::msg::dds_::String_`), the C++ name, and the RIHS01 type hash for Jazzy, Kilted and Lyrical. This is
   what a future rmw_zenoh adapter needs. The format is in `src/dds/ros2/UPSTREAM.md`.
 - **Generated size constants:** the `…_max_cdr_typesize` values of tcn types that embed `std_msgs/Header` are 8 bytes
-  smaller, because `Header` and `Time` are `@final`. Constants above 2³² (large ROS types) are clamped to `UINT32_MAX`.
+  smaller, because `Header` and `Time` are `@final`.
+  - fastddsgen 3.0.0 computes sizes above 2³² for a few large ROS types (visualization_msgs `InteractiveMarker*`,
+    some moveit_msgs types). Those constants are set to 4294967288, the largest value the generated Fast DDS type
+    support can add its header to without overflowing.
+  - With `with_dds`, keep the default payload pool policy (`PREALLOCATED_WITH_REALLOC`) for these types.
+- **`types.json`: escaped identifiers are listed by their real name.** `conversation_msgs::msg::HealthStatus`'s member
+  appears as `component`, not `_component`, as IDL 4.2 defines (the C++ accessor was already `component()`). No
+  consumer reads it today.
+- **ROS 2 tier selection is checked.** An unknown tier name, a selection without `base`, or a tier without the tiers
+  it needs (`manipulation` needs `core`) fails at configure time with a message saying what to add.
 - **Building tcn_schema:** parallel generation is now race-free, because each fastddsgen run has its own temp
   directory. Before, concurrent runs could corrupt each other's preprocessed includes.
 
@@ -184,7 +193,11 @@ their plan), so that each team can prepare.
     `String.idl`, generated ROS files with `@final`, new packages);
   - `idlgen.py check-package` will report the differences until then;
   - the new ROS packages are opt-in for idlgen, as before;
-  - C# names of the fixed-array typedefs (`double__36`) disappear: use the array type.
+  - C# names of the fixed-array typedefs (`double__36`) disappear: use the array type;
+  - tcnart's own fixtures that name the old files or typedefs need updating with the snapshot:
+    - `v3/tools/idlgen/tests/test_parser.py` (lines 46, 98–103, 120: `geometry_msgs::msg::double__36`, `Time_.idl`);
+    - `v3/tools/idlgen/tests/test_gen.py` (line 147: `builtin_interfaces/msg/Time_.h`);
+    - the C# check's golden `hosts/unity/Tools~/csharp-check/golden/types.json` (`Range`, `NavSatStatus`).
 - *Plan 1:*
   - Check that no C++ code uses `operator==` on the 14 parameter and service-info types listed in §1 (it compares pointers).
   - Optional: point the C# codec tests at `test/golden/*.hex`.

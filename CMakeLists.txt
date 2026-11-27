@@ -41,6 +41,7 @@ endif()
 # ROS 2 tiers to build (decisions §5 R-D2); the others are generated and committed, and built on request.
 set(TCN_SCHEMA_ROS2_TIERS "base;core" CACHE STRING
     "ROS 2 interface tiers to build: base;core (default), manipulation, navigation, perception")
+tcn_validate_ros2_tiers()
 message(STATUS "tcn_schema: ROS 2 tiers: ${TCN_SCHEMA_ROS2_TIERS}")
 
 # Every IDL package, in the build order of the package table (cmake/tcn_packages.json).

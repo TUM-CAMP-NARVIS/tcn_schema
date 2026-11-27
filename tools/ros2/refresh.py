@@ -75,6 +75,8 @@ def generate(sources: Dict[str, Path], tiers: Dict[str, str], out: Path,
     tree = Tree()
     for pkg in tiers:
         load_package(tree, pkg, sources[pkg])
+        if not any(k.startswith(pkg + "/") for d in (tree.msgs, tree.srvs, tree.actions) for k in d):
+            raise ValueError(f"{pkg}: no .msg/.srv/.action files in {sources[pkg]}")
     for pkg in tiers:
         pdir = out / pkg
         if pdir.exists():
@@ -139,7 +141,10 @@ def check_tree(committed: Path, regenerated: Path) -> List[str]:
 # -- upstream (network) --------------------------------------------------------------------------------------------
 
 def _git(*args, cwd=None) -> str:
-    return subprocess.run(["git", *args], cwd=cwd, check=True, capture_output=True, text=True).stdout.strip()
+    r = subprocess.run(["git", *args], cwd=cwd, capture_output=True, text=True)
+    if r.returncode != 0:
+        raise RuntimeError(f"git {' '.join(args)} failed in {cwd}: {r.stderr.strip()}")
+    return r.stdout.strip()
 
 
 def cache_dir(cache: Path, url: str, ref: str) -> Path:
@@ -150,16 +155,24 @@ def cache_dir(cache: Path, url: str, ref: str) -> Path:
     return cache / f"{parts[-2]}__{parts[-1]}@{safe}"
 
 
+_DONE = ".tcn_checkout_complete"
+
+
 def _checkout(url: str, commit_or_ref: str, cache: Path) -> Path:
-    """Shallow checkout of `commit_or_ref` (a sha, tag or branch) of `url` into the cache; returns the directory."""
+    """Shallow checkout of `commit_or_ref` (a sha, tag or branch) of `url` into the cache; returns the directory.
+    A directory counts as cached only when the marker written after a successful checkout exists; anything else
+    (an interrupted fetch) is removed and fetched again."""
     d = cache_dir(cache, url, commit_or_ref)
-    if (d / ".git").is_dir():
+    if (d / _DONE).is_file():
         return d
-    d.mkdir(parents=True, exist_ok=True)
+    if d.exists():
+        shutil.rmtree(d)
+    d.mkdir(parents=True)
     _git("init", "-q", cwd=d)
     _git("remote", "add", "origin", url, cwd=d)
     _git("fetch", "-q", "--depth", "1", "origin", commit_or_ref, cwd=d)
     _git("checkout", "-q", "--force", "FETCH_HEAD", cwd=d)
+    (d / _DONE).write_text(_git("rev-parse", "HEAD", cwd=d) + "\n")
     return d
 
 
@@ -206,7 +219,10 @@ def _sources(lock: dict, cache: Path) -> Dict[str, Path]:
         if "skipped" in p:
             continue
         d = _checkout(p["repo"], lock["repos"][p["repo"]]["commit"], cache)
-        out[pkg] = d / p["path"]
+        path = d / p["path"]
+        if not (path / "package.xml").is_file():
+            raise FileNotFoundError(f"{pkg}: no package.xml at {path} (UPSTREAM.lock path {p['path']!r})")
+        out[pkg] = path
     return out
 
 

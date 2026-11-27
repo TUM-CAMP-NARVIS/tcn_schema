@@ -66,7 +66,7 @@ class TcnSchemaConan(ConanFile):
         if self.settings.os == "Windows" or self.settings.os == "WindowsStore":
             gen_path = gen_path.replace("\\", "\\\\")
         tc.variables["FASTDDS_GEN_JAR_PATH"] = gen_path
-        tc.cache_variables["TCN_SCHEMA_ROS2_TIERS"] = str(self.options.ros2_tiers)
+        tc.cache_variables["TCN_SCHEMA_ROS2_TIERS"] = ";".join(t.strip() for t in str(self.options.ros2_tiers).split(";"))
 
     def build(self):
         # overwritten since generator needs to be able to find its shared lib if build with_shared
@@ -98,7 +98,7 @@ class TcnSchemaConan(ConanFile):
             raise ConanException("tcn_schema: package table not found in " + ", ".join(candidates))
         with open(table, encoding="utf-8") as f:
             packages = json.load(f)["packages"]
-        tiers = str(self.options.ros2_tiers).split(";")
+        tiers = [t.strip() for t in str(self.options.ros2_tiers).split(";")]
         for p in packages:
             # A ROS 2 tier that was not selected (option ros2_tiers). The installed table says so ("built"); the
             # source table used in editable mode does not, so the option decides there.

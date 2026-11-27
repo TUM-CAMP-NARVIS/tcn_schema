@@ -3,7 +3,9 @@ import tempfile
 import unittest
 from pathlib import Path
 
-from tools.ros2.refresh import cache_dir, check_tree, generate
+import subprocess
+
+from tools.ros2.refresh import _checkout, _sources, cache_dir, check_tree, generate
 from tools.ros2.rosdistro import parse_distribution
 from tools.ros2.tiers import DEFAULT_TIERS, TIERS
 
@@ -73,6 +75,44 @@ class CacheTest(unittest.TestCase):
         b = cache_dir(Path("/c"), "https://github.com/ros2/common_interfaces.git", "ea081d8a")
         self.assertNotEqual(a, b)
         self.assertEqual(a.parent, Path("/c"))
+
+
+class CheckoutRobustnessTest(unittest.TestCase):
+    def setUp(self):
+        self.tmp = tempfile.TemporaryDirectory()
+        root = Path(self.tmp.name)
+        self.repo = root / "upstream" / "pkgs"
+        (self.repo / "fx_msgs" / "msg").mkdir(parents=True)
+        (self.repo / "fx_msgs" / "msg" / "A.msg").write_text("int32 a\n")
+        (self.repo / "fx_msgs" / "package.xml").write_text("<package><name>fx_msgs</name></package>\n")
+        for cmd in (["init", "-q", "-b", "main"], ["add", "-A"],
+                    ["-c", "user.email=t@t", "-c", "user.name=t", "commit", "-q", "-m", "x"]):
+            subprocess.run(["git", *cmd], cwd=self.repo, check=True)
+        self.url = self.repo.as_uri()
+        self.cache = root / "cache"
+
+    def tearDown(self):
+        self.tmp.cleanup()
+
+    def test_half_made_cache_entry_is_redone(self):
+        # An interrupted fetch leaves a directory with .git but nothing checked out; it must not count as cached.
+        d = cache_dir(self.cache, self.url, "main")
+        d.mkdir(parents=True)
+        subprocess.run(["git", "init", "-q"], cwd=d, check=True)
+        out = _checkout(self.url, "main", self.cache)
+        self.assertTrue((out / "fx_msgs" / "msg" / "A.msg").is_file())
+
+    def test_missing_package_path_raises(self):
+        lock = {"repos": {self.url: {"commit": "main"}},
+                "packages": {"fx_msgs": {"repo": self.url, "path": "not/there", "tier": "core"}}}
+        with self.assertRaises(FileNotFoundError):
+            _sources(lock, self.cache)
+
+    def test_package_without_interfaces_raises(self):
+        empty = Path(self.tmp.name) / "empty_msgs"
+        empty.mkdir()
+        with self.assertRaises(ValueError):
+            generate({"empty_msgs": empty}, {"empty_msgs": "core"}, Path(self.tmp.name) / "out", {"jazzy": None})
 
 
 class GenerateTest(unittest.TestCase):
