@@ -7,7 +7,7 @@
 module pcpd_msgs {
   module msg {
 
-    struct MeshBitstreamMessage {
+    @appendable struct MeshBitstreamMessage {
 
       std_msgs::msg::Header header;
 

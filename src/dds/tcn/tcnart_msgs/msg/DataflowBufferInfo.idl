@@ -4,7 +4,7 @@
 module tcnart_msgs {
   module msg {
 
-    struct BufferInfoPropertyUserData {
+    @appendable struct BufferInfoPropertyUserData {
         @verbatim (language="comment", text=
                 "BufferInfoPropertyUserData provides user-data for BufferInfoProperties")
 
@@ -14,7 +14,7 @@ module tcnart_msgs {
 
     };
 
-    struct BufferInfoProperty {
+    @appendable struct BufferInfoProperty {
         @verbatim (language="comment", text=
                 "BufferInfoProperty properties for BufferInfo")
 
@@ -27,7 +27,7 @@ module tcnart_msgs {
 
     @verbatim (language="comment", text=
       "BufferInfo struct for memory preallocation.")
-    struct BufferInfo {
+    @appendable struct BufferInfo {
       @verbatim (language="comment", text=
         "Provides information about buffer allocation.")
 

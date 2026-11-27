@@ -14,7 +14,7 @@ module tcn_types {
     // of that kind ever created.
     //
     // **Append only.** New kinds go at the end.
-    enum MarkerType {
+    @appendable enum MarkerType {
       MARKER_TYPE_NONE,
       MARKER_TYPE_ARUCO_MARKER,
       MARKER_TYPE_ARUCO_BOARD,
@@ -24,7 +24,7 @@ module tcn_types {
       MARKER_TYPE_APRILTAG
     };
 
-    struct Marker {
+    @appendable struct Marker {
       uint32 marker_id;
       Vector3 position;
       float quality; // Normalized 0.0 to 1.0
@@ -38,7 +38,7 @@ module tcn_types {
       sequence<double, 6> position_covariance;
     };
 
-    struct Target {
+    @appendable struct Target {
       uint32 target_id;
       RigidTransform pose;
       float quality; // Normalized 0.0 to 1.0

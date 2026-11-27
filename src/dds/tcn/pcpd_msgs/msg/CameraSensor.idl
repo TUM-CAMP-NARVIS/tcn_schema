@@ -7,7 +7,7 @@
 module pcpd_msgs {
   module msg {
 
-    enum CameraSensorTypesEnum {
+    @appendable enum CameraSensorTypesEnum {
         GENERIC_RGBD,
         KINECT_AZURE,
         FEMTO_MEGA
@@ -15,7 +15,7 @@ module pcpd_msgs {
 
     @verbatim (language="comment", text=
       "This represents a camera sensor connected to a pcpd instance.")
-    struct CameraSensor {
+    @appendable struct CameraSensor {
       @verbatim (language="comment", text=
         "An camera sensor is a physical device like an Azure Kinect camera that captures measurements.")
 

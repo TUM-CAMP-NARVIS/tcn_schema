@@ -12,7 +12,7 @@ module sqe_msgs {
 
         // --- nodes -------------------------------------------------------------
 
-        enum SRNodeType {
+        @appendable enum SRNodeType {
           SRG_NODE_GENERIC,
           SRG_NODE_SENSOR,
           SRG_NODE_DISPLAY,
@@ -36,7 +36,7 @@ module sqe_msgs {
         //
         // Ordinals are the wire encoding; append only. A reader that predates a
         // value should treat an unknown scope as shared, not as local.
-        enum SRNodeScope {
+        @appendable enum SRNodeScope {
           SRG_SCOPE_LOCAL,
           SRG_SCOPE_GLOBAL,
           SRG_SCOPE_DOMAIN
@@ -51,7 +51,7 @@ module sqe_msgs {
         // this kind, not yet identified". It is never traversed itself. When an
         // observation matches its rule, the template node and every edge attached
         // to it are materialized into concrete copies carrying the observed id.
-        struct SRNodeTemplate {
+        @appendable struct SRNodeTemplate {
 
             // What kind of observation materializes this template.
             tcn_types::msg::MarkerType marker_type;
@@ -65,7 +65,7 @@ module sqe_msgs {
 
         };
 
-        struct SRNode {
+        @appendable struct SRNode {
 
             // Identity within the graph. Edges reference nodes by this.
             string name;
@@ -130,7 +130,7 @@ module sqe_msgs {
         // "which entity is this?"; SRG_EDGE_STATIC_UNCALIBRATED covers "both ends
         // are known, but their relation has not been measured yet" -- which is the
         // work queue an external calibration tool reads.
-        enum SREdgeTemporalType {
+        @appendable enum SREdgeTemporalType {
           SRG_EDGE_STATIC,              // fixed by construction or declaration
           SRG_EDGE_STATIC_UNCALIBRATED, // declared; value not yet measured, not traversable
           SRG_EDGE_STATIC_CALIBRATED,   // fixed, and measured; carries provenance
@@ -151,7 +151,7 @@ module sqe_msgs {
           SRG_EDGE_PROJECTION
         };
 
-        struct SRCalibration {
+        @appendable struct SRCalibration {
             string method;                    // free-form: "hand-eye", "aruco-board", ...
             double residual;                  // RMS error in metres; negative if not reported
             builtin_interfaces::msg::Time computed_at;
@@ -174,7 +174,7 @@ module sqe_msgs {
             string description;
         };
 
-        struct SREdge {
+        @appendable struct SREdge {
 
             // Identity within the graph. Parallel edges between the same pair of
             // nodes are legal and are distinguished by this.
@@ -320,7 +320,7 @@ module sqe_msgs {
 
         // --- graph -------------------------------------------------------------
 
-        struct SRGraph {
+        @appendable struct SRGraph {
 
             string name;                      // the owning client's identifier
             string origin;                    // SRNode.name; the root of this graph
@@ -377,7 +377,7 @@ module sqe_msgs {
         // A view is never a template for a mutation the engine promises to
         // reproduce; it is an observation, and `client` is what makes it one.
 
-        struct SRNodeView {
+        @appendable struct SRNodeView {
 
             // The fragment that declared this node. With `node.name`, the
             // frame's identity across the fused graph.
@@ -388,7 +388,7 @@ module sqe_msgs {
 
         };
 
-        struct SREdgeView {
+        @appendable struct SREdgeView {
 
             // The fragment that declared this relation. Not necessarily the
             // owner of either endpoint: a client may relate its own node to

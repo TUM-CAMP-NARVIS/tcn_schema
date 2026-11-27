@@ -7,14 +7,14 @@
 module conversation_msgs {
   module msg {
 
-  struct SttRequest {
+  @appendable struct SttRequest {
     MessageHeader header;
     string backend;
     string language_hint;
     boolean finalize_now;
   };
 
-  struct SttPartial {
+  @appendable struct SttPartial {
     MessageHeader header;
     string text;
     float stability;
@@ -25,7 +25,7 @@ module conversation_msgs {
     EventState state;
   };
 
-  struct SttFinal {
+  @appendable struct SttFinal {
     MessageHeader header;
     string text;
     float confidence;

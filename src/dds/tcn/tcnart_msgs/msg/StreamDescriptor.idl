@@ -10,7 +10,7 @@
 module tcnart_msgs {
   module msg {
 
-    struct StreamDescriptorMessage {
+    @appendable struct StreamDescriptorMessage {
 
       std_msgs::msg::Header header;
 

@@ -67,6 +67,9 @@ function(FASTDDS_GENERATE_CPP MODPATH MODTYP SOURCES HEADERS DLLEXPORT GEN_DEPEN
     list(APPEND CMDARGS -typeros2)
     list(APPEND CMDARGS -cs)
     list(APPEND CMDARGS -replace)
+    # Default extensibility for a type declared without one (0.11 O6). Every tcn and ROS type declares its own
+    # (E1, E2); this only pins what fastddsgen would otherwise default to.
+    list(APPEND CMDARGS -de appendable)
     list(APPEND CMDARGS ${FASTDDSGEN_FLAGS})
 
     # On macOS fastddsgen runs `cpp`, which Apple ships as clang in traditional

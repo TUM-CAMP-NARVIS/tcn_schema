@@ -13,7 +13,7 @@ module tcnart_msgs {
       // CAMERA_MODEL_FOV,
       // CAMERA_MODEL_THIN_PRISM_FISHEYE,
 
-    enum CameraModelType {
+    @appendable enum CameraModelType {
       CAMERA_MODEL_NONE,
       CAMERA_MODEL_PINHOLE,
       CAMERA_MODEL_OPEN_CV,
@@ -21,7 +21,7 @@ module tcnart_msgs {
       CAMERA_MODEL_SENSOR_AZURE_KINECT
     };
 
-    struct CameraModel {
+    @appendable struct CameraModel {
 
       CameraModelType camera_model;
       

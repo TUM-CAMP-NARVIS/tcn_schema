@@ -6,7 +6,7 @@
 module conversation_msgs {
   module msg {
 
-  struct TtsRequest {
+  @appendable struct TtsRequest {
     MessageHeader header;
     string backend;
     string voice;
@@ -20,7 +20,7 @@ module conversation_msgs {
     boolean is_final_segment;
   };
 
-  struct TtsAudioChunk {
+  @appendable struct TtsAudioChunk {
     MessageHeader header;
     string backend;
     string voice;
@@ -32,7 +32,7 @@ module conversation_msgs {
     ShmRef shm_ref;
   };
 
-  struct TtsDone {
+  @appendable struct TtsDone {
     MessageHeader header;
     string backend;
     string voice;

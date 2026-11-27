@@ -35,7 +35,26 @@ def main(argv) -> int:
     mv.add_argument("--json", type=Path)
     mv.add_argument("--markdown", type=Path)
 
+    an = sub.add_parser("annotate", help="add explicit @appendable/@final to every tcn struct, union and enum (E1, E7)")
+    an.add_argument("--dds-root", type=Path, required=True)
+    an.add_argument("--final", default="", help="comma-separated fully qualified names to declare @final")
+
     args = ap.parse_args(argv)
+    if args.cmd == "annotate":
+        from .annotate import annotate
+        final = {x for x in args.final.split(",") if x}
+        changed = 0
+        for f in load_schema(args.dds_root).files:
+            if f.family != "tcn":
+                continue
+            p = args.dds_root / "tcn" / f.path
+            text = p.read_text(encoding="utf-8")
+            new = annotate(text, f.decls, final)
+            if new != text:
+                p.write_text(new, encoding="utf-8")
+                changed += 1
+        print(f"{changed} files annotated")
+        return 0
     if args.cmd == "tables":
         from .tables import write_tables
         write_tables(load_schema(args.dds_root), args.version, args.out)
@@ -48,9 +67,10 @@ def main(argv) -> int:
             restructure(args.dds_root, spec, args.dds_root)
             return 0
         from .moves import compare, write_reports
-        renames = {o: f"{e['module']}::{o.rsplit('::', 1)[1]}" for e in spec["files"] for o in e["decls"]}
+        renames = {o: f"{e['module']}::{o.rsplit('::', 1)[1]}" for e in spec.get("files", []) for o in e["decls"]}
         old, new = load_schema(args.old), load_schema(args.new)
-        report = compare(old, new, renames, set(spec.get("deleted", [])), spec.get("new_types", []))
+        report = compare(old, new, renames, set(spec.get("deleted", [])), spec.get("new_types", []),
+                         spec.get("expect"))
         for p in report.problems:
             print(p)
         write_reports(report, old, new, args.json, args.markdown)

@@ -8,36 +8,36 @@ module pcpd_msgs {
     struct Parameter;
     union ParameterValue;
 
-    enum RPCResponseStatus {
+    @appendable enum RPCResponseStatus {
       RPC_STATUS_SUCCESS,
       RPC_STATUS_ERROR
     };
 
     // null
-    struct NullRequest {
+    @appendable struct NullRequest {
         uint8 dummy;
     };
 
-    struct NullReply {
+    @appendable struct NullReply {
         RPCResponseStatus status;
     };
 
-    struct BoolReply {
+    @appendable struct BoolReply {
         boolean value;
         RPCResponseStatus status;
     };
 
-    struct StringListRequest {
+    @appendable struct StringListRequest {
       sequence<string> values;
     };
 
-    struct StringListReply {
+    @appendable struct StringListReply {
       sequence<string> values;
       RPCResponseStatus status;
     };
 
     // Generic Parameter Interface
-    enum ParameterValueType {
+    @appendable enum ParameterValueType {
       PVT_STRING,
       PVT_INT32,
       PVT_INT64,
@@ -50,16 +50,16 @@ module pcpd_msgs {
       PVT_UINT64
     };
 
-    struct ParameterList {
+    @appendable struct ParameterList {
         sequence<Parameter> parameters;
     };
 
-    struct Parameter {
+    @appendable struct Parameter {
         string key;
         ParameterValue value;
     };
 
-    union ParameterValue switch(ParameterValueType) {
+    @appendable union ParameterValue switch(ParameterValueType) {
     case PVT_STRING:
         string string_value;
     case PVT_INT32:
@@ -81,22 +81,22 @@ module pcpd_msgs {
         uint64 uint64_value;
     };
 
-    struct ParameterSchema {
+    @appendable struct ParameterSchema {
         string key;
         ParameterValueType value_type;
         sequence<ParameterValue> valid_entries;
     };
 
-    struct ParameterListSchema {
+    @appendable struct ParameterListSchema {
         sequence<ParameterSchema> parameters;
     };
 
     // generic
-    struct GenericParameterRequest {
+    @appendable struct GenericParameterRequest {
         ParameterList value;
     };
 
-    struct GenericParameterReply {
+    @appendable struct GenericParameterReply {
         ParameterList value;
         RPCResponseStatus status;
     };
@@ -111,7 +111,7 @@ module pcpd_msgs {
     // (request: StringListRequest of keys, empty = all).
 
     /// How a parameter can be changed.
-    enum ParameterAccess {
+    @appendable enum ParameterAccess {
       PA_READ_WRITE_LIVE,      // set takes effect while running (next compute / next frame)
       PA_READ_WRITE_RESTART,   // set accepted, applies after a restart / recompile
       PA_READ_ONLY             // get only
@@ -119,7 +119,7 @@ module pcpd_msgs {
 
     /// One allowed enum value: the label as shown and sent (PVT_STRING),
     /// and the underlying integer value.
-    struct EnumEntry {
+    @appendable struct EnumEntry {
         string label;
         int64 value;
     };
@@ -132,7 +132,7 @@ module pcpd_msgs {
     /// optional member does not round-trip. Each is a plain member with a
     /// `has_*` flag before it; when the flag is false the value is
     /// meaningless (default-constructed) and must be ignored.
-    struct ParameterDescriptor {
+    @appendable struct ParameterDescriptor {
         string key;
         ParameterValueType value_type;
         ParameterAccess access;
@@ -150,11 +150,11 @@ module pcpd_msgs {
         uint64 generation;                  // server-side change counter of the current value
     };
 
-    struct ParameterDescriptorList {
+    @appendable struct ParameterDescriptorList {
         sequence<ParameterDescriptor> parameters;
     };
 
-    struct ParameterDescriptorReply {
+    @appendable struct ParameterDescriptorReply {
         ParameterDescriptorList value;
         RPCResponseStatus status;
     };
@@ -162,7 +162,7 @@ module pcpd_msgs {
     // A3. Per-key set results, served by `parameters/set_ex`
     // (request: GenericParameterRequest). `parameters/set` (NullReply) stays.
 
-    enum ParameterSetStatus {
+    @appendable enum ParameterSetStatus {
       PSS_APPLIED,          // in effect
       PSS_UNCHANGED,        // equal to the current value
       PSS_PENDING,          // accepted, not yet in effect within the server's wait
@@ -173,13 +173,13 @@ module pcpd_msgs {
       PSS_REJECTED          // other; see message
     };
 
-    struct ParameterSetResult {
+    @appendable struct ParameterSetResult {
         string key;
         ParameterSetStatus status;
         string message;
     };
 
-    struct ParameterSetReply {
+    @appendable struct ParameterSetReply {
         sequence<ParameterSetResult> results;
         RPCResponseStatus status;   // SUCCESS only if every key is APPLIED or UNCHANGED
     };
@@ -187,7 +187,7 @@ module pcpd_msgs {
     // A4. Change notification, published on
     // `<prefix>/str/service/<name>/parameters` whenever a value takes effect.
 
-    struct ParameterChanged {
+    @appendable struct ParameterChanged {
         string service;
         ParameterList value;   // keys that changed, with their new values
         uint64 generation;

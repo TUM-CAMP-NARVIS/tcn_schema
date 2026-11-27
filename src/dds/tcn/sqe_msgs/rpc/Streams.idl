@@ -17,14 +17,14 @@ module sqe_msgs {
     // --- relation streams -------------------------------------------------
 
     // A frame of reference: a node within an owning graph.
-    struct SISFrameRef {
+    @appendable struct SISFrameRef {
         string client;                  // owning graph
         string node;                    // SRNode.name within it
     };
 
     // Which dynamic hop of a compiled path drives an SRG_TRIGGER_ON_REFERENCE
     // stream. Ordinals are the wire encoding; append only.
-    enum SRReferencePolicy {
+    @appendable enum SRReferencePolicy {
         SRG_REF_FIRST,                  // the hop closest to the observer -- first in
                                         // path order, the request naming its path as
                                         // "target located in observer"
@@ -32,7 +32,7 @@ module sqe_msgs {
         SRG_REF_SLOWEST                 // the hop with the lowest declared non-zero rate
     };
 
-    enum SRStreamTriggerKind {
+    @appendable enum SRStreamTriggerKind {
         SRG_TRIGGER_FIXED_RATE,         // a timer; sample at "now" less the system latency
         SRG_TRIGGER_ON_STREAM,          // a named stream; sample at its stamp
         SRG_TRIGGER_ON_ANY,             // any input on the path; sample at the arriving stamp
@@ -54,7 +54,7 @@ module sqe_msgs {
     // One relation is one stream, shared by every requester, so two clients
     // asking for the same relation with different triggers is refused. Pick
     // one and use it across the deployment.
-    union SRStreamTrigger switch(SRStreamTriggerKind) {
+    @appendable union SRStreamTrigger switch(SRStreamTriggerKind) {
     case SRG_TRIGGER_FIXED_RATE:
         double hz;
     case SRG_TRIGGER_ON_STREAM:
@@ -75,7 +75,7 @@ module sqe_msgs {
     // so, because SIS_RS_ACTIVE is what the client is told. If that
     // calibration later arrives, the shorter route becomes available and
     // nothing looks at it again.
-    enum SISReoptimisePolicy {
+    @appendable enum SISReoptimisePolicy {
         SIS_RO_BEST_AVAILABLE_NOW,  // ordinal 0. Today's behaviour, and the
                                     //   default: serve the best route
                                     //   available at the moment of
@@ -90,7 +90,7 @@ module sqe_msgs {
 
     // Where a relation stream is evaluated (0.10.0, engine B90). Ordinals are
     // the wire encoding; append only.
-    enum SISEvaluationMode {
+    @appendable enum SISEvaluationMode {
         SIS_EV_ENGINE,          // ordinal 0, the default: the engine composes and publishes
                                 //   the relation on its handle, as every stream did before
         SIS_EV_LOCAL,           // the engine routes and publishes the plan; the client composes
@@ -117,7 +117,7 @@ module sqe_msgs {
     // no output_topic here. 0.3.0's third field is gone, and the engine answers
     // with the topic it assigned (SISRelationStreamReply, below). Field order is
     // now: observer, target, trigger, freshness_bias, reoptimise.
-    struct SISRelationStreamStartRequest {
+    @appendable struct SISRelationStreamStartRequest {
         SISFrameRef observer;           // the frame poses are expressed in
         SISFrameRef target;             // the frame being located
         SRStreamTrigger trigger;
@@ -185,11 +185,11 @@ module sqe_msgs {
     // purpose: the value is no longer a topic the client chose, and a rename
     // turns a peer that keeps supplying its own into a compile error instead of
     // a request that decodes cleanly and stops nothing.
-    struct SISRelationStreamStopRequest {
+    @appendable struct SISRelationStreamStopRequest {
         string handle;
     };
 
-    enum SISRelationStreamStatus {
+    @appendable enum SISRelationStreamStatus {
         SIS_RS_ACTIVE,                  // running
         SIS_RS_INACTIVE,                // not running; stopped, or never started
         SIS_RS_NO_PATH,                 // the graph does not connect these two frames
@@ -244,7 +244,7 @@ module sqe_msgs {
     // anything else touched the row -- the same objection SISMutationReply
     // records for its own missing echo. What is carried is an address plus the
     // one property that says why the relation blocks.
-    struct SISBlockingRelation {
+    @appendable struct SISBlockingRelation {
         SISFrameRef source;             // the relation's source frame
         SISFrameRef target;             // the relation's target frame
         string name;                    // SREdge.name, as declared
@@ -266,19 +266,19 @@ module sqe_msgs {
     // at one instant, is exactly what the engine publishes for that instant.
 
     // Which operation a SISPlanOp is. Ordinals are the wire encoding; append only.
-    enum SISPlanOpKind {
+    @appendable enum SISPlanOpKind {
         SIS_PO_STATIC,          // a fixed transform, already aligned to the walk
         SIS_PO_DYNAMIC,         // a live input, sampled at the instant
         SIS_PO_COORD_SWAP,      // a change of axis convention
         SIS_PO_PROJECT          // terminal: into an image plane
     };
 
-    struct SISPlanDynamicOp {
+    @appendable struct SISPlanDynamicOp {
         uint32 input;           // index into SISTranslationPlan.inputs
         boolean inverted;       // compose the sample's inverse (the hop was walked backwards)
     };
 
-    struct SISPlanCoordSwapOp {
+    @appendable struct SISPlanCoordSwapOp {
         tcn_types::msg::CoordinateSystem from_coord;
         tcn_types::msg::CoordinateSystem to_coord;
     };
@@ -286,7 +286,7 @@ module sqe_msgs {
     // STATIC carries SRG_TRANSFORM_POSE6D, _TRANSLATION3D or their _COV
     // variants; the covariance is the edge's stated (systematic) one, already
     // conjugated when the hop was walked backwards.
-    union SISPlanOp switch (SISPlanOpKind) {
+    @appendable union SISPlanOp switch (SISPlanOpKind) {
         case SIS_PO_STATIC:     sqe_msgs::msg::SRTransform static_transform;
         case SIS_PO_DYNAMIC:    SISPlanDynamicOp dynamic;
         case SIS_PO_COORD_SWAP: SISPlanCoordSwapOp coord_swap;
@@ -296,13 +296,13 @@ module sqe_msgs {
     // One target's chain. A plain relation has one, `materialized_id` 0; a
     // template target ("every marker this camera sees") has one per
     // materialized marker, keyed by the marker's id.
-    struct SISPlanInstance {
+    @appendable struct SISPlanInstance {
         uint32 materialized_id;
         sequence<SISPlanOp> ops;
     };
 
     // Where a live input's samples come from. Ordinals are the wire encoding.
-    enum SISPlanInputSource {
+    @appendable enum SISPlanInputSource {
         SIS_PI_TRACKER,         // a sensor's pose stream
         SIS_PI_ENGINE_STREAM,   // another relation stream's output (a derived edge)
         SIS_PI_UNBOUND          // no adopted topic feeds this input right now
@@ -310,7 +310,7 @@ module sqe_msgs {
 
     // Everything the engine's ingest knows about one live input: what to
     // subscribe to, how to read it, and how to correct its stamps.
-    struct SISPlanInput {
+    @appendable struct SISPlanInput {
         string topic;                   // the key the samples arrive on; "" when unbound
         string schema;                  // the declared payload type, e.g.
                                         //   "tcnart_msgs::msg::Pose6DMapMessage"
@@ -331,7 +331,7 @@ module sqe_msgs {
 
     // One hop of a route, in path order from the observer to the target.
     // The provenance a plan's ops were built from, and what explain is for.
-    struct SISPlanHop {
+    @appendable struct SISPlanHop {
         uint32 instance;                // index into SISTranslationPlan.instances
         SISFrameRef from;               // the frame this hop starts at (client "" = global)
         SISFrameRef to;
@@ -346,7 +346,7 @@ module sqe_msgs {
                                            //   SRPose6DWithCovariance; empty = not stated
     };
 
-    struct SISTranslationPlan {
+    @appendable struct SISTranslationPlan {
         uint16 plan_version;            // 2 since 0.10.0 (1 in 0.9.3, without engine_epoch).
                                         //   A reader refuses a version it does not know.
         string output_topic;            // the stream it belongs to; "" for a dry run
@@ -373,7 +373,7 @@ module sqe_msgs {
     // before: it is a legal topic-shaped value that every consumer would have to
     // remember to special-case. A discriminated union makes absence a case the
     // decoder has to handle.
-    enum SISRelationStreamHandleKind {
+    @appendable enum SISRelationStreamHandleKind {
         SIS_RSH_NONE,                   // no stream to consume, and so no handle
         SIS_RSH_ASSIGNED                // the engine assigned this handle
     };
@@ -381,7 +381,7 @@ module sqe_msgs {
     // Carries a filler `boolean` in the NONE case because IDL requires every
     // union case to declare a member -- the same reason SRStreamTrigger's
     // SRG_TRIGGER_ON_ANY carries one.
-    union SISRelationStreamHandle switch(SISRelationStreamHandleKind) {
+    @appendable union SISRelationStreamHandle switch(SISRelationStreamHandleKind) {
     case SIS_RSH_NONE:
         boolean unused;
     case SIS_RSH_ASSIGNED:
@@ -451,7 +451,7 @@ module sqe_msgs {
     // stream needs no sentence: SIS_RS_ACTIVE is self-explanatory, and a
     // SIS_RS_PENDING says what to calibrate in `blocked_by`, which prose
     // restating it would only duplicate.
-    struct SISRelationStreamReply {
+    @appendable struct SISRelationStreamReply {
         SISRelationStreamStatus status;
         SISRelationStreamHandle handle;
         // Appended last, so a decoder reading the two leading fields degrades
@@ -494,7 +494,7 @@ module sqe_msgs {
     // at all. Every route change is announced, whatever caused it -- a
     // consumer cannot care *why* its geometry provenance changed, only that it
     // did.
-    struct SISRelationStreamStatusNotification {
+    @appendable struct SISRelationStreamStatusNotification {
         string output_topic;
         SISRelationStreamStatus status;
         string detail;                  // human-readable reason; may be empty

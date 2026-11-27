@@ -7,7 +7,7 @@
 module tcnart_msgs {
   module msg {
 
-    enum XRGazeSpaceType {
+    @appendable enum XRGazeSpaceType {
       XR_GAZE_SPACE_UNKNOWN,
       XR_GAZE_SPACE_VIEW,
       XR_GAZE_SPACE_LOCAL
@@ -42,7 +42,7 @@ module tcnart_msgs {
 
     // One eye-tracker sample. Rays: origin in metres, direction a unit vector, both in gaze_space (LOCAL: the
     // header's frame_id). viewpoint: the head pose at the sample. Openness, squeeze, wide in [0,1].
-    struct EyeTrackingMessage {
+    @appendable struct EyeTrackingMessage {
 
       std_msgs::msg::Header header;
       

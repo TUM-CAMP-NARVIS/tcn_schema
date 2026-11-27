@@ -22,13 +22,13 @@ module sqe_msgs {
     // the engine refuses, is answered SIS_MU_REJECTED with every reason in
     // `detail`, and nothing is stored. A second join from the same client
     // replaces its fragment.
-    struct SISJoinRequest {
+    @appendable struct SISJoinRequest {
         sqe_msgs::msg::SRGraph graph;
     };
 
     // Announce departure. Without this a client is only collected after the
     // inactivity timeout.
-    struct SISLeaveRequest {
+    @appendable struct SISLeaveRequest {
         string client;
     };
 
@@ -38,23 +38,23 @@ module sqe_msgs {
     // Who is asking. An operator key carries no client id, so this is what
     // the operator rate limit is keyed on and what the engine's log names.
     // Free-form, e.g. "tcn-web/lab-pc3/alice".
-    struct SISOperatorRef {
+    @appendable struct SISOperatorRef {
         string requester;
     };
 
     // --- sqe/{engine_id}/op/info ------------------------------------------
-    struct SISEngineInfoRequest {
+    @appendable struct SISEngineInfoRequest {
         SISOperatorRef who;
     };
 
-    enum SISStoreHealth {
+    @appendable enum SISStoreHealth {
         SIS_SH_OK,              // a probe read came back in time
         SIS_SH_DEGRADED,        // it came back slowly; store_detail says how
         SIS_SH_UNAVAILABLE      // it failed or timed out; reads and writes will too
     };
 
     // The bounds one class of reader is held to.
-    struct SISReadLimits {
+    @appendable struct SISReadLimits {
         uint32 max_items;          // nodes plus relations per graph-read reply
         uint32 max_bytes;          // bytes per reply
         uint32 reads_per_second;   // per requester
@@ -63,7 +63,7 @@ module sqe_msgs {
     // `status` is SIS_GQ_OK, SIS_GQ_REJECTED (undecodable) or
     // SIS_GQ_UNAVAILABLE (the operator rate limit); every other field is then
     // zero or empty.
-    struct SISEngineInfoReply {
+    @appendable struct SISEngineInfoReply {
         SISGraphQueryStatus status;
         string detail;
         string engine_id;

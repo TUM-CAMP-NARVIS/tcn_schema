@@ -4,7 +4,7 @@
 module tcnart_msgs {
   module msg {
 
-    enum SensorType {
+    @appendable enum SensorType {
         SENSOR_TYPE_NONE,
         SENSOR_TYPE_VIDEO_COLOR,
         SENSOR_TYPE_VIDEO_DEPTH,
@@ -21,7 +21,7 @@ module tcnart_msgs {
         SENSOR_TYPE_SURFEL
     };
 
-    enum VideoPixelFormat {
+    @appendable enum VideoPixelFormat {
       PixelFormat_NV12,
       PixelFormat_RGB24,
       PixelFormat_BGR24,
@@ -31,7 +31,7 @@ module tcnart_msgs {
       PixelFormat_RGBA32
     };
 
-    enum VideoImageCompression {
+    @appendable enum VideoImageCompression {
         CompressionType_Raw,
         CompressionType_Png,
         CompressionType_H26x,
@@ -42,7 +42,7 @@ module tcnart_msgs {
         CompressionType_JpegLs
     };
 
-    enum VideoH26xProfile {
+    @appendable enum VideoH26xProfile {
         H264Profile_Base,
         H264Profile_Main,
         H264Profile_High,
@@ -50,7 +50,7 @@ module tcnart_msgs {
         H26xProfile_None
     };
 
-    enum AudioAACProfile {
+    @appendable enum AudioAACProfile {
         AACProfile_12000,
         AACProfile_16000,
         AACProfile_20000,

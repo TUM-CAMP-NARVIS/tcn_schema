@@ -7,7 +7,7 @@
 module conversation_msgs {
   module msg {
 
-  enum MemoryScopeKind {
+  @appendable enum MemoryScopeKind {
     disabled,
     session,
     client,
@@ -15,29 +15,29 @@ module conversation_msgs {
     anonymous
   };
 
-  struct MemoryScope {
+  @appendable struct MemoryScope {
     MemoryScopeKind kind;
     string key;
   };
 
-  enum InteractionMode {
+  @appendable enum InteractionMode {
     direct,
     pipeline
   };
 
-  enum RetrievalPolicy {
+  @appendable enum RetrievalPolicy {
     auto_,  // C++ keyword; the pipeline names it `auto`; same value (0)
     always,
     never
   };
 
-  enum ExecutionPreference {
+  @appendable enum ExecutionPreference {
     AUTO,
     FAST,
     AGENTIC
   };
 
-  struct RetrievalOptions {
+  @appendable struct RetrievalOptions {
     RetrievalPolicy policy;
     sequence<string> preferred_domains;
     sequence<string> excluded_domains;
@@ -45,12 +45,12 @@ module conversation_msgs {
     unsigned long top_k;
   };
 
-  struct ImageAttachment {
+  @appendable struct ImageAttachment {
     string mime_type;
     sequence<octet> data;
   };
 
-  struct InteractionRequest {
+  @appendable struct InteractionRequest {
     MessageHeader header;
     string request_id;
     InteractionMode mode;
@@ -61,28 +61,28 @@ module conversation_msgs {
     ClientIdentity identity;
   };
 
-  struct InteractionPartial {
+  @appendable struct InteractionPartial {
     MessageHeader header;
     string request_id;
     string text_delta;
     unsigned long token_count;
   };
 
-  enum InteractionActivityState {
+  @appendable enum InteractionActivityState {
     started,
     progress,
     completed,
     failed
   };
 
-  struct InteractionActivity {
+  @appendable struct InteractionActivity {
     string request_id;
     string call_id;
     string tool_name;
     InteractionActivityState state;
   };
 
-  struct InteractionResponse {
+  @appendable struct InteractionResponse {
     MessageHeader header;
     string request_id;
     string text;
@@ -90,7 +90,7 @@ module conversation_msgs {
     unsigned long generated_tokens;
   };
 
-  struct LlmRequest {
+  @appendable struct LlmRequest {
     MessageHeader header;
     MemoryScope memory_scope;
     string backend;
@@ -105,7 +105,7 @@ module conversation_msgs {
     ExecutionPreference execution_preference;
   };
 
-  struct LlmPartial {
+  @appendable struct LlmPartial {
     MessageHeader header;
     string text_delta;
     unsigned long token_count;
@@ -113,7 +113,7 @@ module conversation_msgs {
     EventState state;
   };
 
-  struct LlmFinal {
+  @appendable struct LlmFinal {
     MessageHeader header;
     string text;
     string finish_reason;

@@ -6,13 +6,13 @@
 module conversation_msgs {
   module msg {
 
-  struct ClientIdentity {
+  @appendable struct ClientIdentity {
     string client_id;
     string user_id;
     string display_name;
   };
 
-  struct SessionStart {
+  @appendable struct SessionStart {
     MessageHeader header;
     StreamDirection direction;
 
@@ -35,18 +35,18 @@ module conversation_msgs {
     ClientIdentity identity;
   };
 
-  struct SessionStop {
+  @appendable struct SessionStop {
     MessageHeader header;
     string reason;
   };
 
-  struct SessionCancel {
+  @appendable struct SessionCancel {
     MessageHeader header;
     CancelTarget target;
     string reason;
   };
 
-  struct SessionConfigUpdate {
+  @appendable struct SessionConfigUpdate {
     MessageHeader header;
 
     boolean has_language_hint;
@@ -68,7 +68,7 @@ module conversation_msgs {
     boolean enable_partial_tts;
   };
 
-  struct SessionStateEvent {
+  @appendable struct SessionStateEvent {
     MessageHeader header;
     SessionState state;
     Status status;

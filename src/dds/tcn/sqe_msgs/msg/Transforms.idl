@@ -24,14 +24,14 @@ module sqe_msgs {
         // The convention is stated here because it is not inferable from the
         // type: a 6x6 says nothing about which three of its axes are the
         // translation.
-        struct SRPose6DWithCovariance {
+        @appendable struct SRPose6DWithCovariance {
             tcn_types::msg::RigidTransform pose;
             sequence<double, 21> covariance;
         };
 
         // A translation and its 3x3, packed as 0 or 6 doubles -- the upper
         // triangle, row-major, in m^2.
-        struct SRTranslation3DWithCovariance {
+        @appendable struct SRTranslation3DWithCovariance {
             tcn_types::msg::Vector3 translation;
             sequence<double, 6> covariance;
         };
@@ -42,7 +42,7 @@ module sqe_msgs {
         // needs no second mechanism. Extrinsic calibration writes the pose
         // edge, intrinsic calibration writes this, and neither can drift from
         // the other because there is only one copy of each fact.
-        struct SRIntrinsics {
+        @appendable struct SRIntrinsics {
             double fx; double fy;
             double cx; double cy;
 
@@ -69,7 +69,7 @@ module sqe_msgs {
         // A point in an image plane, in pixels. The result of a projection,
         // never a declared relation: nothing composes onto it, because the
         // projection that produced it discarded the depth a further hop needs.
-        struct SRPoint2D {
+        @final struct SRPoint2D {
             double u; double v;
 
             // How well (u, v) is known: 0 or 3 doubles, the upper triangle of
@@ -77,7 +77,7 @@ module sqe_msgs {
             sequence<double, 3> covariance;
         };
 
-        enum SRTransformType {
+        @appendable enum SRTransformType {
           SRG_TRANSFORM_POSE6D,
           SRG_TRANSFORM_TRANSLATION3D,
 
@@ -91,7 +91,7 @@ module sqe_msgs {
           SRG_TRANSFORM_POINT2D
         };
 
-        union SRTransform switch(SRTransformType) {
+        @appendable union SRTransform switch(SRTransformType) {
         case SRG_TRANSFORM_POSE6D:
             tcn_types::msg::RigidTransform pose6d;
         case SRG_TRANSFORM_TRANSLATION3D:

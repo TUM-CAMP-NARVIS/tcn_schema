@@ -6,7 +6,7 @@
 module conversation_msgs {
   module msg {
 
-  struct AudioOpusFrame {
+  @appendable struct AudioOpusFrame {
     MessageHeader header;
     StreamDirection direction;
     AudioFormat format;
@@ -21,7 +21,7 @@ module conversation_msgs {
     sequence<octet> packet;
   };
 
-  struct AudioPcmChunk {
+  @appendable struct AudioPcmChunk {
     MessageHeader header;
     StreamDirection direction;
     AudioFormat format;
@@ -38,7 +38,7 @@ module conversation_msgs {
     ShmRef shm_ref;
   };
 
-  struct VadEvent {
+  @appendable struct VadEvent {
     MessageHeader header;
 
     boolean speech_active;

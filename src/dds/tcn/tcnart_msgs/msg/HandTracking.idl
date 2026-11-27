@@ -7,24 +7,24 @@
 module tcnart_msgs {
   module msg {
 
-    enum Handedness {
+    @appendable enum Handedness {
       HANDEDNESS_UNKNOWN,
       HANDEDNESS_LEFT,
       HANDEDNESS_RIGHT
     };
 
-    enum JointPoseAccuracy {
+    @appendable enum JointPoseAccuracy {
       JointPoseAccuracy_High,
       JointPoseAccuracy_Approximate
     };
 
-    struct HandJointPose {
+    @appendable struct HandJointPose {
       tcn_types::msg::RigidTransform pose;
       float radius;
       JointPoseAccuracy accuracy;
     };
 
-    struct HandState {
+    @appendable struct HandState {
       Handedness hand;
       boolean tracked;
       boolean aim_valid;
@@ -32,7 +32,7 @@ module tcnart_msgs {
       sequence<HandJointPose> joints;
     };
 
-    struct HandTrackingMessage {
+    @appendable struct HandTrackingMessage {
 
       std_msgs::msg::Header header;
 
