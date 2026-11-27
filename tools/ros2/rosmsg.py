@@ -19,6 +19,7 @@ class RosType:
     name: str                     # primitive name, or message name
     array: Optional[Tuple] = None  # None | ("fixed", N) | ("bounded", N) | ("unbounded",)
     string_bound: Optional[int] = None
+    kind: str = "msg"             # namespace of a referenced type: msg | srv | action
 
 
 @dataclass
@@ -41,6 +42,7 @@ class MessageSpec:
     name: str
     fields: List[Field] = field(default_factory=list)
     constants: List[Constant] = field(default_factory=list)
+    kind: str = "msg"             # msg | srv | action: the IDL module the struct lives in
 
 
 @dataclass
@@ -134,11 +136,15 @@ def _split(text: str, n: int, what: str) -> List[str]:
 
 def parse_service(pkg: str, name: str, text: str) -> ServiceSpec:
     req, resp = _split(text, 2, f"{pkg}/{name}")
-    return ServiceSpec(pkg, name, parse_message(pkg, name + "_Request", req),
-                       parse_message(pkg, name + "_Response", resp))
+    r, p = parse_message(pkg, name + "_Request", req), parse_message(pkg, name + "_Response", resp)
+    r.kind = p.kind = "srv"
+    return ServiceSpec(pkg, name, r, p)
 
 
 def parse_action(pkg: str, name: str, text: str) -> ActionSpec:
     goal, result, feedback = _split(text, 3, f"{pkg}/{name}")
-    return ActionSpec(pkg, name, parse_message(pkg, name + "_Goal", goal),
-                      parse_message(pkg, name + "_Result", result), parse_message(pkg, name + "_Feedback", feedback))
+    parts = [parse_message(pkg, name + suffix, t) for suffix, t in
+             (("_Goal", goal), ("_Result", result), ("_Feedback", feedback))]
+    for m in parts:
+        m.kind = "action"
+    return ActionSpec(pkg, name, *parts)
