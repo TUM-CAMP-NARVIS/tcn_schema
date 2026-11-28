@@ -23,12 +23,6 @@ module conversation_msgs {
     STREAM_DIRECTION_DOWNLINK
   };
 
-  @appendable enum EventState {
-    EVENT_STATE_UNKNOWN,
-    EVENT_STATE_PARTIAL,
-    EVENT_STATE_FINAL
-  };
-
   @appendable enum CancelTarget {
     CANCEL_TARGET_UNKNOWN,
     CANCEL_TARGET_STT,
@@ -48,6 +42,29 @@ module conversation_msgs {
     SESSION_STATE_PLAYING,
     SESSION_STATE_STOPPED,
     SESSION_STATE_ERROR
+  };
+
+  // Why a session changed state (#36 S5): a return to LISTENING after a completed reply, a barge-in, an ignored
+  // noise, an utterance without the wake word or a cancel. NONE when there is nothing to say (the first enumerator
+  // is NONE, not UNKNOWN). Errors keep their detail in SessionStateEvent.status.
+  @appendable enum SessionStateReason {
+    SESSION_STATE_REASON_NONE,
+    SESSION_STATE_REASON_COMPLETED,
+    SESSION_STATE_REASON_BARGE_IN,
+    SESSION_STATE_REASON_NON_SPEECH,
+    SESSION_STATE_REASON_NOT_ADDRESSED,
+    SESSION_STATE_REASON_CANCELLED,
+    SESSION_STATE_REASON_ERROR
+  };
+
+  // The server's barge-in mode (#36 S6), advertised in AppServerInfo.barge_in_mode; a client may lower it with
+  // SessionStart.barge_in_mode. UNKNOWN is 0 (E6), so OFF is 1 (#36 S6 had OFF = 0).
+  @appendable enum BargeInMode {
+    BARGE_IN_MODE_UNKNOWN,
+    BARGE_IN_MODE_OFF,
+    BARGE_IN_MODE_VAD,
+    BARGE_IN_MODE_SUSTAINED,
+    BARGE_IN_MODE_WORDS
   };
 
   @appendable enum ErrorCode {

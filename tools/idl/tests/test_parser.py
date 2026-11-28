@@ -22,10 +22,10 @@ class RepoSchemaTest(unittest.TestCase):
     def test_all_repo_files_parse(self):
         # 0.11 plan 2: the ROS 2 tree is generated from Jazzy (all tiers committed); plan 3: the tcn layout;
         # plan 5 task 4: sqe_msgs/rpc/Reply.idl; plan 6 task 1: tcn_types/msg/Stream.idl; task 2: tcnart_msgs/msg/JointSet.idl (generated).
-        # task 5 deleted tcnart_msgs/msg/CameraModel.idl.
-        self.assertEqual(len(self.schema.files), 474)
+        # task 5 deleted tcnart_msgs/msg/CameraModel.idl; task 6 added conversation_msgs/msg/Face.idl.
+        self.assertEqual(len(self.schema.files), 475)
         n = sum(1 for f in self.schema.files for d in f.decls if isinstance(d, (Struct, Enum, Union)))
-        self.assertEqual(n, 1199)  # 0.11 plan 4 deleted six types (tools/idl/fields_0_11.json); plan 5 task 2 added 11, task 3 added 6 and deleted 5, task 4 added 16 and deleted 5, task 5 added 12 and deleted 3; plan 6 task 1 added 2, task 2 added 1, task 3 added 10, task 4 added 12 and deleted 3, task 5 added 2 and deleted 2 (tools/idl/streams_0_11.json)
+        self.assertEqual(n, 1202)  # 0.11 plan 4 deleted six types (tools/idl/fields_0_11.json); plan 5 task 2 added 11, task 3 added 6 and deleted 5, task 4 added 16 and deleted 5, task 5 added 12 and deleted 3; plan 6 task 1 added 2, task 2 added 1, task 3 added 10, task 4 added 12 and deleted 3, task 5 added 2 and deleted 2, task 6 added 6 and deleted 3 (tools/idl/streams_0_11.json)
 
     def test_stream_kind(self):
         # 0.11 plan 6 task 4: StreamKind replaces SensorType.

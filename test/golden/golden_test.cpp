@@ -14,6 +14,8 @@
 
 #include "cdr_util.h"
 
+#include "conversation_msgs/msg/Control.h"
+#include "conversation_msgs/msg/ControlCdrAux.hpp"
 #include "pcpd_msgs/rpc/Parameters.h"
 #include "pcpd_msgs/rpc/ParametersCdrAux.hpp"
 #include "std_msgs/msg/Header.h"
@@ -492,9 +494,44 @@ static void parameters()
     CHECK(back.value().enum_value().label() == "auto" && back.value().enum_value().value() == 2);
 }
 
+// The first conversation_msgs golden (0.11 plan 6 task 6, #36 S1/S6; E4: XCDR2, so 00 09 first). By hand:
+// SessionStart DHEADER 0x80; MessageHeader DHEADER 0x5c: six empty strings (length 1 + NUL + pad 3), "s" (length 2
+// + pad 2), turn_id 1 and three zero uint64 at 4-aligned offsets, two zero uint16; ClientIdentity DHEADER 0x15: "c",
+// "" + pad 3, "" with no trailing pad (XTypes 1.3: padding precedes an aligned member, never ends a struct);
+// allow_barge_in 01, enable_partial_stt 00; barge_in_mode present (01), already 4-aligned, VAD = 2 (UNKNOWN = 0,
+// OFF = 1: E6, unlike #36 S6's OFF = 0).
+static void conversation()
+{
+    namespace cm = conversation_msgs::msg;
+    cm::SessionStart s;
+    s.header().session_id("s");
+    s.header().turn_id(1);
+    s.identity().client_id("c");
+    s.allow_barge_in(true);
+    s.enable_partial_stt(false);
+    s.barge_in_mode(cm::BargeInMode::BARGE_IN_MODE_VAD);
+    CHECK(static_cast<int>(cm::BargeInMode::BARGE_IN_MODE_OFF) == 1);
+    const std::vector<char> bytes = golden("conversation_msgs_SessionStart", s, Encoding::XCDR2);
+    CHECK(bytes.size() == 136);
+    cm::SessionStart back;
+    CHECK(tcn_test::decode(bytes, back));
+    CHECK(back.barge_in_mode().has_value() && *back.barge_in_mode() == cm::BargeInMode::BARGE_IN_MODE_VAD);
+
+    // Absent is "the server's mode" (AppServerInfo.barge_in_mode), never OFF: the presence byte 00 ends the struct.
+    cm::SessionStart plain = s;
+    plain.barge_in_mode().reset();
+    std::vector<char> plain_bytes;
+    CHECK(tcn_test::encode(plain, plain_bytes, Encoding::XCDR2));
+    CHECK(plain_bytes.size() == 132 && plain_bytes.back() == 0);
+    cm::SessionStart plain_back = s;
+    CHECK(tcn_test::decode(plain_bytes, plain_back) && !plain_back.barge_in_mode().has_value());
+}
+
 int main()
 {
     golden("std_msgs_Header", header(), Encoding::XCDR1);
+
+    conversation();
 
     streams();
 

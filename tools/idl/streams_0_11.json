@@ -16,7 +16,10 @@
   "tcnart_msgs::msg::VideoImageCompression",
   "tcnart_msgs::msg::BufferInfo",
   "tcnart_msgs::msg::CameraModel",
-  "tcnart_msgs::msg::CameraModelType"
+  "tcnart_msgs::msg::CameraModelType",
+  "conversation_msgs::msg::SessionConfigUpdate",
+  "conversation_msgs::msg::SttRequest",
+  "conversation_msgs::msg::EventState"
  ],
  "new_types": [
   "tcn_types::msg::StreamHeader",
@@ -45,7 +48,13 @@
   "tcnart_msgs::msg::VideoCodec",
   "tcnart_msgs::msg::MeshEncoding",
   "pcpd_msgs::rpc::StreamRole",
-  "pcpd_msgs::rpc::StreamMode"
+  "pcpd_msgs::rpc::StreamMode",
+  "conversation_msgs::msg::BargeInMode",
+  "conversation_msgs::msg::SessionStateReason",
+  "conversation_msgs::msg::PlaybackState",
+  "conversation_msgs::msg::PlaybackEvent",
+  "conversation_msgs::msg::FaceRig",
+  "conversation_msgs::msg::FaceAnimationLayout"
  ],
  "expect": {
   "reshaped": [
@@ -71,7 +80,20 @@
    "pcpd_msgs::rpc::StreamAnnouncement",
    "pcpd_msgs::rpc::ProcessInfo",
    "tcnart_msgs::msg::TcnartPresenceMessage",
-   "tcnart_msgs::msg::ServiceInfo"
+   "tcnart_msgs::msg::ServiceInfo",
+   "conversation_msgs::msg::SessionStart",
+   "conversation_msgs::msg::SessionStateEvent",
+   "conversation_msgs::msg::VadEvent",
+   "conversation_msgs::msg::AudioOpusFrame",
+   "conversation_msgs::msg::SttPartial",
+   "conversation_msgs::msg::SttFinal",
+   "conversation_msgs::msg::LlmPartial",
+   "conversation_msgs::msg::LlmFinal",
+   "conversation_msgs::msg::InteractionActivity",
+   "conversation_msgs::msg::TtsAudioChunk",
+   "conversation_msgs::msg::TtsDone",
+   "conversation_msgs::msg::HealthStatus",
+   "conversation_msgs::rpc::AppServerInfo"
   ],
   "removed_members": {
    "tcnart_msgs::msg::VideoStreamMessage": [
@@ -115,6 +137,43 @@
    ],
    "tcnart_msgs::msg::ServiceInfo": [
     "service_info"
+   ],
+   "conversation_msgs::msg::SessionStart": [
+    "direction",
+    "ingress_format",
+    "expected_stt_format",
+    "expected_tts_format",
+    "egress_format",
+    "stt_backend",
+    "llm_backend",
+    "tts_backend",
+    "language_hint",
+    "voice_hint",
+    "enable_partial_llm",
+    "enable_partial_tts"
+   ],
+   "conversation_msgs::msg::VadEvent": [
+    "start_ms",
+    "end_ms",
+    "state"
+   ],
+   "conversation_msgs::msg::SttPartial": [
+    "state"
+   ],
+   "conversation_msgs::msg::SttFinal": [
+    "has_confidence",
+    "state"
+   ],
+   "conversation_msgs::msg::LlmPartial": [
+    "state"
+   ],
+   "conversation_msgs::msg::LlmFinal": [
+    "has_prompt_tokens",
+    "has_generated_tokens",
+    "state"
+   ],
+   "conversation_msgs::msg::HealthStatus": [
+    "component"
    ]
   }
  }

@@ -2,6 +2,7 @@
 #define CONVERSATION_MSGS_RPC_DISCOVERY_IDL
 
 #include "conversation_msgs/msg/Common.idl"
+#include "conversation_msgs/msg/Face.idl"
 
 module conversation_msgs {
   module rpc {
@@ -30,6 +31,13 @@ module conversation_msgs {
     boolean enable_partial_stt;
     boolean enable_partial_llm;
     boolean enable_partial_tts;
+
+    // Optional features this server supports (#36 D1, D4): names match [a-z0-9_]{1,64}; a client ignores a name it
+    // does not know. 0.11.0: `playback_events` (it consumes msg::PlaybackEvent), `barge_in_modes` (it honours
+    // SessionStart.barge_in_mode), `wake_word` (turns are gated by a wake word).
+    sequence<string> capabilities;
+    conversation_msgs::msg::BargeInMode barge_in_mode;  // the server's mode (#36 S6)
+    sequence<conversation_msgs::msg::FaceAnimationLayout> face_layouts;  // #36 F3, D5
   };
 
   };
