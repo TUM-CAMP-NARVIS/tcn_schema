@@ -17,7 +17,7 @@ becomes that release's migration note.
 | 3 | Moves and deletions: `sqe_msgs`, `tcn_types`, parameter RPC → `pcpd_msgs`, `custom/` → `tcn/`, deleted types | type names, removals | merged (#43) |
 | 4 | Encoding (XCDR2, `tcn_schema=0.11`), enum renames outside `sqe_msgs`, field removals F1, F2, F5 | **yes** | merged (#44) |
 | 5 | The #35 SQE redesign, with F3/F4 and the `sqe_msgs` enums | **yes** | merged (#45) |
-| 6 | #36, #37, #38 changes, the typed stream descriptor (#35 S1, N6), HumanPose and joint sets; `0.11.0-rc1` | **yes** | in review (PR for branch `0.11-plan6-rc1`) |
+| 6 | #36, #37, #38 changes, the typed stream descriptor (#35 S1, N6), HumanPose and joint sets; `0.11.0-rc1` | **yes** | merged (#46) |
 
 **How to use this log.** Find your checklist in §2 and work through it in order. Each item names the plan that
 brought it; the details are in that plan's part of §1. Items marked *(wire)* need the lockstep cut-over; all others
