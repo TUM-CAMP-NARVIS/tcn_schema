@@ -6,5 +6,6 @@ tcn_add_idl_package(
             "msg/Frames.idl"
             "msg/Geometry.idl"
             "msg/Ids.idl"
+            "msg/Stream.idl"
             "msg/Tracking.idl"
         )

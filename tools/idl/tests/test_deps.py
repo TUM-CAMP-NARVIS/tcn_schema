@@ -18,7 +18,8 @@ class PackageTableTest(unittest.TestCase):
         self.assertEqual(self.deps["std_msgs"], {"builtin_interfaces"})
         self.assertEqual(self.deps["tcnart_msgs"], {"std_msgs", "tcn_types"})
         self.assertEqual(self.deps["conversation_msgs"], set())
-        self.assertEqual(self.deps["pcpd_msgs"], {"std_msgs", "tcn_types", "tcnart_msgs"})
+        # 0.11 plan 6 task 1 (#38 A1): MeshBitstreamMessage carries a tcn_types StreamHeader, not std_msgs/Header.
+        self.assertEqual(self.deps["pcpd_msgs"], {"tcn_types", "tcnart_msgs"})
         # 0.11 plan 5 (#35 H3): SISRelationOutput carries a whole tcnart_msgs TargetTrackingMessage.
         self.assertEqual(self.deps["sqe_msgs"], {"builtin_interfaces", "tcn_types", "tcnart_msgs"})
 

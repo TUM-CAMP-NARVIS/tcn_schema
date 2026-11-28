@@ -1,8 +1,8 @@
 #ifndef TCNART_MSGS_MSG_IMU_IDL
 #define TCNART_MSGS_MSG_IMU_IDL
 
-#include "std_msgs/msg/Header.idl"
 #include "tcn_types/msg/Geometry.idl"
+#include "tcn_types/msg/Stream.idl"
 
 module tcnart_msgs {
   module msg {
@@ -13,14 +13,14 @@ module tcnart_msgs {
     const uint32 IMU_VALID_GYRO = 2;    // gyro_device_ns, gyro
 
     // One inertial sample (0.10.4): accelerometer and gyroscope, each with the device's own time (they may be
-    // sampled at different instants or rates; a message may carry one of them). header.stamp: the sample's time
-    // on the publisher's clock; header.frame_id: the IMU's frame.
+    // sampled at different instants or rates; a message may carry one of them). header.capture_time_ns: the
+    // sample's time in the stream's clock; header.frame: the IMU's frame.
     @appendable struct ImuMessage {
-      std_msgs::msg::Header header;
+      tcn_types::msg::StreamHeader header;
       int64 acc_device_ns;   // the accelerometer sample's device time (ns)
-      tcn_types::msg::Vector3 acc;           // m/s^2, in frame_id
+      tcn_types::msg::Vector3 acc;           // m/s^2, in header.frame
       int64 gyro_device_ns;  // the gyroscope sample's device time (ns)
-      tcn_types::msg::Vector3 gyro;          // rad/s, in frame_id
+      tcn_types::msg::Vector3 gyro;          // rad/s, in header.frame
       uint32 valid;          // IMU_VALID_* bits
     };
 

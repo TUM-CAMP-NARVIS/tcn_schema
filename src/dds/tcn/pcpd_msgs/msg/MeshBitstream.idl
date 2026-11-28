@@ -1,15 +1,15 @@
 #ifndef PCPD_MSGS_MSG_MESHBITSTREAM_IDL
 #define PCPD_MSGS_MSG_MESHBITSTREAM_IDL
 
-#include "std_msgs/msg/Header.idl"
 #include "tcn_types/msg/Geometry.idl"
+#include "tcn_types/msg/Stream.idl"
 
 module pcpd_msgs {
   module msg {
 
     @appendable struct MeshBitstreamMessage {
 
-      std_msgs::msg::Header header;
+      tcn_types::msg::StreamHeader header;
 
       boolean enable_mesh_indices;
       uint32 num_camera_ids;

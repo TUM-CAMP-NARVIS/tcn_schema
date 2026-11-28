@@ -351,7 +351,6 @@
    "family": "tcn",
    "tier": "tcn",
    "deps": [
-    "std_msgs",
     "tcn_types",
     "tcnart_msgs"
    ]

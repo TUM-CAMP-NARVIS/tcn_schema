@@ -495,6 +495,9 @@ module sqe_msgs {
         uint32 covariance_hops;
         // One target per instance that resolved (target_id = materialized id;
         // 0 for a plain relation). An instance with a hole is absent.
+        // The outer `clock_domain` and `sequence_number` win over the embedded
+        // StreamHeader's: the engine leaves `targets.header.clock` absent and
+        // sets `targets.header.sequence_number` equal to the outer one.
         tcnart_msgs::msg::TargetTrackingMessage targets;
     };
 

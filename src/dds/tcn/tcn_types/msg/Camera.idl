@@ -1,6 +1,8 @@
 #ifndef TCN_TYPES_MSG_CAMERA_IDL
 #define TCN_TYPES_MSG_CAMERA_IDL
 
+#include "tcn_types/msg/Geometry.idl"
+
 module tcn_types {
   module msg {
 
@@ -35,6 +37,21 @@ module tcn_types {
 
         @appendable union CameraIntrinsics switch (CameraIntrinsicsKind) {
           case CAMERA_INTRINSICS_KIND_PINHOLE: PinholeIntrinsics pinhole;
+        };
+
+        // Where a calibration came from (#37 T1, with an ns time). `tool` is a
+        // stable id ("sqe-calibrate", "hta.rig_calibration"); `method` names the
+        // tool's procedure. `residual` is the tool's fit residual, in its own
+        // unit; `covariance` is the calibrated pose's, absent when not stated.
+        // `computed_at_ns`: when it was computed, ns since the Unix epoch.
+        // `samples`: how many observations went into it.
+        @appendable struct CalibrationProvenance {
+          string tool;
+          string method;
+          @optional double residual;
+          @optional SRCovariance6 covariance;
+          @optional int64 computed_at_ns;
+          uint32 samples;
         };
 
   };

@@ -1,0 +1,36 @@
+#ifndef TCN_TYPES_MSG_STREAM_IDL
+#define TCN_TYPES_MSG_STREAM_IDL
+
+#include "tcn_types/msg/Clock.idl"
+#include "tcn_types/msg/Frames.idl"
+
+module tcn_types {
+  module msg {
+
+        // The first member of every stream message (0.11, #38 A1); it replaces
+        // std_msgs/Header there.
+        //
+        // `capture_time_ns`: when the sample was captured, in ns in `clock`'s
+        // time base; for the deployment clock, since the Unix epoch.
+        // `device_time_ns`: the device's own counter, arbitrary epoch; absent
+        // when the device has none.
+        // `sequence_number`: per stream, gapless, from 1. (The IDL keyword
+        // `sequence` cannot be a member name.)
+        // `group_id`: one capture group across streams; a HumanPoseMessage
+        // matches its PersonTrackingMessage by it. Absent: not grouped.
+        // `clock`: absent means the stream descriptor's clock, which stays
+        // authoritative -- never the deployment clock by default.
+        // `frame`: the frame the payload is expressed in (was header.frame_id).
+        @appendable struct StreamHeader {
+          int64 capture_time_ns;
+          @optional int64 device_time_ns;
+          uint64 sequence_number;
+          @optional uint64 group_id;
+          @optional ClockDomain clock;
+          SRFrameRef frame;
+        };
+
+  };
+};
+
+#endif

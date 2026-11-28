@@ -18,8 +18,12 @@
 #include "std_msgs/msg/HeaderCdrAux.hpp"
 #include "tcn_types/msg/Frames.h"
 #include "tcn_types/msg/FramesCdrAux.hpp"
+#include "tcn_types/msg/Stream.h"
+#include "tcn_types/msg/StreamCdrAux.hpp"
 #include "tcnart_msgs/msg/PoseTracking.h"
 #include "tcnart_msgs/msg/PoseTrackingCdrAux.hpp"
+#include "tcnart_msgs/msg/VideoStream.h"
+#include "tcnart_msgs/msg/VideoStreamCdrAux.hpp"
 #include "sqe_msgs/msg/Graph.h"
 #include "sqe_msgs/msg/GraphCdrAux.hpp"
 #include "sqe_msgs/rpc/Mutations.h"
@@ -232,28 +236,83 @@ static void sqe_replies()
     golden("sqe_msgs_SISRelationStreamReply", reply, Encoding::XCDR2);
 }
 
+// {capture_time_ns 1, sequence_number 2, frame global:w}; device_time_ns, group_id and clock absent.
+static tcn_types::msg::StreamHeader stream_header()
+{
+    tcn_types::msg::StreamHeader h;
+    h.capture_time_ns(1);
+    h.sequence_number(2);
+    h.frame().scope(tcn_types::msg::SRNodeScope::SR_NODE_SCOPE_GLOBAL);
+    h.frame().owner("");
+    h.frame().name("w");
+    h.frame().selector(tcn_types::msg::SRFrameSelector::SR_FRAME_SELECTOR_FRAME);
+    return h;
+}
+
+// The stream header and two stream messages with optional members absent and present (#38 A1, A5; #37 T8, T19).
+static void streams()
+{
+    // By hand: DHEADER 0x34; int64 1 at a 4-aligned offset; device_time_ns absent (00 + 3 pad); uint64 2;
+    // group_id and clock absent (00 00 + 2 pad); SRFrameRef DHEADER 0x18, GLOBAL = 2, "" and "w", FRAME = 1.
+    golden("tcn_types_StreamHeader", stream_header(), Encoding::XCDR2);
+
+    // Target 1 tracked with a pose (presence 01), no covariance, no stamp; target 2 untracked with no pose
+    // (presence 00, never identity) and its own capture_time_ns 5.
+    tcnart_msgs::msg::TargetTrackingMessage tt;
+    tt.header(stream_header());
+    tcn_types::msg::Target tracked;
+    tracked.target_id(1);
+    tcn_types::msg::RigidTransform pose;
+    pose.translation().x(1);
+    pose.translation().y(2);
+    pose.translation().z(3);
+    pose.rotation().w(1);
+    tracked.pose(pose);
+    tracked.is_tracked(true);
+    tt.targets().push_back(tracked);
+    tcn_types::msg::Target lost;
+    lost.target_id(2);
+    lost.is_tracked(false);
+    lost.capture_time_ns(5);
+    tt.targets().push_back(lost);
+    tt.status_flags(tcnart_msgs::msg::TRACKER_STATUS_RUNNING);
+    golden("tcnart_msgs_TargetTrackingMessage", tt, Encoding::XCDR2);
+
+    // Per-frame intrinsics present (presence 01, then the union): pinhole 500, 500, 320, 240, NONE, no coefficients.
+    tcnart_msgs::msg::VideoStreamMessage video;
+    video.header(stream_header());
+    video.pose().rotation().w(1);
+    tcn_types::msg::PinholeIntrinsics pin;
+    pin.fx(500);
+    pin.fy(500);
+    pin.cx(320);
+    pin.cy(240);
+    pin.distortion_model(tcn_types::msg::SRDistortionModel::SR_DISTORTION_MODEL_NONE);
+    tcn_types::msg::CameraIntrinsics intr;
+    intr.pinhole(pin);
+    video.intrinsics(intr);
+    const std::vector<uint8_t> image{0xde, 0xad, 0xbe, 0xef};
+    video.image_bytes(image.size());
+    video.image(image);
+    golden("tcnart_msgs_VideoStreamMessage", video, Encoding::XCDR2);
+
+    // The same frame with the intrinsics absent (the descriptor's nominal ones): the image after them survives.
+    tcnart_msgs::msg::VideoStreamMessage nominal = video;
+    nominal.intrinsics().reset();
+    std::vector<char> bytes;
+    CHECK(tcn_test::encode(nominal, bytes, Encoding::XCDR2));
+    tcnart_msgs::msg::VideoStreamMessage back;
+    CHECK(tcn_test::decode(bytes, back));
+    CHECK(!back.intrinsics().has_value());
+    CHECK(back.image() == image && back.image_bytes() == 4);
+    CHECK(back == nominal);
+}
+
 int main()
 {
     golden("std_msgs_Header", header(), Encoding::XCDR1);
 
-    tcnart_msgs::msg::TargetTrackingMessage tt;
-    tt.header(header());
-    tcn_types::msg::Target target;
-    target.target_id(7);
-    target.pose().translation().x(1);
-    target.pose().translation().y(2);
-    target.pose().translation().z(3);
-    target.pose().rotation().w(1);
-    target.is_tracked(true);
-    tt.targets().push_back(target);
-    // a second target with a stated covariance: upper[k] = k
-    tcn_types::msg::Target stated = target;
-    stated.target_id(8);
-    tcn_types::msg::SRCovariance6 cov;
-    for (size_t k = 0; k < 21; ++k) cov.upper()[k] = static_cast<double>(k);
-    stated.pose_covariance(cov);
-    tt.targets().push_back(stated);
-    golden("tcnart_msgs_TargetTrackingMessage", tt, Encoding::XCDR2);
+    streams();
 
     // The XCDR2 rules by hand: DHEADER 0x18; enum int32 LOCAL=1; "a" and "b" as length 2 + bytes + pad; enum FRAME=1.
     tcn_types::msg::SRFrameRef ref;

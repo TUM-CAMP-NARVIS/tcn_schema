@@ -1,8 +1,8 @@
 #ifndef TCNART_MSGS_MSG_POSETRACKING_IDL
 #define TCNART_MSGS_MSG_POSETRACKING_IDL
 
-#include "std_msgs/msg/Header.idl"
 #include "tcn_types/msg/Geometry.idl"
+#include "tcn_types/msg/Stream.idl"
 #include "tcn_types/msg/Tracking.idl"
 
 module tcnart_msgs {
@@ -10,7 +10,7 @@ module tcnart_msgs {
 
     @appendable struct Pose6DMessage {
 
-      std_msgs::msg::Header header;
+      tcn_types::msg::StreamHeader header;
 
       tcn_types::msg::RigidTransform value;
 
@@ -80,7 +80,7 @@ module tcnart_msgs {
 
     @appendable struct TargetTrackingMessage {
 
-      std_msgs::msg::Header header;
+      tcn_types::msg::StreamHeader header;
 
       sequence<tcn_types::msg::Target> targets;
       uint32 status_flags;              // TRACKER_STATUS_* bits

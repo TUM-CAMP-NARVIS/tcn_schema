@@ -1,0 +1,32 @@
+{
+ "_comment": "0.11 plan 6 (#36-#38): the expected differences between the plan 5 tree and the plan 6 tree, for `idl_cli.py moves --old <plan 5 src/dds> --new src/dds --spec tools/idl/streams_0_11.json`. Each task appends what it changes.",
+ "files": [],
+ "deleted": [],
+ "new_types": [
+  "tcn_types::msg::StreamHeader",
+  "tcn_types::msg::CalibrationProvenance"
+ ],
+ "expect": {
+  "reshaped": [
+   "tcn_types::msg::Target",
+   "tcnart_msgs::msg::VideoStreamMessage",
+   "tcnart_msgs::msg::Pose6DMessage",
+   "tcnart_msgs::msg::TargetTrackingMessage",
+   "tcnart_msgs::msg::EyeTrackingMessage",
+   "tcnart_msgs::msg::HandTrackingMessage",
+   "tcnart_msgs::msg::ImuMessage",
+   "pcpd_msgs::msg::MeshBitstreamMessage"
+  ],
+  "removed_members": {
+   "tcnart_msgs::msg::VideoStreamMessage": [
+    "camera_focal_length",
+    "camera_principal_point",
+    "camera_radial_distortion",
+    "camera_tangential_distortion"
+   ],
+   "tcnart_msgs::msg::HandTrackingMessage": [
+    "gaze_valid"
+   ]
+  }
+ }
+}

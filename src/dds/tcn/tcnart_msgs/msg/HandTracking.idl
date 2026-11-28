@@ -1,8 +1,8 @@
 #ifndef TCNART_MSGS_MSG_HANDTRACKING_IDL
 #define TCNART_MSGS_MSG_HANDTRACKING_IDL
 
-#include "std_msgs/msg/Header.idl"
 #include "tcn_types/msg/Geometry.idl"
+#include "tcn_types/msg/Stream.idl"
 
 module tcnart_msgs {
   module msg {
@@ -25,11 +25,10 @@ module tcnart_msgs {
 
     @appendable struct HandTrackingMessage {
 
-      std_msgs::msg::Header header;
+      tcn_types::msg::StreamHeader header;
 
       tcn_types::msg::ViewPose head_pose;
-      boolean gaze_valid;
-      tcn_types::msg::Ray gaze;
+      @optional tcn_types::msg::Ray gaze;  // absent: no gaze this sample
       sequence<HandState> hands;
 
     };
