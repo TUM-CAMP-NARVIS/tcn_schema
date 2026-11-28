@@ -62,6 +62,9 @@ def _expected(d, name: str, expect: dict, label_map: Dict[str, str]):
     d = dataclasses.replace(d, extensibility=want)
     if isinstance(d, Struct):
         gone, opt = set(expect.get("removed_members", {}).get(name, [])), set(expect.get("optional", {}).get(name, []))
+        unknown = (gone | opt) - {x.name for x in d.members}
+        if unknown:
+            raise ValueError(f"{name}: expect names members it does not have: {sorted(unknown)}")
         d = dataclasses.replace(d, members=[dataclasses.replace(x, optional=x.optional or x.name in opt)
                                             for x in d.members if x.name not in gone])
     elif isinstance(d, Enum) and name in expect.get("enums", {}):

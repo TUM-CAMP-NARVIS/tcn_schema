@@ -11,6 +11,12 @@ module evo_v2 {
       @optional double c;
       int64 d;
     };
+
+    // Data after a grown struct: a reader that does not skip by the DHEADER misreads the second element and `tail`.
+    @appendable struct Holder {
+      sequence<Thing> things;
+      int32 tail;
+    };
   };
 };
 

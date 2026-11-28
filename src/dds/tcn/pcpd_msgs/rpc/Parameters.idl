@@ -47,7 +47,7 @@ module pcpd_msgs {
       PARAMETER_VALUE_TYPE_DOUBLE,
       PARAMETER_VALUE_TYPE_BOOL,
       PARAMETER_VALUE_TYPE_STRUCT,
-      // 0.9.0, appended: the ordinals above are unchanged.
+      // Appended in 0.9.0. 0.11 inserted PARAMETER_VALUE_TYPE_UNKNOWN first, so every value moved up by one.
       PARAMETER_VALUE_TYPE_UINT32,
       PARAMETER_VALUE_TYPE_UINT64
     };

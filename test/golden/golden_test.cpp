@@ -67,6 +67,8 @@ static std::vector<char> golden(const char* name, const T& value, Encoding e)
     std::vector<char> bytes;
     CHECK(tcn_test::encode(value, bytes, e));
     CHECK(bytes.size() > 1 && bytes[1] == tcn_test::encapsulation_id(e));
+    // Only ROS 2 types (std_msgs here) are XCDR1; every other golden must prove XCDR2 (decisions E1, E2).
+    CHECK((std::string(name).rfind("std_msgs_", 0) == 0) == (e == Encoding::XCDR1));
     const std::string path = std::string(TCN_GOLDEN_DIR) + "/" + name + ".hex";
     const std::string hex = to_hex(bytes);
     const char* update = std::getenv("TCN_SCHEMA_UPDATE_GOLDEN");
@@ -116,6 +118,32 @@ static void evolution()
     CHECK(new_reader.b() == "ab");
     CHECK(!new_reader.c().has_value());
     CHECK(new_reader.d() == 0);
+
+    // Grown structs inside a container, followed by more data: the old reader must skip by every DHEADER.
+    evo_v2::msg::Holder h2;
+    evo_v2::msg::Thing t2b = v2;
+    t2b.a(8);
+    t2b.b("yo");
+    h2.things({v2, t2b});
+    h2.tail(-1);
+    golden("evo_v2_Holder", h2, Encoding::XCDR2);
+    evo_v1::msg::Holder old_holder{};
+    const auto bytes2 = golden_bytes("evo_v2_Holder");
+    CHECK(tcn_test::decode(bytes2, old_holder));
+    CHECK(tcn_test::consumed(bytes2, old_holder) == bytes2.size());
+    CHECK(old_holder.things().size() == 2);
+    CHECK(old_holder.things().size() == 2 && old_holder.things()[1].a() == 8 && old_holder.things()[1].b() == "yo");
+    CHECK(old_holder.tail() == -1);
+
+    evo_v1::msg::Holder h1;
+    h1.things({v1, v1});
+    h1.tail(42);
+    golden("evo_v1_Holder", h1, Encoding::XCDR2);
+    evo_v2::msg::Holder new_holder{};
+    const auto bytes1 = golden_bytes("evo_v1_Holder");
+    CHECK(tcn_test::decode(bytes1, new_holder));
+    CHECK(new_holder.things().size() == 2 && !new_holder.things()[1].c().has_value() && new_holder.things()[1].d() == 0);
+    CHECK(new_holder.tail() == 42);
 }
 
 static std_msgs::msg::Header header()

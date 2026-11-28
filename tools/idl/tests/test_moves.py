@@ -139,3 +139,13 @@ class ExpectTest(unittest.TestCase):
     def test_star_does_not_override_explicit_final(self):
         r = self._cmp(self.NEW.replace("@final struct W", "@appendable struct W"), self.EXPECT)
         self.assertEqual(len(r.problems), 1)
+
+
+class ExpectTypoTest(unittest.TestCase):
+    def test_expect_naming_a_missing_member_is_an_error(self):
+        from tools.idl.moves import compare
+        s = {"p/msg/V.idl": "module p { module msg { struct V { double x; }; }; };"}
+        with self.assertRaises(ValueError):
+            compare(_schema(s), _schema(s), {}, set(), expect={"removed_members": {"p::msg::V": ["typo"]}})
+        with self.assertRaises(ValueError):
+            compare(_schema(s), _schema(s), {}, set(), expect={"optional": {"p::msg::V": ["typo"]}})

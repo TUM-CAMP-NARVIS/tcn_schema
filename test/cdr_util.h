@@ -66,6 +66,25 @@ bool decode(const std::vector<char>& in, T& m)
     return true;
 }
 
+// How many bytes decoding `in` as T consumes (encapsulation included); 0 on failure. A reader that honours every
+// DHEADER consumes the whole payload.
+template <typename T>
+size_t consumed(const std::vector<char>& in, T& m)
+{
+    if (in.size() < 4) return 0;
+    const CdrVersion version = static_cast<unsigned char>(in[1]) >= 0x06 ? CdrVersion::XCDRv2 : CdrVersion::DDS_CDR;
+    std::vector<char> copy(in);
+    FastBuffer fb(copy.data(), copy.size());
+    Cdr de(fb, Cdr::DEFAULT_ENDIAN, version);
+    try {
+        de.read_encapsulation();
+        de >> m;
+    } catch (...) {
+        return 0;
+    }
+    return de.get_serialized_data_length();
+}
+
 // A default-constructed T survives encode -> decode into a fresh T (decisions E5): the payload is more than the
 // 4-byte encapsulation header, and re-encoding the decoded value gives the same bytes. With compare_values, the
 // generated operator== must also hold; it is off for types whose operator== is known to be wrong (fastddsgen 3.0.0

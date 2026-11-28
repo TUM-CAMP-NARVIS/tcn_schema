@@ -91,7 +91,8 @@ under `share/tcn_schema/dds/`.
 
 - **What it is:** `src/dds/tcn/conversation_msgs/` is the realtime conversational pipeline's protocol:
   `conversation_msgs::msg` (common, control, audio, stt, llm, tts, metrics) and `conversation_msgs::rpc` (discovery,
-  `AppServerInfo`). Type names, field names, field order and enum order are the pipeline's.
+  `AppServerInfo`). Type names, field names and field order are the pipeline's; since 0.11 enumerators carry the enum-name prefix and
+  start with `…_UNKNOWN` (E6, O5), so their values differ from the pipeline's own enums.
 - **Encoding:** since 0.11 XCDR2 with the encapsulation header, like every tcn type (decisions E4). Up to 0.10 they
   travelled as plain CDR without the header.
 
@@ -107,7 +108,8 @@ The encoding belongs to the package family (decisions E1–E3):
 - **fast-cdr writers** of tcn types: `CdrVersion::XCDRv2`, then `set_encoding_flag(EncodingAlgorithmFlag::DELIMIT_CDR2)`,
   then `serialize_encapsulation()`.
 - **Readers** pick the version from the encapsulation id, decode into a fresh object, skip trailing members they do
-  not know, and give missing members their defaults.
+  not know, and give missing members their defaults. An unknown enumerator reads as the first one (E6); fast-cdr does
+  not check this, so C++ readers range-check enums themselves.
 - **New members after 0.11.0** are appended and `@optional`, unless 0, `""` or empty is a true reading (E8).
 - **The details for hand-written codecs** are in
   [docs/migration/MIGRATION-0.11.0.md](docs/migration/MIGRATION-0.11.0.md) (Plan 4).
