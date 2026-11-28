@@ -126,10 +126,11 @@ module sqe_msgs {
         // disagrees with a stream start using the other one, and the disagreement reads as an engine bug.
         SISPathPredicate predicate;
 
-        // Hops from either named frame that the walk may consider. 0 asks for the engine's default; the engine's
-        // own cap is a ceiling this may only lower. A path read within a stated radius is bounded before it
-        // starts, and the reply says whether the radius stopped it.
-        uint32 radius;
+        // Hops from either named frame that the walk may consider; absent asks for the engine's default (P3: a
+        // present 0 is zero hops, not "default"). The engine's own cap is a ceiling this may only lower. A path
+        // read within a stated radius is bounded before it starts, and the reply says whether the radius stopped
+        // it.
+        @optional uint32 radius;
     };
 
     // What to read (#35 G3). One union and one key for all four kinds, so the item cap and the minimum interval
@@ -146,10 +147,11 @@ module sqe_msgs {
     @appendable struct SISGraphQueryRequest {
         SISGraphQuery query;
 
-        // Opaque; empty on a first page, otherwise the `next_cursor` of the page before. A cursor and not an
-        // offset: the graph mutates under a paginated read and no transaction is held across pages. A client that
-        // parses one has broken the contract. A reply is bounded by the engine's own item and byte caps; a client
-        // cannot lower or raise them.
+        // Opaque; "" = the first page, otherwise the `next_cursor` of the page before. The empty token is a true
+        // reading ("start"), not a sentinel for an absent cursor, so the member is a plain string. A cursor and
+        // not an offset: the graph mutates under a paginated read and no transaction is held across pages. A
+        // client that parses one has broken the contract. A reply is bounded by the engine's own item and byte
+        // caps; a client cannot lower or raise them.
         string cursor;
     };
 
@@ -398,8 +400,9 @@ module sqe_msgs {
         // the methods that produce that result are what come back.
         sqe_msgs::msg::SRTransformType wanted;
 
-        // Hops from either named frame. 0 asks for the engine's default.
-        uint32 radius;
+        // Hops from either named frame; absent asks for the engine's
+        // default (P3: a present 0 is zero hops, not "default").
+        @optional uint32 radius;
     };
 
     @appendable struct SISPatternQueryReply {

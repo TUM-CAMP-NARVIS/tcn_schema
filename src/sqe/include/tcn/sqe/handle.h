@@ -76,7 +76,11 @@ public:
     ///     because either half may be the wrong one. An OK reply always has a
     ///     state, so `Unknown` is never read as the stop answer;
     ///   * no handle (an OK stop: `Inactive`) -> `HandleAbsent`;
-    ///   * any of the four strings empty -> `EmptyHandleTopic`.
+    ///   * any of the four strings empty -> `EmptyHandleTopic`. All four are
+    ///     always named and non-empty, whatever the evaluation mode: a topic
+    ///     nothing is published on (`data_topic` of a LOCAL stream,
+    ///     `plan_topic` of an ENGINE stream) is still named, so an empty one is
+    ///     a protocol error, never "this mode has no such topic".
     ///
     /// `has_value()` is asked before `value()` on every path: fast-cdr's
     /// `optional::value()` *throws* on an absent member, and this library adds

@@ -14,6 +14,14 @@
 module sqe_msgs {
   module rpc {
 
+    // **Whose LOCAL frames a mutation may name.** A client writes only its own fragment. In a request on
+    // `{client}/sis/node/*` or `{client}/sis/edge/*` (updates and removals alike), every LOCAL SRFrameRef the
+    // request carries -- a removed node, an edge's or a removed edge's source and target -- must have `owner`
+    // equal to the key's `{client}`; any other owner is refused REJECTED + NOT_PERMITTED, before anything is
+    // written. An empty LOCAL owner is accepted only inside a join, where it means "this fragment"; here it is
+    // not the key's client, so it is refused the same way. GLOBAL and DOMAIN frames carry no fragment owner;
+    // this rule does not apply to them.
+
     // A query since 0.9.0 (B73), answered with SISMutationReply.
     @appendable struct SISNodeUpdateRequest {
         sqe_msgs::msg::SRNode node;
@@ -56,7 +64,8 @@ module sqe_msgs {
     //   UNKNOWN_FRAME   a named endpoint node does not exist; which one is in `detail`
     //   REJECTED        MALFORMED (undecodable, a non-finite weight, an invalid identifier), NOT_PERMITTED (a
     //                   timing transition the engine refuses, a push naming an engine-derived edge, removing the
-    //                   origin node) or SCHEMA_MISMATCH; a join is all or nothing, with every reason in `detail`
+    //                   origin node, a LOCAL frame owned by another fragment -- see the top of this file) or
+    //                   SCHEMA_MISMATCH; a join is all or nothing, with every reason in `detail`
     //   UNAVAILABLE     the write did not complete inside its bound (STORE_UNAVAILABLE when the store is down).
     //                   This means *unknown*, not "did not land"; retrying is safe because the write is an upsert.
     //

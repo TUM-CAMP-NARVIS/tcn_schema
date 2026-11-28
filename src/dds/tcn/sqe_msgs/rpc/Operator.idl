@@ -50,7 +50,8 @@ module sqe_msgs {
         SISOperatorRef who;
         string prefix;             // keep ids under this prefix, by whole chunks;
                                    //   "" = the whole scope; outside it = NOT_IN_SCOPE
-        string cursor;             // opaque; "" on the first page
+        string cursor;             // opaque; "" = the first page. The empty token is a true reading
+                                   //   ("start"), not a sentinel for an absent cursor
     };
 
     // Ordered by `fragment`. `header.status` is TRUNCATED with a `next_cursor` when there are more pages; the
@@ -241,7 +242,7 @@ module sqe_msgs {
         boolean active;
         string label;
         string file;            // on the engine's host
-        int64 started_ns;       // ns since the Unix epoch; 0 = no log
+        @optional int64 started_ns;   // ns since the Unix epoch; absent = no log (none running, none stopped)
         uint64 records;
         uint64 dropped;   // lost because the writer could not keep up
     };

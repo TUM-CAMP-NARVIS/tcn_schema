@@ -338,7 +338,8 @@ module sqe_msgs {
     // Everything the engine's ingest knows about one live input: what to
     // subscribe to, how to read it, and how to correct its stamps.
     @appendable struct SISPlanInput {
-        string topic;                   // the key the samples arrive on; "" when unbound
+        @optional string topic;         // the key the samples arrive on; absent when unbound
+                                        //   (`source` UNBOUND: no adopted topic feeds the input)
         string schema;                  // the declared payload type, e.g.
                                         //   "tcnart_msgs::msg::Pose6DMessage"
         tcn_types::msg::CoordinateSystem device_coord;   // the publisher's convention;
@@ -399,9 +400,16 @@ module sqe_msgs {
     // here; never compose one. `handle` is opaque: it is what a stop names,
     // and nothing about its shape is a promise (the engine may keep it equal
     // to `data_topic`).
+    //
+    // **All four are always named and non-empty, whatever the evaluation
+    // mode.** A topic nothing is published on is still named: `data_topic` of
+    // a LOCAL stream (the client composes the relation itself) and
+    // `plan_topic` of an ENGINE stream (no plan is published). A client must
+    // not read an empty string as "this mode has no such topic"; it is a
+    // protocol error (the contract library: EmptyHandleTopic).
     @appendable struct SISStreamHandle {
         string handle;
-        string data_topic;              // SISRelationOutput, one per evaluation
+        string data_topic;              // SISRelationOutput, one per evaluation (ENGINE and BOTH)
         string status_topic;            // SISRelationStreamStatusNotification; a get answers the last
         string plan_topic;              // SISPlanNotification (LOCAL and BOTH); a get answers the last
     };

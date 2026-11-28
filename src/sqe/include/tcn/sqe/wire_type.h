@@ -443,7 +443,10 @@ struct WireEncoding
 ///
 /// The rules are the engine's, so a peer is refused here exactly when it would
 /// be refused there:
-///   * every segment is trimmed of ASCII whitespace, key and value separately;
+///   * the type name, and a parameter's key and value (separately), are
+///     trimmed of ASCII whitespace. The media type is **not** trimmed: it is
+///     returned verbatim and `check_declared_type` compares it byte for byte,
+///     so `" application/cdr"` is not CDR;
 ///   * a parameter whose key is not `tcn_schema` is ignored, as is one with no
 ///     `=` -- a later release may add parameters, and a reader that refused
 ///     them would turn every addition into a break;

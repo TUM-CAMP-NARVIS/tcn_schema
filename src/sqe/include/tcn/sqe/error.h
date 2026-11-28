@@ -80,7 +80,9 @@ enum class Error : int {
     /// or `application/json` (V1).
     UnknownEncoding,
     /// A start reply's handle had an empty string: the handle, or its data,
-    /// status or plan topic.
+    /// status or plan topic. All four are always named, whatever the evaluation
+    /// mode (a LOCAL stream's `data_topic` and an ENGINE stream's `plan_topic`
+    /// included), so an empty one is a protocol error.
     EmptyHandleTopic,
 
     // --- the session layer (sqe_session) --------------------------------------

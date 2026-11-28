@@ -359,8 +359,8 @@ Every type and key of the spatial query engine protocol (`sqe_msgs`, the shared 
 - **In the sqe enum map, `SRNodeScope` and `SISTargetKind` appear under their pre-move `sqe_msgs` names** (they
   moved to `tcn_types::msg` in the same plan). The "0.11" columns are the new names and values.
 - **Install note.** `cmake --install` of the whole tree failed on the plan 4 base because the generator was told to
-  write `…CdrAux` files for enum-only IDL (`tcnart_msgs/msg/MediaTypes.idl`). That is fixed on the plan 4 branch after
-  this branch was cut (`5ff0fd7`, with an `install_smoke` test); take it from there.
+  write `…CdrAux` files for enum-only IDL (`tcnart_msgs/msg/MediaTypes.idl`). The fix (with an `install_smoke` test)
+  is part of Plan 4 (PR #44) and is merged into this branch, so a Plan 5 tree installs as a whole.
 
 #### Types: what is new, moved, reshaped and deleted
 
@@ -427,8 +427,8 @@ unless the table says so; a type listed here must be re-decoded as a whole.
 | `SISPlanNotification` (new) | the plan was published as a bare `SISTranslationPlan` | `{ header, handle, sequence_number, plan }` |
 | `SISRelationOutput` (new, H3) | data topic: `TargetTrackingMessage` plus a 13-byte attachment | `{ engine_epoch, route_epoch, sequence_number, clock_domain, total_hops, covariance_hops, targets: TargetTrackingMessage }`, **no attachment** |
 | `SISBlockingRelation` | `source`, `target`, `name`, `temporal_type` | `edge` (`SRRelationRef`), `kind`, `timing` |
-| `SISPlanInput` | `topic`, `schema`, `device_coord`, `entry_bound`, `entry_id`, `sensor_latency_ns`, `frame_rate` (uint32), `clock_domain` (string), `source`, `buffer_client`, `device`, `target` | `topic`, `schema`, `device_coord`, `? entry_id`, `sensor_latency_ns`, `? frame_rate` (double), `clock_domain` (`ClockDomain`), `source`, `edge` (`SRRelationRef`; replaces the three strings) |
-| `SISPlanHop` | `from`, `to`, `edge_name`, `temporal_type`, `derived`, `walked_inverted`, `weight`, `derived_from` (strings), `input` (int32, -1 = none), `covariance` (0 or 21) | `edge` (`SRRelationRef`), `kind`, `timing`, `derived`, `walked_inverted`, `weight`, `derived_from` (`SRRelationRef`s), `? input`, `? SRCovariance6 covariance` |
+| `SISPlanInput` | `topic` ("" = unbound), `schema`, `device_coord`, `entry_bound`, `entry_id`, `sensor_latency_ns`, `frame_rate` (uint32), `clock_domain` (string), `source`, `buffer_client`, `device`, `target` | `? topic` (absent when unbound), `schema`, `device_coord`, `? entry_id`, `sensor_latency_ns`, `? frame_rate` (double), `clock_domain` (`ClockDomain`), `source`, `edge` (`SRRelationRef`; replaces the three strings) |
+| `SISPlanHop` | `instance`, `from`, `to`, `edge_name`, `temporal_type`, `derived`, `walked_inverted`, `weight`, `derived_from` (strings), `input` (int32, -1 = none), `covariance` (0 or 21) | `instance` (unchanged), `edge` (`SRRelationRef`), `kind`, `timing`, `derived`, `walked_inverted`, `weight`, `derived_from` (`SRRelationRef`s), `? input`, `? SRCovariance6 covariance` |
 | `SISPlanOp` (union) | `PROJECT` case: `SRIntrinsics` | `CameraIntrinsics` |
 | `SISTranslationPlan` | `plan_version`, `output_topic`, `route_epoch` (uint32), `engine_epoch`, `target_coord`, `instances`, `inputs`, `reference_input` (int32, -1 = none), `correlated_via` (strings), `clock_domain` (string), `path_weight`, `hops`, `route_notes` | `? route_epoch` (uint64; absent for a dry run), `target_coord`, `instances`, `inputs`, `? reference_input`, `correlated_via` (`SRRelationRef`s), `clock_domain` (`ClockDomain`), `path_weight`, `hops`, `route_notes`. Removed: `plan_version`, `output_topic`, `engine_epoch` |
 | `SISRelationSampleRequest` | `observer`, `target`, `freshness_bias`, `instant`, `stamp_ns`, `wait_ms`, `include_plan` | `terms`, `instant`, `? stamp_ns` (present exactly when `instant` is AT), `? wait_ms`, `include_plan` |
@@ -438,7 +438,7 @@ unless the table says so; a type listed here must be re-decoded as a whole.
 
 | Type | 0.10 | 0.11 |
 |---|---|---|
-| `SISGraphQueryRequest` | `kind`, `client`, `from`, `to`, `max_items`, `cursor`, `temporal_type[]`, `scope[]`, `node_type[]`, `name_prefix`, `predicate`, `radius` (kind-dependent fields "ignored, not refused") | `query: SISGraphQuery` (union: `FRAGMENT` string, `NEIGHBOURS` `SRFrameRef`, `SEARCH` `SISGraphSearch { anchor, filter }`, `PATH` `SISGraphPath { from, to, predicate, radius }`), `cursor`. Removed: `node_type`, `name_prefix`, `scope`, `max_items` |
+| `SISGraphQueryRequest` | `kind`, `client`, `from`, `to`, `max_items`, `cursor`, `temporal_type[]`, `scope[]`, `node_type[]`, `name_prefix`, `predicate`, `radius` (kind-dependent fields "ignored, not refused") | `query: SISGraphQuery` (union: `FRAGMENT` string, `NEIGHBOURS` `SRFrameRef`, `SEARCH` `SISGraphSearch { anchor, filter }`, `PATH` `SISGraphPath { from, to, predicate, ? radius }`; absent radius = the engine's default), `cursor` (still a string: `""` is the first page, a true reading, not a sentinel). Removed: `node_type`, `name_prefix`, `scope`, `max_items` |
 | `SISGraphFilter` (new, G3) | name prefixes | `timing[]`, `edge_kind[]`, `? materialized`, `? derived`, `? marker_type`, `? marker_system`, `? marker_domain` |
 | `SISGraphQueryReply` | `status`, `nodes`, `edges`, `next_cursor`, `detail`, `path` (strings), `radius_exhausted` | `header`, `nodes`, `edges`, `? next_cursor`, `path` (`SRRelationRef`s), `radius_exhausted`, `? fragment` (`SISFragmentSummary`, for a FRAGMENT read) |
 | `SISFragmentSummary` | `client`, `origin`, `joined`, `last_updated_ms`, `node_count`, `relation_count` | `fragment`, `origin`, `joined`, `last_updated_ms`, `node_count`, `edge_count`, `display_name`, `description` |
@@ -446,7 +446,7 @@ unless the table says so; a type listed here must be re-decoded as a whole.
 | `SISPatternInput` | `role_from`, `role_to`, `segments`, `observer`, `target` (`SISFrameRef`), `frame_rate` | `segments`, `observer`, `target` (`SRFrameRef`), `? frame_rate`. Removed: `role_from`, `role_to` |
 | `SISPatternInstance` | …, `min_measurements`, `max_measurements`, `cost`, … | `max_measurements` removed |
 | `SISPatternRole` | `frame`: `SISFrameRef` | `frame`: `SRFrameRef` |
-| `SISPatternQueryRequest` | `from`, `to`, `wanted`, `radius`, `only_patterns`, `max_candidates` | `from`, `to` (`SRFrameRef`), `wanted`, `radius`. Removed: `only_patterns`, `max_candidates` |
+| `SISPatternQueryRequest` | `from`, `to`, `wanted`, `radius` (0 = the engine's default), `only_patterns`, `max_candidates` | `from`, `to` (`SRFrameRef`), `wanted`, `? radius` (absent = the engine's default; a present 0 is zero hops). Removed: `only_patterns`, `max_candidates` |
 | `SISPatternQueryReply` | `status`, `instances`, `detail` | `header`, `instances` |
 | `SISFragmentListRequest` | `who`, `prefix`, `max_items`, `cursor` | `max_items` removed |
 | `SISFragmentListReply` | `status`, `fragments`, `next_cursor`, `detail` | `header`, `fragments`, `? next_cursor` |
@@ -454,7 +454,7 @@ unless the table says so; a type listed here must be re-decoded as a whole.
 | `SISOperatorMutationRequest` | `who`, `client`, `mutation` | `who`, `fragment`, `mutation` |
 | `SISExplainRequest` | `who`, `kind`, `observer`, `target`, `trigger`, `freshness_bias`, `handle` | `who`, `subject: SISExplainSubject` (union: `RELATION` `SISRelationTerms`, `STREAM` handle string) |
 | `SISExplainReply` | `status`, `detail`, `relation`, `relation_detail`, `blocked_by`, `plan`, `live` | `header`, `relation` (`SISRelationStatus`), `? plan`, `? live` |
-| `SISTransactionLogReply` | `status`, `detail`, … | `header`, `active`, `label`, `file`, `started_ns`, `records`, `dropped` |
+| `SISTransactionLogReply` | `status`, `detail`, `active`, `label`, `file`, `started_ns` (0 = no log), `records`, `dropped` | `header`, `active`, `label`, `file`, `? started_ns` (absent = no log), `records`, `dropped` |
 | `SISTargetAlias` (N10) | `system` ("aruco:DICT_4X4_50", "art:lab1"), `key`, `config` | `family`, `variant`, `key`, `config` |
 | `SISGlobalTarget` | `name`, `uuid`, `kind`, `aliases`, `description`, `custom_data` | `name`, `? uuid` (absent in a REGISTER asks the engine to assign one; a present uuid that differs from the stored one is refused on UPDATE), `kind`, `aliases`, `description`. Removed: `custom_data` |
 | `SISTargetQueryRequest` | `kind`, `system`, `key`, `name` | `query: SISTargetQuery` (union: `RESOLVE` `SISTargetAliasKey { family, variant, key }`, `LIST` `SISTargetFamily { family, ? variant }`, `GET` name, `ALL` `SISEmpty`) |
@@ -494,6 +494,7 @@ a sample's outcome are domain fields, not statuses.
 | a frame, fragment or domain outside the engine's client scope | `NOT_IN_SCOPE` | – |
 | `*_REJECTED` | `REJECTED` + `MALFORMED`, `NOT_PERMITTED` (authorization) or `SCHEMA_MISMATCH`; a start whose terms contradict a running stream (B28): `CONFLICT` + `TERMS_CONFLICT` | – |
 | transaction log without a log directory | `REJECTED` + `UNSUPPORTED` | – |
+| a node, edge or remove request naming a LOCAL frame whose `owner` is not the key's client (an empty owner included; it is accepted only inside a join) | `REJECTED` + `NOT_PERMITTED` | – |
 | `*_UNAVAILABLE` | `UNAVAILABLE` (+ `STORE_UNAVAILABLE` when the store is down) | – |
 | `SIS_RS_ACTIVE` / `PENDING` / `INACTIVE` | `OK` | `relation.state` `ACTIVE` / `PENDING` (+ `relation.park_reason`) / `INACTIVE` |
 | `SIS_RS_NO_PATH` (reply) / (notification) | `REJECTED` + `NO_PATH` / `OK` | – / `PENDING` + `WITHDRAWN` |
@@ -532,7 +533,7 @@ the wire; it has **no text form**, and `FrameRef::from_wire` refuses it everywhe
 - **The text form is mandatory in every implementation** (configs, UIs, CLIs, logs, tests). There is no bare
   shorthand: `camera` is a parse error that names the three forms.
 - **The vector file is the specification:** `src/sqe/vectors/frame_ref.tsv`, installed as
-  `share/tcn_schema/sqe/frame_ref.tsv`. It has 69 rows (16 `ok`, 53 `err`). **An implementation that does not pass
+  `share/tcn_schema/sqe/frame_ref.tsv`. It has 70 rows (16 `ok`, 54 `err`). **An implementation that does not pass
   every row does not speak N2a.** The C++ test (`test_frame_ref.cpp`) and the engine's Rust tests must both run it.
   The file header states the parse order and the file format (TAB separated, no quoting, `#` comments, one CR
   before the LF is stripped).
@@ -596,6 +597,10 @@ reply, in `op/info` and in the `sqe/{engine}/info` summary.
 - **The start reply** has `handle` (an `@optional SISStreamHandle`), present exactly when `header.status` is `OK` and
   `relation.state` is `ACTIVE` or `PENDING`. A client subscribes to `data_topic`, `status_topic` and `plan_topic` as
   given; `handle` itself is opaque. The engine may keep `handle == data_topic` and `{data_topic}/status|/plan`.
+- **All four strings of `SISStreamHandle` (`handle`, `data_topic`, `status_topic`, `plan_topic`) are always named and
+  non-empty, whatever the evaluation mode.** A topic nothing is published on is still named: `data_topic` of a LOCAL
+  stream, `plan_topic` of an ENGINE stream. An empty one is a protocol error, not "this mode has no such topic"; the
+  contract library refuses it (`EmptyHandleTopic`).
 - **Stop:** `OK` or `NOT_FOUND` (an unknown handle) both release the lease.
 - **Sequences:** `sequence_number` counters are per topic (status, plan, data), start at 1 and are gapless per
   handle. (The IDL keyword `sequence` cannot be a member name; `SISGraphChangeNotification` already used
@@ -694,6 +699,16 @@ satisfies the spec. Each needs an answer from the SQE side before `0.11.0-rc1`.
     not say more); confirm or correct.
 11. **`SRReferencePolicy.SLOWEST`** is "the lowest declared `frame_rate`" (`frame_rate` is `@optional` now; a hop with
     none does not count).
+12. **More P3 optionals:** `SISTransactionLogReply.started_ns` (absent = no log), `SISPlanInput.topic` (absent when
+    unbound), `SISGraphPath.radius` and `SISPatternQueryRequest.radius` (absent = the engine's default; a present 0 is
+    zero hops). The two `cursor` members stay strings: `""` is the first page, a true reading, not a sentinel.
+13. **Whose LOCAL frames a mutation may name** (`Mutations.idl`): in `/sis/node/*`, `/sis/edge/*` and the remove
+    requests, a LOCAL `SRFrameRef`'s `owner` must equal the key's client, otherwise `REJECTED` + `NOT_PERMITTED`. An
+    empty LOCAL owner is accepted only inside a join (where it means this fragment); elsewhere it is refused the same
+    way.
+14. **A sample's `evaluation` and `fusion`** (`Sample.idl`): validated like a start's (`UNKNOWN` is `MALFORMED`,
+    `FUSED`/`FILTERED` `UNSUPPORTED`). ENGINE, LOCAL and BOTH are all accepted and the engine evaluates the sample in
+    every mode; a client that wants the route asks with `include_plan`.
 
 #### Tools
 
@@ -754,8 +769,15 @@ their plan), so that each team can prepare.
       into `kind` and `timing`; the store must write both;
     - the same holds for any JSON fixture (`fixtures/wire/*.json`, `tests/wire_golden.rs`) and for `0` as a default:
       `0` is `UNKNOWN` now.
+  - **Stored node identities.** The store keys nodes by the 0.10 composed names: a domain node is stored with
+    `global_identifier` and `name` both `@{domain}::{name}` (`src/persistence.rs:1000-1002`, `stored_scope`), and a
+    marker node keeps its composed `…__sis_marker__…` name as both (`direct_discover_marker`,
+    `src/persistence.rs:2745-2746`). After N1 and N5 a node's identity is its bare `name` plus `domain` (and, for a
+    marker, the `SRMaterialization` fields), so a 0.11 engine on a 0.10 store must migrate those rows or read the
+    old form too; otherwise it creates a second node for the same frame and breaks the meeting points (a marker two
+    cameras see, a domain node two fragments share).
   - **`FrameRef` text and wire:** implement parse and format against **`share/tcn_schema/sqe/frame_ref.tsv`**
-    (`src/sqe/vectors/frame_ref.tsv`, 69 rows) in the Rust tests; it is mandatory. `sqe-op`, sqe-calibrate command
+    (`src/sqe/vectors/frame_ref.tsv`, 70 rows) in the Rust tests; it is mandatory. `sqe-op`, sqe-calibrate command
     lines and logs use the text form. Domain ids as `@{domain}::{name}` and the `:::*` suffix go (`context.rs`,
     `driver.rs:1327, 2225, 3176`).
   - **Header at every refusal site, including ingest:** every reply and every notification carries

@@ -41,8 +41,16 @@ module sqe_msgs {
     };
 
     // `terms` exactly as a start would name the relation, so a sample compiles
-    // the route that start would. `trigger` and `reoptimise` are validated
-    // like a start's but do not change the value.
+    // the route that start would. Every term is validated like a start's
+    // (Streams.idl): an UNKNOWN trigger, reoptimise, evaluation or fusion is
+    // refused REJECTED + MALFORMED, and fusion FUSED or FILTERED REJECTED +
+    // UNSUPPORTED (only BEST_PATH is served).
+    //
+    // `trigger` and `reoptimise` do not change the value. Nor does
+    // `evaluation`: ENGINE, LOCAL and BOTH are all accepted, and **the engine
+    // evaluates the sample in every mode** -- a LOCAL sample is not answered
+    // with a plan instead of a value, and nothing is published on any topic.
+    // A client that wants the route as well asks for it with `include_plan`.
     @appendable struct SISRelationSampleRequest {
         SISRelationTerms terms;
         SISRelationSampleInstant instant;
@@ -77,7 +85,8 @@ module sqe_msgs {
     // `header.status`:
     //   OK            `outcome` says whether there is a value; `relation.state` is ACTIVE
     //   REJECTED      MALFORMED (undecodable, bias outside [0, 1], AT without a
-    //                 stamp), NO_PATH (no route now) or CLOCK_DOMAIN_MISMATCH
+    //                 stamp, an UNKNOWN term), UNSUPPORTED (fusion FUSED or
+    //                 FILTERED), NO_PATH (no route now) or CLOCK_DOMAIN_MISMATCH
     //   NOT_IN_SCOPE  a frame outside the client scope
     //   UNAVAILABLE   the rate limit or the sampler table (LIMIT_EXCEEDED), or the
     //                 graph read failed or timed out
