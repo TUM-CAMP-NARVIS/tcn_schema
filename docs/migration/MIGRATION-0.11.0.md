@@ -1209,8 +1209,8 @@ presence byte.
    claim (the node or edge naming the descriptor topic), as today. `header.frame` is checked against that node and
    logged when it disagrees, but never re-routes a stream. An absent `Target.pose` is no measurement, like
    `is_tracked = false` since B98. A per-target `capture_time_ns` is that target's sample time for interpolation.
-4. **Confirmed:** a changed `revision` is changed content; an absent one means compare the content (the engine has
-   compared content since B93).
+4. **Confirmed:** a changed `revision` is changed content; an absent one means compare the content. (A 0.10 engine
+   re-reads every descriptor it receives, which gives the same result; the 0.11 engine applies this rule.)
 5. **Confirmed.** The source frame is the request's observer, already an `SRFrameRef` in `SISRelationTerms`, and the
    engine writes it as `targets.header.frame`. `capture_time_ns` is the evaluation instant in the output's
    `clock_domain`, `clock` is absent, and the inner `sequence_number` is the outer one.
