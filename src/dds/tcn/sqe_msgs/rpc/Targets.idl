@@ -7,6 +7,7 @@
 #ifndef SQE_MSGS_RPC_TARGETS_IDL
 #define SQE_MSGS_RPC_TARGETS_IDL
 
+#include "sqe_msgs/rpc/Reply.idl"
 #include "tcn_types/msg/Ids.idl"
 #include "tcn_types/msg/Tracking.idl"
 
@@ -23,22 +24,23 @@ module sqe_msgs {
     //
     // Two consumers:
     //   * a template marker camera sets StreamDescriptorMessage.marker_system;
-    //     a marker id registered under (marker_system, str(id)) is
+    //     a marker id registered under (family, variant, str(id)) is
     //     materialized as the registered target's node (name and uuid)
     //     instead of `{prefix}__sis_marker__{id}`;
     //   * a client that names its own nodes (concrete edge claims) resolves
-    //     (system, key) here and declares the returned `name` as its Global
+    //     (family, variant, key) here and declares the returned `name` as its Global
     //     node. The engine never rewrites node names inside a fragment.
     //
     // Not in the registry: poses, calibrations, static edges. Those are
     // fragments or pinned nodes owned by whoever measured them.
 
-    // How one tracking system identifies a target. `(system, key)` is unique
-    // across the whole registry: one alias, one target.
+    // How one tracking system identifies a target (#35 N10). `(family, variant, key)` is unique across the whole
+    // registry: one alias, one target. The 0.10 `system` string packed family and variant into one value
+    // ("aruco:DICT_4X4_50", "art:lab1") and every consumer split it by hand; they are separate fields now.
     @appendable struct SISTargetAlias {
-        string system;   // namespace: "art", "ndi", "irtrack",
-                         // "aruco:DICT_4X4_50", "apriltag:36h11", ...;
-                         // installations of one kind by suffix ("art:lab1")
+        string family;   // the tracking technology: "art", "ndi", "irtrack", "aruco", "apriltag", ...
+        string variant;  // the configuration within the family: "DICT_4X4_50", "36h11", an
+                         // installation ("lab1"). "" when the family has none
         string key;      // the system's configured identity, as a string:
                          // an ART body id ("3"), an ArUco id ("7"), a name
         string config;   // opaque to the engine: what a tracker needs to
@@ -48,42 +50,49 @@ module sqe_msgs {
 
     @appendable struct SISGlobalTarget {
         string name;                       // the Global node name; immutable
-        tcn_types::msg::UUID uuid;       // stable identity, goes into
-                                           // SRNode.uuid. All-zero in a
-                                           // REGISTER asks the engine to
-                                           // assign one.
+        @optional tcn_types::msg::UUID uuid;   // stable identity, goes into SRNode.uuid. Absent in a REGISTER
+                                           // asks the engine to assign one.
         tcn_types::msg::SISTargetKind kind;  // informational
         sequence<SISTargetAlias> aliases;
         string description;
-        string custom_data;                // same convention as SRNode
     };
 
     @appendable enum SISTargetQueryKind {
         SIS_TARGET_QUERY_KIND_UNKNOWN,
-        SIS_TARGET_QUERY_KIND_RESOLVE,   // (system, key) -> the one target holding that alias
-        SIS_TARGET_QUERY_KIND_LIST,      // system -> every target with an alias in it
+        SIS_TARGET_QUERY_KIND_RESOLVE,   // (family, variant, key) -> the one target holding that alias
+        SIS_TARGET_QUERY_KIND_LIST,      // family [, variant] -> every target with an alias in it
         SIS_TARGET_QUERY_KIND_GET,       // name -> that target
         SIS_TARGET_QUERY_KIND_ALL        // every target (the export)
     };
 
+    @appendable struct SISTargetAliasKey {
+        string family;
+        string variant;     // "" when the family has none
+        string key;
+    };
+
+    // LIST's argument: absent `variant` keeps every variant of the family.
+    @appendable struct SISTargetFamily {
+        string family;
+        @optional string variant;
+    };
+
+    @appendable union SISTargetQuery switch (SISTargetQueryKind) {
+        case SIS_TARGET_QUERY_KIND_RESOLVE: SISTargetAliasKey alias;
+        case SIS_TARGET_QUERY_KIND_LIST: SISTargetFamily family;
+        case SIS_TARGET_QUERY_KIND_GET: string name;
+        case SIS_TARGET_QUERY_KIND_ALL: SISEmpty all;
+    };
+
     // `{client_id}/sis/target/query` -- a query.
     @appendable struct SISTargetQueryRequest {
-        SISTargetQueryKind kind;
-        string system;    // RESOLVE, LIST
-        string key;       // RESOLVE
-        string name;      // GET
+        SISTargetQuery query;
     };
 
-    @appendable enum SISTargetQueryStatus {
-        SIS_TQS_OK,         // `targets` holds the answer; empty is an answer
-                            // for LIST and ALL
-        SIS_TQS_NOT_FOUND,  // RESOLVE or GET named nothing registered
-        SIS_TQS_REJECTED    // malformed (a required field empty)
-    };
-
+    // `header.status`: OK (`targets` holds the answer; empty is an answer for LIST and ALL), NOT_FOUND (RESOLVE or
+    // GET named nothing registered) or REJECTED + MALFORMED (a required field empty).
     @appendable struct SISTargetQueryReply {
-        SISTargetQueryStatus status;
-        string detail;                       // empty exactly when OK
+        SISReplyHeader header;
         sequence<SISGlobalTarget> targets;
     };
 
@@ -91,8 +100,8 @@ module sqe_msgs {
         SIS_TARGET_MUTATION_KIND_UNKNOWN,
         SIS_TARGET_MUTATION_KIND_REGISTER,  // a new name; refused if the name or any alias is
                           // taken (the detail names the holder)
-        SIS_TARGET_MUTATION_KIND_UPDATE,    // replace kind, aliases, description and
-                          // custom_data of an existing name; the uuid is kept
+        SIS_TARGET_MUTATION_KIND_UPDATE,    // replace kind, aliases and
+                          // description of an existing name; the uuid is kept
                           // (a non-zero uuid that differs is refused)
         SIS_TARGET_MUTATION_KIND_REMOVE     // by `target.name`; markers materialized under it
                           // fall back to their template names, fragments keep
@@ -111,6 +120,7 @@ module sqe_msgs {
     // accepted mutation. A client that resolved names re-resolves and re-joins
     // if a target it uses changed.
     @appendable struct SISTargetChange {
+        SISReplyHeader header;      // an OK header
         boolean removed;            // true: `target` (name only is reliable)
                                     // is no longer registered
         SISGlobalTarget target;     // the entry after the change

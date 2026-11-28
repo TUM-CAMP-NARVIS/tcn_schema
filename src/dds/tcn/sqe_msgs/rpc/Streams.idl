@@ -21,12 +21,6 @@ module sqe_msgs {
 
     // --- relation streams -------------------------------------------------
 
-    // A frame of reference: a node within an owning graph.
-    @appendable struct SISFrameRef {
-        string client;                  // owning graph
-        string node;                    // SRNode.name within it
-    };
-
     // Which dynamic hop of a compiled path drives an SR_STREAM_TRIGGER_KIND_ON_REFERENCE
     // stream. Ordinals are the wire encoding; append only.
     @appendable enum SRReferencePolicy {
@@ -483,7 +477,7 @@ module sqe_msgs {
     // TargetTrackingMessage, decoded by the same code as a tracker's.
     @appendable struct SISRelationOutput {
         uint64 engine_epoch;            // the engine's alive key {epoch}
-        uint64 route_epoch;             // as SISRelationStreamStatusNotification's
+        uint64 route_epoch;             // always set: an output is published only after a route compiled
         uint64 sequence_number;         // per data topic: from 1, gapless per handle
         tcn_types::msg::ClockDomain clock_domain;   // the route's; the targets' stamps are in it
         // Covariance completeness of the route, once per message (#35 E6):

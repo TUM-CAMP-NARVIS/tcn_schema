@@ -77,8 +77,8 @@ module sqe_msgs {
     // `header.status`:
     //   OK            `outcome` says whether there is a value; `relation.state` is ACTIVE
     //   REJECTED      MALFORMED (undecodable, bias outside [0, 1], AT without a
-    //                 stamp), NO_PATH (no route now) or CLOCK_DOMAIN_MISMATCH
-    //   NOT_IN_SCOPE  a frame outside the client scope
+    //                 stamp), NOT_PERMITTED (a frame outside the client scope),
+    //                 NO_PATH (no route now) or CLOCK_DOMAIN_MISMATCH
     //   UNAVAILABLE   the rate limit or the sampler table (LIMIT_EXCEEDED), or the
     //                 graph read failed or timed out
     // On any status but OK, `relation` follows the rule in SISRelationStatus

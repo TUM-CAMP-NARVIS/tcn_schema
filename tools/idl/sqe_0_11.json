@@ -14,6 +14,13 @@
    "decls": [
     "sqe_msgs::rpc::SISTargetKind"
    ]
+  },
+  {
+   "path": "sqe_msgs/rpc/Queries.idl",
+   "module": "sqe_msgs::rpc",
+   "decls": [
+    "sqe_msgs::rpc::SISFragmentSummary"
+   ]
   }
  ],
  "deleted": [
@@ -26,7 +33,10 @@
   "sqe_msgs::rpc::SISRelationStreamStatus",
   "sqe_msgs::rpc::SISRelationStreamHandleKind",
   "sqe_msgs::rpc::SISRelationStreamHandle",
-  "sqe_msgs::rpc::SISRelationSampleStatus"
+  "sqe_msgs::rpc::SISRelationSampleStatus",
+  "sqe_msgs::rpc::SISFrameRef",
+  "sqe_msgs::rpc::SISGraphQueryStatus",
+  "sqe_msgs::rpc::SISTargetQueryStatus"
  ],
  "new_types": [
   "tcn_types::msg::SRFrameSelector",
@@ -61,7 +71,19 @@
   "sqe_msgs::rpc::SISStreamHandle",
   "sqe_msgs::rpc::SISPlanNotification",
   "sqe_msgs::rpc::SISRelationOutput",
-  "sqe_msgs::rpc::SISSampleOutcome"
+  "sqe_msgs::rpc::SISSampleOutcome",
+  "sqe_msgs::rpc::SISGraphAnchorKind",
+  "sqe_msgs::rpc::SISGraphAnchor",
+  "sqe_msgs::rpc::SISGraphFilter",
+  "sqe_msgs::rpc::SISGraphSearch",
+  "sqe_msgs::rpc::SISGraphPath",
+  "sqe_msgs::rpc::SISGraphQuery",
+  "sqe_msgs::rpc::SISChangeOriginKind",
+  "sqe_msgs::rpc::SISChangeOrigin",
+  "sqe_msgs::rpc::SISExplainSubject",
+  "sqe_msgs::rpc::SISTargetAliasKey",
+  "sqe_msgs::rpc::SISTargetFamily",
+  "sqe_msgs::rpc::SISTargetQuery"
  ],
  "expect": {
   "enums_from": "tools/idl/enum_renames_0_11_sqe.json",
@@ -94,7 +116,26 @@
    "sqe_msgs::rpc::SISRelationStreamStatusNotification",
    "sqe_msgs::rpc::SISRelationSampleRequest",
    "sqe_msgs::rpc::SISRelationSampleReply",
-   "sqe_msgs::rpc::SISExplainReply"
+   "sqe_msgs::rpc::SISExplainReply",
+   "sqe_msgs::rpc::SISGraphQueryReply",
+   "sqe_msgs::rpc::SISPatternRole",
+   "sqe_msgs::rpc::SISPatternSegment",
+   "sqe_msgs::rpc::SISPatternInput",
+   "sqe_msgs::rpc::SISPatternInstance",
+   "sqe_msgs::rpc::SISPatternQueryRequest",
+   "sqe_msgs::rpc::SISPatternQueryReply",
+   "sqe_msgs::rpc::SISFragmentListRequest",
+   "sqe_msgs::rpc::SISFragmentListReply",
+   "sqe_msgs::rpc::SISGraphChangeNotification",
+   "sqe_msgs::rpc::SISOperatorMutationRequest",
+   "sqe_msgs::rpc::SISExplainRequest",
+   "sqe_msgs::rpc::SISTransactionLogReply",
+   "sqe_msgs::rpc::SISTargetAlias",
+   "sqe_msgs::rpc::SISGlobalTarget",
+   "sqe_msgs::rpc::SISTargetQueryRequest",
+   "sqe_msgs::rpc::SISTargetQueryReply",
+   "sqe_msgs::rpc::SISTargetChange",
+   "sqe_msgs::rpc::SISFragmentSummary"
   ],
   "removed_members": {
    "sqe_msgs::msg::SRNode": [
@@ -109,6 +150,32 @@
    ],
    "sqe_msgs::rpc::SISLeaveRequest": [
     "client"
+   ],
+   "sqe_msgs::rpc::SISPatternInput": [
+    "role_from",
+    "role_to"
+   ],
+   "sqe_msgs::rpc::SISPatternSegment": [
+    "inverted"
+   ],
+   "sqe_msgs::rpc::SISPatternInstance": [
+    "max_measurements"
+   ],
+   "sqe_msgs::rpc::SISPatternQueryRequest": [
+    "only_patterns",
+    "max_candidates"
+   ],
+   "sqe_msgs::rpc::SISGraphQueryRequest": [
+    "node_type",
+    "name_prefix",
+    "scope",
+    "max_items"
+   ],
+   "sqe_msgs::rpc::SISFragmentListRequest": [
+    "max_items"
+   ],
+   "sqe_msgs::rpc::SISGlobalTarget": [
+    "custom_data"
    ]
   }
  }
