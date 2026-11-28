@@ -99,10 +99,6 @@ def _merge(schema):
     return schema
 
 
-if __name__ == "__main__":
-    unittest.main()
-
-
 class ExpectTest(unittest.TestCase):
     OLD = {"p/msg/V.idl": """module p { module msg {
         struct V { double x; double y; };
@@ -149,3 +145,89 @@ class ExpectTypoTest(unittest.TestCase):
             compare(_schema(s), _schema(s), {}, set(), expect={"removed_members": {"p::msg::V": ["typo"]}})
         with self.assertRaises(ValueError):
             compare(_schema(s), _schema(s), {}, set(), expect={"optional": {"p::msg::V": ["typo"]}})
+
+
+class EnumsFromTest(unittest.TestCase):
+    """`expect.enums_from` names a JSON file whose "enums" are merged into the inline ones (path as given)."""
+
+    def test_enums_from_behaves_like_inline_enums(self):
+        import json
+        import os
+        from tools.idl.moves import compare
+        table = {"p::msg::E": [[None, "E_UNKNOWN"], ["A_ONE", "E_ONE"], ["A_TWO", "E_TWO"]]}
+        new = _schema({"p/msg/V.idl": ExpectTest.NEW})
+        old = _schema(ExpectTest.OLD)
+        base = {"extensibility": {"*": "appendable"}, "removed_members": {"p::msg::V": ["y"]},
+                "optional": {"p::msg::V": ["x"]}}
+        with tempfile.TemporaryDirectory() as d:
+            t = Path(d) / "t.json"
+            t.write_text(json.dumps({"enums": table}))
+            from_file = compare(old, new, {}, set(), expect=dict(base, enums_from=str(t)))
+            inline = compare(old, new, {}, set(), expect=dict(base, enums=table))
+            self.assertEqual(from_file.problems, [])
+            self.assertEqual(from_file.problems, inline.problems)
+            # a relative path resolves against the working directory (the repo root for the CLI)
+            cwd = os.getcwd()
+            os.chdir(d)
+            try:
+                rel = compare(old, new, {}, set(), expect=dict(base, enums_from="t.json"))
+            finally:
+                os.chdir(cwd)
+            self.assertEqual(rel.problems, [])
+            # an inline entry for an enum the file also lists is an error
+            with self.assertRaises(ValueError):
+                compare(old, new, {}, set(), expect=dict(base, enums=table, enums_from=str(t)))
+
+    def test_markdown_provenance_is_a_parameter(self):
+        from tools.idl.enums import write_markdown
+        with tempfile.TemporaryDirectory() as d:
+            md = Path(d) / "m.md"
+            write_markdown({"p::E": [(None, None, "E_UNKNOWN", 0)]}, md, "plan 5", "enum_renames_0_11_sqe.json")
+            text = md.read_text()
+            self.assertIn("plan 5", text)
+            self.assertIn("enum_renames_0_11_sqe.json", text)
+            self.assertNotIn("plan 4", text)
+
+
+class ReshapedTest(unittest.TestCase):
+    """`expect.reshaped` names types whose layout changes on purpose: not layout-compared, listed in the report."""
+    OLD = {"p/msg/V.idl": "module p { module msg { struct V { double x; sequence<double, 21> cov; }; }; };"}
+    NEW = "module p { module msg { struct V { double x; @optional double cov; }; }; };"
+
+    def _cmp(self, expect, new=None):
+        from tools.idl.moves import compare
+        return compare(_schema(self.OLD), _schema({"p/msg/V.idl": new or self.NEW}), {}, set(), expect=expect)
+
+    def test_reshaped_layout_is_not_compared_and_is_reported(self):
+        self.assertEqual(self._cmp({}).problems.__len__(), 1)  # without the listing the change is a problem
+        r = self._cmp({"reshaped": ["p::msg::V"]})
+        self.assertEqual(r.problems, [])
+        self.assertEqual(r.reshaped, ["p::msg::V"])
+
+    def test_reshaped_type_that_keeps_a_removed_member_is_a_problem(self):
+        r = self._cmp({"reshaped": ["p::msg::V"], "removed_members": {"p::msg::V": ["cov"]}})
+        self.assertEqual(len(r.problems), 1)
+        self.assertIn("cov", r.problems[0])
+        r = self._cmp({"reshaped": ["p::msg::V"], "removed_members": {"p::msg::V": ["cov"]}},
+                      new="module p { module msg { struct V { double x; }; }; };")
+        self.assertEqual(r.problems, [])
+
+    def test_reshaped_report_section_and_provenance(self):
+        import json
+        from tools.idl.moves import write_reports
+        r = self._cmp({"reshaped": ["p::msg::V"]})
+        with tempfile.TemporaryDirectory() as d:
+            md, js = Path(d) / "m.md", Path(d) / "m.json"
+            old, new = _schema(self.OLD), _schema({"p/msg/V.idl": self.NEW})
+            write_reports(r, old, new, js, md, plan="plan 5", spec_name="sqe_0_11.json")
+            text = md.read_text()
+            self.assertIn("## Reshaped", text)
+            self.assertIn("`p::msg::V`", text)
+            self.assertIn("plan 5", text)
+            self.assertIn("sqe_0_11.json", text)
+            self.assertNotIn("(0.11 plan 3", text)
+            self.assertEqual(json.loads(js.read_text())["reshaped"], [{"name": "p::msg::V", "header": "p/msg/V.h"}])
+
+
+if __name__ == "__main__":
+    unittest.main()

@@ -46,7 +46,8 @@ module tcnart_msgs {
       // Which clock the header stamps were taken on. Empty means the default
       // synchronized domain. Read by the SQE since 0.9.0 (engine B77): a
       // relation whose live inputs come from two different domains is
-      // refused with SIS_RS_CLOCK_DOMAIN_MISMATCH rather than composed from
+      // refused (REJECTED + CLOCK_DOMAIN_MISMATCH, or PENDING +
+      // CLOCK_DOMAIN_MISMATCH for a running stream) rather than composed from
       // stamps that cannot be compared. Any non-empty string names a domain;
       // two streams are comparable exactly when the strings are equal.
       string clock_domain;
@@ -55,8 +56,9 @@ module tcnart_msgs {
       // registry alias system its marker ids live in, e.g. "art",
       // "aruco:DICT_4X4_50" (0.9.0, engine B78). A marker id N registered
       // under (marker_system, "N") becomes the registered target's Global
-      // node; otherwise, and when empty, the node stays
-      // `{prefix}__sis_marker__{N}` as before.
+      // node; otherwise, and when empty, the engine names the node
+      // itself (SRNode.materialization says where it came from; the name is
+      // opaque).
       string marker_system;
 
     };

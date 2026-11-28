@@ -239,3 +239,29 @@ TCN_SQE_TEST(the_fragment_rule_differs_from_the_identifier_rule_by_exactly_one_c
                   "with no '/' present the two rules must agree");
     }
 }
+
+// ---------------------------------------------------------------------------
+// domain and clock domain (#35 N1, N2a)
+// ---------------------------------------------------------------------------
+
+// A domain is a fragment and nothing more: the `::` rule of 0.10.7 went with
+// the composed node ids (N1).
+TCN_SQE_TEST(a_domain_takes_the_fragment_rule)
+{
+    CHECK_OK(check_domain("tcn/ksv1/rig01"));
+    CHECK_OK(check_domain("tcn::ksv1"));
+    CHECK_ERR(check_domain(""), Error::Empty);
+    CHECK_ERR(check_domain("/tcn"), Error::LeadingSlash);
+    CHECK_ERR(check_domain("tcn//ksv1"), Error::EmptyChunk);
+    CHECK_ERR(check_domain("tcn/*"), Error::ContainsWildcard);
+}
+
+// A clock domain id may be empty (the host clock); otherwise a fragment.
+TCN_SQE_TEST(a_clock_domain_is_empty_or_a_fragment)
+{
+    CHECK_OK(check_clock_domain(""));
+    CHECK_OK(check_clock_domain("ptp/lab1"));
+    CHECK_ERR(check_clock_domain("a//b"), Error::EmptyChunk);
+    CHECK_ERR(check_clock_domain("/a"), Error::LeadingSlash);
+    CHECK_ERR(check_clock_domain("a b"), Error::ContainsWhitespace);
+}

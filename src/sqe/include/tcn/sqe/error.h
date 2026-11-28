@@ -50,12 +50,14 @@ enum class Error : int {
     OriginNotDeclared,
 
     // --- relation-stream replies (§4.4) -------------------------------------
-    /// The reply carried no handle. Not necessarily a fault: a `NoPath`,
-    /// `UnknownFrame`, `Rejected` or `Inactive` reply correctly carries none.
+    /// An OK stream reply carried no handle. Not a fault: the answer to a stop
+    /// (relation `Inactive`) correctly carries none. A refusal is
+    /// `ReplyRefused`, checked first.
     HandleAbsent,
-    /// The reply's status and handle disagree. `ASSIGNED` must occur exactly
-    /// when the status is `Active` or `Pending`. Reported rather than papered
-    /// over, because either half may be the wrong one.
+    /// An OK stream reply's relation state is `Unknown`, or it and the handle
+    /// disagree: the handle must be present exactly when the state is `Active`
+    /// or `Pending` (#35 H1).
+    /// Reported rather than papered over, because either half may be wrong.
     HandleInvariantViolated,
 
     /// A second `acquire` for a relation this process already leases, on
@@ -74,9 +76,13 @@ enum class Error : int {
     /// The encoding annotation carried no `;<type>` suffix at all. CDR is not
     /// self-describing, so an unannotated payload cannot be decoded safely.
     MissingDeclaredType,
-    /// The encoding annotation's media type was not one this library knows.
+    /// The encoding annotation's media type was not exactly `application/cdr`
+    /// or `application/json` (V1).
     UnknownEncoding,
-    /// The reply named an assigned handle whose topic was the empty string.
+    /// A start reply's handle had an empty string: the handle, or its data,
+    /// status or plan topic. All four are always named, whatever the evaluation
+    /// mode (a LOCAL stream's `data_topic` and an ENGINE stream's `plan_topic`
+    /// included), so an empty one is a protocol error.
     EmptyHandleTopic,
 
     // --- the session layer (sqe_session) --------------------------------------
@@ -117,6 +123,39 @@ enum class Error : int {
     /// against another minor can append a field this reader does not know, or
     /// lack one it expects, and CDR decodes either without complaint.
     SchemaVersionMismatch,
+
+    // --- 0.11 (#35) ----------------------------------------------------------
+    //
+    // The first five are the N2a text form's own refusals (frame_ref.h); with
+    // the naming entries above they are the vocabulary of the shared vector
+    // file src/sqe/vectors/frame_ref.tsv, spelled by `code()`.
+
+    /// A frame reference's text had no `:`, so no scheme.
+    MissingScheme,
+    /// The scheme was not exactly `local`, `global` or `domain`.
+    UnknownScheme,
+    /// A LOCAL or DOMAIN reference had no owner: no `/` in its text, or an
+    /// empty owner on the wire (which means "this fragment" and exists only
+    /// inside a join).
+    MissingOwner,
+    /// A GLOBAL reference had an owner: a `/` in its text, or a non-empty
+    /// owner on the wire.
+    UnexpectedOwner,
+    /// A `[` that is not exactly one trailing `[instances]`.
+    MalformedSelector,
+    /// A wire `SRNodeScope` of `UNKNOWN` or an ordinal this library does not
+    /// know.
+    UnknownScope,
+    /// A wire `SRFrameSelector` of `UNKNOWN` or an ordinal this library does
+    /// not know.
+    UnknownSelector,
+    /// An engine capability name outside `[a-z0-9_]{1,64}`.
+    MalformedCapability,
+    /// The reply's header status was not OK; the header says why.
+    ReplyRefused,
+    /// The encoding annotation carried no `tcn_schema=` parameter. Required
+    /// from 0.11 (V1): an unversioned payload is not accepted.
+    MissingSchemaVersion,
 };
 
 /// A static, ASCII, locale-independent description. Never null, never
@@ -154,8 +193,75 @@ inline const char* describe(Error e) noexcept
         case Error::EmptyTriggerTopic:       return "on-stream trigger names no topic";
         case Error::PresenceUnavailable:     return "the liveliness token could not be declared";
         case Error::SchemaVersionMismatch:   return "encoding declares another tcn_schema version";
+        case Error::MissingScheme:           return "frame reference has no scheme; use local:<fragment>/<name>, "
+                                                    "global:<name> or domain:<domain>/<name>, optionally + [instances]";
+        case Error::UnknownScheme:           return "frame reference scheme is not local, global or domain; use "
+                                                    "local:<fragment>/<name>, global:<name> or domain:<domain>/<name>, "
+                                                    "optionally + [instances]";
+        case Error::MissingOwner:            return "local or domain frame reference has no owner";
+        case Error::UnexpectedOwner:         return "global frame reference has an owner";
+        case Error::MalformedSelector:       return "frame selector is not a single trailing [instances]";
+        case Error::UnknownScope:            return "unknown node scope";
+        case Error::UnknownSelector:         return "unknown frame selector";
+        case Error::MalformedCapability:     return "capability name is not [a-z0-9_]{1,64}";
+        case Error::ReplyRefused:            return "the reply's status is not OK";
+        case Error::MissingSchemaVersion:    return "encoding declares no tcn_schema version";
     }
     return "unknown error";
+}
+
+/// The stable machine code of an error: the snake_case of its enumerator
+/// (`Error::EmptyChunk` -> `"empty_chunk"`). Never null, never allocates.
+///
+/// Unlike `describe`, these strings are a contract: they are the `code`
+/// column of the shared N2a vector file and the codes the engine reports, so
+/// an implementation in another language compares against them verbatim.
+/// They change only with the enumerator's name.
+inline const char* code(Error e) noexcept
+{
+    switch (e)
+    {
+        case Error::Ok:                      return "ok";
+        case Error::Empty:                   return "empty";
+        case Error::IllegalCharacter:        return "illegal_character";
+        case Error::NonAscii:                return "non_ascii";
+        case Error::ContainsWildcard:        return "contains_wildcard";
+        case Error::ContainsWhitespace:      return "contains_whitespace";
+        case Error::ContainsSlash:           return "contains_slash";
+        case Error::EmptyChunk:              return "empty_chunk";
+        case Error::LeadingSlash:            return "leading_slash";
+        case Error::TrailingSlash:           return "trailing_slash";
+        case Error::OriginNotDeclared:       return "origin_not_declared";
+        case Error::HandleAbsent:            return "handle_absent";
+        case Error::HandleInvariantViolated: return "handle_invariant_violated";
+        case Error::ConflictingLease:        return "conflicting_lease";
+        case Error::WrongDeclaredType:       return "wrong_declared_type";
+        case Error::MoreThanOneItem:         return "more_than_one_item";
+        case Error::MissingDeclaredType:     return "missing_declared_type";
+        case Error::UnknownEncoding:         return "unknown_encoding";
+        case Error::EmptyHandleTopic:        return "empty_handle_topic";
+        case Error::NoTransport:             return "no_transport";
+        case Error::TransportFailed:         return "transport_failed";
+        case Error::Timeout:                 return "timeout";
+        case Error::EncodeFailed:            return "encode_failed";
+        case Error::DecodeFailed:            return "decode_failed";
+        case Error::FreshnessBiasOutOfRange: return "freshness_bias_out_of_range";
+        case Error::InvalidTriggerRate:      return "invalid_trigger_rate";
+        case Error::EmptyTriggerTopic:       return "empty_trigger_topic";
+        case Error::PresenceUnavailable:     return "presence_unavailable";
+        case Error::SchemaVersionMismatch:   return "schema_version_mismatch";
+        case Error::MissingScheme:           return "missing_scheme";
+        case Error::UnknownScheme:           return "unknown_scheme";
+        case Error::MissingOwner:            return "missing_owner";
+        case Error::UnexpectedOwner:         return "unexpected_owner";
+        case Error::MalformedSelector:       return "malformed_selector";
+        case Error::UnknownScope:            return "unknown_scope";
+        case Error::UnknownSelector:         return "unknown_selector";
+        case Error::MalformedCapability:     return "malformed_capability";
+        case Error::ReplyRefused:            return "reply_refused";
+        case Error::MissingSchemaVersion:    return "missing_schema_version";
+    }
+    return "unknown";
 }
 
 }  // namespace sqe

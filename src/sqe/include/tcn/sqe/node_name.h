@@ -1,6 +1,10 @@
 // SPDX-License-Identifier: internal
 //
-// NodeName / LocalNodeId / GlobalNodeId / DomainNodeId — the two alphabets, kept apart.
+// NodeName — a node or edge name, by the identifier rule.
+//
+// The composed node ids of 0.10 (`{fragment}::{name}`, `@{domain}::{name}`)
+// are gone (#35 N1): a frame is named by scope, owner and name in separate
+// fields, which is `FrameRef` (frame_ref.h).
 //
 // See docs/design/2026-08-31-sqe-contract-library-design.md §4.3.
 #ifndef TCN_SQE_NODE_NAME_H
@@ -10,16 +14,12 @@
 #include <string_view>
 #include <utility>
 
-#include "tcn/sqe/client_id.h"
 #include "tcn/sqe/error.h"
 #include "tcn/sqe/result.h"
 #include "tcn/sqe/validate.h"
 
 namespace tcn {
 namespace sqe {
-
-// kNodeIdSeparator, the `::` between a composed node id's two halves, is in
-// validate.h (0.10.7): the domain id rule there needs it too.
 
 /// A node or edge name: the **identifier** rule, whole.
 class NodeName
@@ -40,122 +40,6 @@ public:
 private:
     explicit NodeName(std::string n) noexcept : name_(std::move(n)) {}
     std::string name_;
-};
-
-/// A local node's composed id: `{fragment}::{name}`.
-///
-/// The fragment half is a client id and takes the fragment rule; the name half
-/// takes the identifier rule. This is the only value in the contract that
-/// mixes the two alphabets, and it does so because its left half *is* a key
-/// prefix.
-class LocalNodeId
-{
-public:
-    static LocalNodeId compose(const ClientId& fragment, const NodeName& name)
-    {
-        std::string id;
-        id.reserve(fragment.str().size() + kNodeIdSeparator.size() + name.str().size());
-        id += fragment.str();
-        id.append(kNodeIdSeparator.data(), kNodeIdSeparator.size());
-        id += name.str();
-        return LocalNodeId(std::move(id));
-    }
-
-    /// Splits at the **first** `::`, matching the engine.
-    ///
-    /// `:` is a legal identifier character, so any other split is wrong:
-    /// `a::b::c` is the node `b::c` in fragment `a`, not the node `c` in
-    /// fragment `a::b`.
-    static Result<LocalNodeId> parse(std::string_view s)
-    {
-        const std::size_t at = s.find(kNodeIdSeparator);
-        if (at == std::string_view::npos) { return Result<LocalNodeId>::fail(Error::IllegalCharacter); }
-
-        const Result<void> frag = check_fragment(s.substr(0, at));
-        if (!frag) { return Result<LocalNodeId>::fail(frag.error()); }
-
-        const Result<void> name = check_identifier(s.substr(at + kNodeIdSeparator.size()));
-        if (!name) { return Result<LocalNodeId>::fail(name.error()); }
-
-        return Result<LocalNodeId>::ok(LocalNodeId(std::string(s)));
-    }
-
-    const std::string& str() const noexcept { return id_; }
-
-    friend bool operator==(const LocalNodeId& a, const LocalNodeId& b) noexcept { return a.id_ == b.id_; }
-    friend bool operator!=(const LocalNodeId& a, const LocalNodeId& b) noexcept { return !(a == b); }
-
-private:
-    explicit LocalNodeId(std::string id) noexcept : id_(std::move(id)) {}
-    std::string id_;
-};
-
-/// A global node's id: a bare name, and nothing about it is a key prefix.
-///
-/// A distinct type rather than a `using`, so that nobody applies the fragment
-/// rule to it "for symmetry" and admits a `/` into a bare global name.
-class GlobalNodeId
-{
-public:
-    static GlobalNodeId of(const NodeName& name) { return GlobalNodeId(name.str()); }
-
-    static Result<GlobalNodeId> parse(std::string_view s)
-    {
-        const Result<NodeName> n = NodeName::parse(s);
-        if (!n) { return Result<GlobalNodeId>::fail(n.error()); }
-        return Result<GlobalNodeId>::ok(GlobalNodeId(n.value().str()));
-    }
-
-    const std::string& str() const noexcept { return id_; }
-
-    friend bool operator==(const GlobalNodeId& a, const GlobalNodeId& b) noexcept { return a.id_ == b.id_; }
-    friend bool operator!=(const GlobalNodeId& a, const GlobalNodeId& b) noexcept { return !(a == b); }
-
-private:
-    explicit GlobalNodeId(std::string id) noexcept : id_(std::move(id)) {}
-    std::string id_;
-};
-
-/// A domain node's id (0.10.7, engine B94): `@{domain}::{name}`. The domain
-/// takes the fragment rule without `::`, the name the identifier rule
-/// (`domain_node_id`, `parse_domain_node_id`).
-class DomainNodeId
-{
-public:
-    static Result<DomainNodeId> compose(std::string_view domain, const NodeName& name)
-    {
-        Result<std::string> id = domain_node_id(domain, name.str());
-        if (!id) { return Result<DomainNodeId>::fail(id.error()); }
-        return Result<DomainNodeId>::ok(DomainNodeId(std::move(id.value())));
-    }
-
-    static Result<DomainNodeId> parse(std::string_view s)
-    {
-        std::string_view d, n;
-        if (!parse_domain_node_id(s, d, n)) { return Result<DomainNodeId>::fail(Error::IllegalCharacter); }
-        return Result<DomainNodeId>::ok(DomainNodeId(std::string(s)));
-    }
-
-    const std::string& str() const noexcept { return id_; }
-    std::string_view domain() const noexcept
-    {
-        std::string_view d, n;
-        parse_domain_node_id(id_, d, n);
-        return d;
-    }
-    std::string_view name() const noexcept
-    {
-        std::string_view d, n;
-        parse_domain_node_id(id_, d, n);
-        return n;
-    }
-
-    friend bool operator==(const DomainNodeId& a, const DomainNodeId& b) noexcept { return a.id_ == b.id_; }
-    friend bool operator!=(const DomainNodeId& a, const DomainNodeId& b) noexcept { return !(a == b); }
-
-private:
-    explicit DomainNodeId(std::string id) noexcept : id_(std::move(id)) {}
-    std::string id_;
 };
 
 }  // namespace sqe

@@ -1,4 +1,5 @@
 {
+ "plan": "plan 4",
  "_comment": "0.11 plan 4: enum renames outside sqe_msgs (decisions E6 ..._UNKNOWN/..._NONE first, O5 enum-name prefix; #36 L3). Per enum, the new enumerators in their new order as [old or null, new]. Applied once by `idl_cli.py enums`; kept as the record and the source of docs/migration/0.11-enum-map.md.",
  "enums": {
   "tcnart_msgs::msg::VideoPixelFormat": [

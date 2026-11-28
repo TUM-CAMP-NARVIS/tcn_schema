@@ -81,7 +81,26 @@ under `share/tcn_schema/dds/`.
   type names, validation, relation requests, handles, leases. Its design note is
   [docs/design/2026-08-31-sqe-contract-library-design.md](docs/design/2026-08-31-sqe-contract-library-design.md).
 - **Protocol description:** the canonical description is the engine's `docs/reference/protocol.md`, and each change
-  is a B-entry in its `docs/reference/compatibility-breaks.md`.
+  is a B-entry in its `docs/reference/compatibility-breaks.md`. Since 0.11 the contract library knows one protocol
+  floor, `tcn::sqe::kProtocolBreak` (`protocol.h`), instead of the 0.10 B-levels.
+- **Replies:** every reply and notification starts with `SISReplyHeader` (`status: SISStatus`, `reason: SISReason`,
+  `detail`, `engine_id`, `engine_epoch`); `tcn::sqe::reply_header(reply)` reads it, and a zeroed reply is not OK
+  (every enum starts with `…_UNKNOWN`).
+- **Frame references:** `tcn_types::msg::SRFrameRef { scope, owner, name, selector }` on the wire, and one text form,
+  `local:<fragment>/<name>`, `global:<name>`, `domain:<domain>/<name>`, each optionally + `[instances]`
+  (`tcn::sqe::FrameRef::parse`/`format`). The shared test vectors, `src/sqe/vectors/frame_ref.tsv` (installed as
+  `share/tcn_schema/sqe/frame_ref.tsv`), are **mandatory** for every implementation, the engine's Rust side
+  included.
+- **Capabilities and scope:** the join reply, `op/info` and the unscoped `sqe/{engine}/info` carry
+  `SISEngineCapabilities` (`protocol_break`, `capabilities` such as `sample`, `domain`, `rational_lens` and
+  `marker_domain`, and the `client_scope`); a client gates a feature on `Capabilities::has(...)`, not on a number.
+- **Key families:** `/sis/node/{update,remove}`, `/sis/edge/{update,remove}`, `/sis/stream/{start,stop,sample}`,
+  `/sis/graph/query`, `/sis/pattern/query`, `/sis/target/{query,update}`, `/sis/{join,leave,alive}`,
+  `{client}/cfg/marker/{device}/{marker_id}`, `sqe/{engine}/{alive/{epoch},info,op/*}`. A start reply names the data,
+  status and plan topics (`SISStreamHandle`); a client never composes them. The data topic carries
+  `SISRelationOutput`.
+- **Moving from 0.10:** [docs/migration/MIGRATION-0.11.0.md](docs/migration/MIGRATION-0.11.0.md), Plan 5, with the
+  [type map](docs/migration/0.11-sqe-type-map.md) and the [enum map](docs/migration/0.11-sqe-enum-map.md).
 - **Version check:** every SQE payload's encoding annotation carries the release, `;tcn_schema=0.11`
   (`tcn::sqe::kWireSchemaVersion`). Peers compare major.minor, so a minor bump is a lockstep rebuild of every peer.
 - **C++ clients** use sqe_client_cpp, which builds on this library.
@@ -119,7 +138,7 @@ The encoding belongs to the package family (decisions E1–E3):
 - All migration notes are indexed in [MIGRATION.md](MIGRATION.md), newest first. Each note says what changed on the
   wire and in the generated code, and what each consumer has to do.
 - Recent releases:
-  - **0.10.7** (engine B94, additive): `SRG_SCOPE_DOMAIN`, domain nodes `@{domain}::{name}`.
+  - **0.10.7** (engine B94, additive): `SRG_SCOPE_DOMAIN` (`SR_NODE_SCOPE_DOMAIN` from 0.11), domain nodes `@{domain}::{name}`.
   - **0.10.6** (B93, additive): the relation sample.
   - **0.10.5:** person tracking for avatars, `HumanPoseMessage`, `TimeRef`.
   - **0.10.0** (B90): a wire break; evaluation modes and plans.

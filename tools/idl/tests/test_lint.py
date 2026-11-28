@@ -101,6 +101,13 @@ class RepoBaselineTest(unittest.TestCase):
                            capture_output=True, text=True)
         self.assertEqual(r.returncode, 0, r.stdout)
 
+    def test_baseline_holds_no_sqe_msgs_entry(self):
+        # 0.11 plan 5 (#35): the sqe_msgs enums are lint-clean, so the baseline is header-only for them.
+        repo = Path(__file__).resolve().parents[3]
+        lines = (repo / "tools" / "idl" / "lint_baseline.txt").read_text().splitlines()
+        entries = [ln for ln in lines if ln and not ln.startswith("#")]
+        self.assertEqual([ln for ln in entries if "sqe_msgs" in ln], [])
+
 
 if __name__ == "__main__":
     unittest.main()

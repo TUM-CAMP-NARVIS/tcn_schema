@@ -20,10 +20,10 @@ namespace sqe {
 /// The fourteen key suffixes. A client's key is `{client_id}{SUFFIX}`; every
 /// suffix begins with `/`, which is why a client id must not end with one.
 ///
-/// Since B73 every key here that changes the graph -- join, component
-/// update/remove, relation update/remove, target update -- is a **queryable**
-/// answered with `SISMutationReply`, and a `put` on one is ignored by the
-/// engine. `kLeave` is the one write that stays a put, and `kAlive` is not
+/// Since B73 every key here that changes the graph -- join, node
+/// update/remove, edge update/remove, target update -- is a **queryable**
+/// answered with a reply, and a `put` on one is ignored by the engine.
+/// `kLeave` is the one write that stays a put, and `kAlive` is not
 /// written at all. Which is which is pinned in session.h's `RequestKey` table,
 /// not here: a suffix is a string, and the mode is a property of the request
 /// type that goes to it.
@@ -34,10 +34,12 @@ inline constexpr std::string_view kLeave           = "/sis/leave";
 /// Not a publish key. A client declares a Zenoh **liveliness token** here and
 /// holds it; nothing is ever `put` on it. Declaring it *is* the message.
 inline constexpr std::string_view kAlive           = "/sis/alive";
-inline constexpr std::string_view kNodeUpdate      = "/sis/component/update";
-inline constexpr std::string_view kNodeRemove      = "/sis/component/remove";
-inline constexpr std::string_view kEdgeUpdate      = "/sis/relation/update";
-inline constexpr std::string_view kEdgeRemove      = "/sis/relation/remove";
+/// The node and edge writes (0.11, #35 H4; `/sis/component/*` and
+/// `/sis/relation/*` before).
+inline constexpr std::string_view kNodeUpdate      = "/sis/node/update";
+inline constexpr std::string_view kNodeRemove      = "/sis/node/remove";
+inline constexpr std::string_view kEdgeUpdate      = "/sis/edge/update";
+inline constexpr std::string_view kEdgeRemove      = "/sis/edge/remove";
 inline constexpr std::string_view kStreamStart     = "/sis/stream/start";
 inline constexpr std::string_view kStreamStop      = "/sis/stream/stop";
 /// The only **read** the engine answers. Every other key here writes, or asks
@@ -60,8 +62,9 @@ inline constexpr std::string_view kTargetQuery     = "/sis/target/query";
 inline constexpr std::string_view kTargetUpdate    = "/sis/target/update";
 /// The relation sample (B93, 0.10.6): one value of a relation at one instant.
 /// A read, like the graph read, and charged to the same rate bucket; it starts
-/// nothing, so it has no stop.
-inline constexpr std::string_view kRelationSample  = "/sis/relation/sample";
+/// nothing, so it has no stop. `/sis/relation/sample` before 0.11 (#35 H4),
+/// which emptied the `/sis/relation/` family.
+inline constexpr std::string_view kStreamSample    = "/sis/stream/sample";
 
 }  // namespace keys
 
@@ -97,7 +100,7 @@ public:
 
     const std::string& str() const noexcept { return id_; }
 
-    // -- the fourteen keys --------------------------------------------------
+    // -- the fourteen keys ---------------------------------------------------
     //
     // Fourteen named accessors, and no `key(std::string_view suffix)` overload.
     // That is the point: a free-form suffix parameter re-opens exactly the
@@ -117,7 +120,7 @@ public:
     std::string pattern_query_key() const { return detail::concat(id_, keys::kPatternQuery); }
     std::string target_query_key() const { return detail::concat(id_, keys::kTargetQuery); }
     std::string target_update_key() const { return detail::concat(id_, keys::kTargetUpdate); }
-    std::string relation_sample_key() const { return detail::concat(id_, keys::kRelationSample); }
+    std::string stream_sample_key() const { return detail::concat(id_, keys::kStreamSample); }
 
     friend bool operator==(const ClientId& a, const ClientId& b) noexcept { return a.id_ == b.id_; }
     friend bool operator!=(const ClientId& a, const ClientId& b) noexcept { return !(a == b); }

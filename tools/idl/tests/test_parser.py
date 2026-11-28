@@ -20,10 +20,11 @@ class RepoSchemaTest(unittest.TestCase):
         cls.decls = _decls(cls.schema)
 
     def test_all_repo_files_parse(self):
-        # 0.11 plan 2: the ROS 2 tree is generated from Jazzy (all tiers committed); plan 3: the tcn layout.
-        self.assertEqual(len(self.schema.files), 469)
+        # 0.11 plan 2: the ROS 2 tree is generated from Jazzy (all tiers committed); plan 3: the tcn layout;
+        # plan 5 task 4: sqe_msgs/rpc/Reply.idl.
+        self.assertEqual(len(self.schema.files), 473)
         n = sum(1 for f in self.schema.files for d in f.decls if isinstance(d, (Struct, Enum, Union)))
-        self.assertEqual(n, 1145)  # 0.11 plan 4 deleted six types (tools/idl/fields_0_11.json)
+        self.assertEqual(n, 1177)  # 0.11 plan 4 deleted six types (tools/idl/fields_0_11.json); plan 5 task 2 added 11, task 3 added 6 and deleted 5, task 4 added 16 and deleted 5, task 5 added 12 and deleted 3
 
     def test_sensor_type(self):
         e = self.decls["tcnart_msgs::msg::SensorType"]

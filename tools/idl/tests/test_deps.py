@@ -19,7 +19,8 @@ class PackageTableTest(unittest.TestCase):
         self.assertEqual(self.deps["tcnart_msgs"], {"std_msgs", "tcn_types"})
         self.assertEqual(self.deps["conversation_msgs"], set())
         self.assertEqual(self.deps["pcpd_msgs"], {"std_msgs", "tcn_types", "tcnart_msgs"})
-        self.assertEqual(self.deps["sqe_msgs"], {"builtin_interfaces", "tcn_types"})
+        # 0.11 plan 5 (#35 H3): SISRelationOutput carries a whole tcnart_msgs TargetTrackingMessage.
+        self.assertEqual(self.deps["sqe_msgs"], {"builtin_interfaces", "tcn_types", "tcnart_msgs"})
 
     def test_table_matches_includes(self):
         idl_entries = [p for p in self.table if p["family"] in ("ros2", "tcn")]

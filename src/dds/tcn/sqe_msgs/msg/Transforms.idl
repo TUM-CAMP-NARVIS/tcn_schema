@@ -1,6 +1,7 @@
 #ifndef SQE_MSGS_MSG_TRANSFORMS_IDL
 #define SQE_MSGS_MSG_TRANSFORMS_IDL
 
+#include "tcn_types/msg/Camera.idl"
 #include "tcn_types/msg/Geometry.idl"
 
 module sqe_msgs {
@@ -8,62 +9,21 @@ module sqe_msgs {
 
         // A pose and how well it is known.
         //
-        // `covariance` is 0 or 21 doubles: the upper triangle of the 6x6,
-        // row-major, ordered (tx, ty, tz, rx, ry, rz) -- translation first --
-        // with m^2 on the translational block and rad^2 on the rotational one.
-        // Empty means "not stated", which is different from a zero covariance
-        // meaning "known exactly".
-        //
-        // The triangle rather than all 36 makes an asymmetric matrix
-        // unrepresentable, which is the failure that otherwise surfaces as a
-        // Cholesky decomposition failing far from whatever produced it. Same
-        // packing as every other covariance in this schema (see
-        // tcn_types::msg::Target::pose_covariance): one packing, one unpacking,
-        // one place to get it wrong.
-        //
-        // The convention is stated here because it is not inferable from the
-        // type: a 6x6 says nothing about which three of its axes are the
-        // translation.
-        @appendable struct SRPose6DWithCovariance {
+        // `covariance` is the upper triangle of the 6x6, row-major, ordered
+        // (tx, ty, tz, rx, ry, rz) -- translation first -- with m^2 on the
+        // translational block and rad^2 on the rotational one; see
+        // tcn_types::msg::SRCovariance6. Absent means "not stated", which is
+        // different from a zero covariance meaning "known exactly".
+        @appendable struct SRPose6D {
             tcn_types::msg::RigidTransform pose;
-            sequence<double, 21> covariance;
+            @optional tcn_types::msg::SRCovariance6 covariance;
         };
 
-        // A translation and its 3x3, packed as 0 or 6 doubles -- the upper
-        // triangle, row-major, in m^2.
-        @appendable struct SRTranslation3DWithCovariance {
+        // A translation and its 3x3 (upper triangle, row-major, m^2); absent
+        // means "not stated".
+        @appendable struct SRTranslation3D {
             tcn_types::msg::Vector3 translation;
-            sequence<double, 6> covariance;
-        };
-
-        // A camera's internal geometry. Intrinsics ONLY -- the camera's
-        // extrinsics are the ordinary pose edge BEFORE the projection edge, so
-        // a camera that moves is a dynamic pose edge like any tracked thing and
-        // needs no second mechanism. Extrinsic calibration writes the pose
-        // edge, intrinsic calibration writes this, and neither can drift from
-        // the other because there is only one copy of each fact.
-        @appendable struct SRIntrinsics {
-            double fx; double fy;
-            double cx; double cy;
-
-            // Which model the coefficients belong to. An empty string is an
-            // ideal pinhole -- stated, not defaulted, so "nobody calibrated
-            // this lens" and "this lens is rectilinear" stay distinguishable.
-            //
-            // "opencv_radtan" is Brown-Conrady, which is what OpenCV, Kalibr,
-            // COLMAP and every ART/NDI calibration report emit for an ordinary
-            // lens under three different names.
-            string distortion_model;          // "" | "opencv_radtan" | "opencv_fisheye"
-
-            // Coefficients in the model's own order: radtan is k1 k2 p1 p2 [k3]
-            // (OpenCV's distCoeffs order), fisheye is k1..k4. A length the model
-            // does not expect reads as "not stated" rather than being
-            // truncated, for the reason a wrong-length covariance does.
-            sequence<double, 8> distortion;
-
-            // Pixels; 0 means unknown, which is what "nothing bounds-checks
-            // this" is.
-            uint32 image_w; uint32 image_h;
+            @optional tcn_types::msg::SRCovariance3 covariance;
         };
 
         // A point in an image plane, in pixels. The result of a projection,
@@ -71,48 +31,33 @@ module sqe_msgs {
         // projection that produced it discarded the depth a further hop needs.
         @final struct SRPoint2D {
             double u; double v;
-
-            // How well (u, v) is known: 0 or 3 doubles, the upper triangle of
-            // the 2x2 in row-major order, in px^2. Empty means "not stated".
-            sequence<double, 3> covariance;
         };
 
         @appendable enum SRTransformType {
-          SRG_TRANSFORM_POSE6D,
-          SRG_TRANSFORM_TRANSLATION3D,
-
-          // Each of the following is APPENDED, never inserted. CDR is
-          // positional and a union's discriminant is its first four bytes, so
-          // renumbering an existing case makes an un-rebuilt publisher misread
-          // rather than fail.
-          SRG_TRANSFORM_POSE6D_COV,
-          SRG_TRANSFORM_TRANSLATION3D_COV,
-          SRG_TRANSFORM_PROJECTION,
-          SRG_TRANSFORM_POINT2D
+          SR_TRANSFORM_TYPE_UNKNOWN,
+          SR_TRANSFORM_TYPE_POSE6D,
+          SR_TRANSFORM_TYPE_TRANSLATION3D,
+          SR_TRANSFORM_TYPE_PROJECTION,
+          SR_TRANSFORM_TYPE_POINT2D
         };
 
+        // A transform's value. Covariance rides inside the pose and translation
+        // cases, so there are no separate "with covariance" cases.
         @appendable union SRTransform switch(SRTransformType) {
-        case SRG_TRANSFORM_POSE6D:
-            tcn_types::msg::RigidTransform pose6d;
-        case SRG_TRANSFORM_TRANSLATION3D:
-            tcn_types::msg::Vector3 translation3d;
+        case SR_TRANSFORM_TYPE_POSE6D:
+            SRPose6D pose6d;
+        case SR_TRANSFORM_TYPE_TRANSLATION3D:
+            SRTranslation3D translation3d;
 
-        // A pose and how well it is known. A separate case rather than a field
-        // appended to SRG_TRANSFORM_POSE6D, because appending to an existing
-        // case makes an un-rebuilt publisher misread rather than fail.
-        case SRG_TRANSFORM_POSE6D_COV:
-            SRPose6DWithCovariance pose6d_cov;
-
-        case SRG_TRANSFORM_TRANSLATION3D_COV:
-            SRTranslation3DWithCovariance translation3d_cov;
-
-        // The intrinsics of a projection edge. No pose -- see SRIntrinsics.
-        case SRG_TRANSFORM_PROJECTION:
-            SRIntrinsics projection;
+        // The intrinsics of a projection edge. No pose: the camera's extrinsics
+        // are the ordinary pose edge BEFORE the projection edge, so a camera
+        // that moves is a dynamic pose edge like any tracked thing.
+        case SR_TRANSFORM_TYPE_PROJECTION:
+            tcn_types::msg::CameraIntrinsics projection;
 
         // A composed result, carried where a transform would otherwise be:
         // what a path ending in a projection resolves to.
-        case SRG_TRANSFORM_POINT2D:
+        case SR_TRANSFORM_TYPE_POINT2D:
             SRPoint2D point2d;
         };
 

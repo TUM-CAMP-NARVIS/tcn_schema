@@ -1,0 +1,144 @@
+# frame_ref.tsv -- the N2a text form of a frame reference (tcn_schema 0.11, #35 N2a).
+#
+# The shared contract between every implementation of the text form: the C++
+# contract library (src/sqe/test/test_frame_ref.cpp) and the SQE engine's Rust
+# tests both run every row of this file. Installed as
+# share/tcn_schema/sqe/frame_ref.tsv. An implementation that does not pass it
+# does not speak N2a.
+#
+# THE FORM
+#   local:<fragment>/<name>     a node in a fragment (owner = fragment)
+#   global:<name>               a global node (no owner)
+#   domain:<domain>/<name>      a node in a domain (owner = domain)
+#   each optionally followed by the selector suffix [instances].
+#   <fragment> and <domain> take the fragment rule ([A-Za-z0-9_.:/-], non-empty,
+#   no empty chunk); <name> takes the identifier rule ([A-Za-z0-9_.:-],
+#   non-empty, no '/').
+#
+# THE PARSE, in this order; the first failure wins and names the code:
+#   1. the text is empty                                   -> empty
+#   2. the text contains '[': it must end with "[instances]" and contain no
+#      other '['                                           -> else malformed_selector
+#      strip the suffix; selector = instances (otherwise frame)
+#   3. scheme = everything before the FIRST ':'; no ':'    -> missing_scheme
+#      scheme not exactly local, global or domain
+#      (case-sensitive)                                    -> unknown_scheme
+#   4. global: a body containing '/'                       -> unexpected_owner
+#      otherwise the identifier rule on the body
+#   5. local, domain: split the body at the LAST '/'; none -> missing_owner
+#      the fragment rule on the owner, then the identifier rule on the name
+#   The identifier and fragment rules report, in order:
+#      empty; then the first byte outside the alphabet as non_ascii (>= 0x80),
+#      contains_wildcard (* ? # $), contains_whitespace (<= 0x20 or 0x7F),
+#      contains_slash, or illegal_character (anything else); then (fragment
+#      only) leading_slash, trailing_slash, empty_chunk.
+#   contains_slash cannot occur here: a global body with '/' stops at step 4,
+#   and the split at the last '/' leaves none in a local or domain name.
+#
+#   format() is the inverse: text -> ref -> text is exact for every ok row.
+#   A LOCAL ref with an empty owner ("this fragment") exists only inside a join
+#   on the wire; it has no text form.
+#
+# THE FILE
+#   UTF-8. One record per line, ending in LF; one CR directly before the LF
+#   is stripped (a CRLF checkout reads the same), and nothing else is. Fields
+#   are separated by exactly one TAB (0x09), no quoting, no escaping, no
+#   trimming: a field is every byte between two TABs. No field contains a
+#   TAB or a newline. Lines that are empty or begin with '#' are comments.
+#
+#   ok<TAB>text<TAB>scope<TAB>owner<TAB>name<TAB>selector
+#       text parses; scope is local|global|domain, owner is "" for global,
+#       selector is frame|instances; format() gives text back.
+#   err<TAB>text<TAB>code
+#       text is refused with this code (an empty text is an empty field).
+#
+# Codes are the stable snake_case error codes of tcn::sqe::code(Error).
+
+# --- ok: each scheme -------------------------------------------------------
+ok	local:tcn/loc/ch/room/camera	local	tcn/loc/ch/room	camera	frame
+ok	local:hmd/head	local	hmd	head	frame
+ok	global:world	global		world	frame
+ok	domain:tcn/ksv1/rig01/cam0	domain	tcn/ksv1/rig01	cam0	frame
+ok	domain:rig/cam	domain	rig	cam	frame
+# --- ok: the selector ------------------------------------------------------
+ok	local:dev1/hmd[instances]	local	dev1	hmd	instances
+ok	global:world[instances]	global		world	instances
+ok	domain:d/n.x-1_y[instances]	domain	d	n.x-1_y	instances
+# --- ok: ':' is an identifier and fragment character; the scheme ends at the FIRST ':'
+ok	global:a:b	global		a:b	frame
+ok	global:a::b	global		a::b	frame
+ok	local:frag:x/n	local	frag:x	n	frame
+ok	local:a/b:c	local	a	b:c	frame
+ok	domain:d:e/f:g	domain	d:e	f:g	frame
+# --- ok: the owner is everything before the LAST '/'
+ok	local:a/b/c/d	local	a/b/c	d	frame
+# --- ok: the whole identifier alphabet in a name, the whole fragment alphabet in an owner
+ok	local:A-Z.a_z:0-9/A.Z_a-z:09	local	A-Z.a_z:0-9	A.Z_a-z:09	frame
+ok	global:local:x	global		local:x	frame
+
+# --- 1. empty --------------------------------------------------------------
+err		empty
+# --- 2. the selector -------------------------------------------------------
+err	local:a/b[instance]	malformed_selector
+err	local:a/b[instances][instances]	malformed_selector
+err	local:a/b[instances]x	malformed_selector
+err	local:a/b[INSTANCES]	malformed_selector
+err	local:a/b[	malformed_selector
+err	local:a/b[frame]	malformed_selector
+err	local:a[x]/b[instances]	malformed_selector
+# the suffix is stripped before anything else is looked at
+err	[instances]	missing_scheme
+err	local:a/[instances]	empty
+# --- 3. the scheme ---------------------------------------------------------
+err	camera	missing_scheme
+err	local	missing_scheme
+err	tcn/loc/a/b	missing_scheme
+err	world:camera	unknown_scheme
+err	Local:a/b	unknown_scheme
+err	GLOBAL:world	unknown_scheme
+err	:a/b	unknown_scheme
+err	local :a/b	unknown_scheme
+err	tcn/loc:a/b	unknown_scheme
+# --- 4. global -------------------------------------------------------------
+err	global:a/b	unexpected_owner
+err	global:/b	unexpected_owner
+err	global:	empty
+err	global:a b	contains_whitespace
+err	global:a*	contains_wildcard
+err	global:a#b	contains_wildcard
+err	global:a@b	illegal_character
+# --- 5. local and domain: the split ----------------------------------------
+err	local:camera	missing_owner
+err	domain:camera	missing_owner
+err	local:	missing_owner
+err	domain:	missing_owner
+# --- 5. the owner (fragment rule) ------------------------------------------
+err	local:/camera	empty
+err	local://a/b	leading_slash
+err	domain:/a/b	leading_slash
+err	local:a//b	trailing_slash
+err	local:a//b/c	empty_chunk
+err	local:a b/c	contains_whitespace
+err	local:a*/b	contains_wildcard
+err	domain:a?b/c	contains_wildcard
+err	local:a$/b	contains_wildcard
+err	local:é/b	non_ascii
+err	local:a@b/c	illegal_character
+err	local:a]/b	illegal_character
+# --- 5. the name (identifier rule) -----------------------------------------
+err	local:a/	empty
+err	local:a/b/	empty
+err	domain:d/	empty
+err	local:a/b c	contains_whitespace
+err	local:a/ b	contains_whitespace
+# the next row's name ends in DEL (0x7F), a control character: whitespace by the rule above
+err	local:a/b	contains_whitespace
+err	local:a/b*	contains_wildcard
+err	local:a/é	non_ascii
+err	local:a/b]	illegal_character
+err	domain:d/n+1	illegal_character
+# --- first failure wins ----------------------------------------------------
+# the alphabet is checked before the chunk structure
+err	local:/a*/b	contains_wildcard
+# the owner is checked before the name
+err	local:a//b/c d	empty_chunk

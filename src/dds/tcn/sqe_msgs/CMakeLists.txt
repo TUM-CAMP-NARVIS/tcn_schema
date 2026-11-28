@@ -4,6 +4,7 @@ tcn_add_idl_package(
             "msg/Transforms.idl"
             "msg/Graph.idl"
         RPC
+            "rpc/Reply.idl"
             "rpc/Session.idl"
             "rpc/Mutations.idl"
             "rpc/Streams.idl"

@@ -14,7 +14,7 @@ namespace {
 
 FrameRef frame(const char* client, const char* node)
 {
-    return FrameRef::parse(client, node).value();
+    return FrameRef::local(client, node).value();
 }
 
 StreamTrigger hz(double v) { return StreamTrigger::fixed_rate(v).value(); }
@@ -22,32 +22,10 @@ StreamTrigger hz(double v) { return StreamTrigger::fixed_rate(v).value(); }
 }  // namespace
 
 // ---------------------------------------------------------------------------
-// A frame reference is two different rules, not one
+// Frame references (the rules themselves are in test_frame_ref.cpp)
 // ---------------------------------------------------------------------------
 
-// The client half is a key prefix and takes the fragment rule; the node half is
-// a bare name and takes the identifier rule. Validating the client half as an
-// identifier is B39, and it took the daemon down.
-TCN_SQE_TEST(a_frame_ref_applies_the_fragment_rule_to_the_client_and_the_identifier_rule_to_the_node)
-{
-    CHECK_OK(FrameRef::parse("tcn/loc/pcpd/hl2-01", "head"));
-    CHECK_OK(FrameRef::parse("single", "head"));
-
-    // A '/' is legal on the left and illegal on the right.
-    CHECK_ERR(FrameRef::parse("tcn/loc/pcpd/hl2-01", "head/left"), Error::ContainsSlash);
-
-    // ... and the fragment rule's chunk structure still applies on the left.
-    CHECK_ERR(FrameRef::parse("/tcn/loc", "head"), Error::LeadingSlash);
-    CHECK_ERR(FrameRef::parse("tcn//loc", "head"), Error::EmptyChunk);
-    CHECK_ERR(FrameRef::parse("tcn/loc/", "head"), Error::TrailingSlash);
-
-    CHECK_ERR(FrameRef::parse("", "head"), Error::Empty);
-    CHECK_ERR(FrameRef::parse("tcn/loc", ""), Error::Empty);
-    CHECK_ERR(FrameRef::parse("tcn/*/loc", "head"), Error::ContainsWildcard);
-    CHECK_ERR(FrameRef::parse("tcn/loc", "he ad"), Error::ContainsWhitespace);
-}
-
-TCN_SQE_TEST(frame_refs_order_by_client_then_node)
+TCN_SQE_TEST(frame_refs_order_by_owner_then_name)
 {
     CHECK(frame("a", "z") < frame("b", "a"));
     CHECK(frame("a", "a") < frame("a", "b"));
@@ -86,7 +64,7 @@ TCN_SQE_TEST(an_on_stream_trigger_needs_a_topic_and_on_any_needs_nothing)
 
     const StreamTrigger any = StreamTrigger::on_any();
     CHECK(any.kind() == TriggerKind::OnAny);
-    CHECK_STR_EQ(any.kind_name(), "SRG_TRIGGER_ON_ANY");
+    CHECK_STR_EQ(any.kind_name(), "SR_STREAM_TRIGGER_KIND_ON_ANY");
 }
 
 // The ordinals are the IDL's declaration order, spelled out so a renumbering
@@ -94,10 +72,11 @@ TCN_SQE_TEST(an_on_stream_trigger_needs_a_topic_and_on_any_needs_nothing)
 // clock.
 TCN_SQE_TEST(trigger_kind_ordinals_match_the_idl_declaration_order)
 {
-    CHECK_INT_EQ(static_cast<int>(TriggerKind::FixedRate), 0);
-    CHECK_INT_EQ(static_cast<int>(TriggerKind::OnStream), 1);
-    CHECK_INT_EQ(static_cast<int>(TriggerKind::OnAny), 2);
-    CHECK_INT_EQ(static_cast<int>(TriggerKind::OnReference), 3);
+    CHECK_INT_EQ(static_cast<int>(TriggerKind::Unknown), 0);
+    CHECK_INT_EQ(static_cast<int>(TriggerKind::FixedRate), 1);
+    CHECK_INT_EQ(static_cast<int>(TriggerKind::OnStream), 2);
+    CHECK_INT_EQ(static_cast<int>(TriggerKind::OnAny), 3);
+    CHECK_INT_EQ(static_cast<int>(TriggerKind::OnReference), 4);
 }
 
 // Same reasoning one level down: the policy is its own IDL enum, and it is
@@ -105,9 +84,18 @@ TCN_SQE_TEST(trigger_kind_ordinals_match_the_idl_declaration_order)
 // of the path rather than failing.
 TCN_SQE_TEST(reference_policy_ordinals_match_the_idl_declaration_order)
 {
-    CHECK_INT_EQ(static_cast<int>(ReferencePolicy::First), 0);
-    CHECK_INT_EQ(static_cast<int>(ReferencePolicy::Fastest), 1);
-    CHECK_INT_EQ(static_cast<int>(ReferencePolicy::Slowest), 2);
+    CHECK_INT_EQ(static_cast<int>(ReferencePolicy::Unknown), 0);
+    CHECK_INT_EQ(static_cast<int>(ReferencePolicy::First), 1);
+    CHECK_INT_EQ(static_cast<int>(ReferencePolicy::Fastest), 2);
+    CHECK_INT_EQ(static_cast<int>(ReferencePolicy::Slowest), 3);
+}
+
+TCN_SQE_TEST(evaluation_mode_ordinals_match_the_idl_declaration_order)
+{
+    CHECK_INT_EQ(static_cast<int>(EvaluationMode::Unknown), 0);
+    CHECK_INT_EQ(static_cast<int>(EvaluationMode::Engine), 1);
+    CHECK_INT_EQ(static_cast<int>(EvaluationMode::Local), 2);
+    CHECK_INT_EQ(static_cast<int>(EvaluationMode::Both), 3);
 }
 
 // The trigger a composed relation should be asking for. `on_any` fires once
@@ -118,12 +106,12 @@ TCN_SQE_TEST(a_reference_trigger_defaults_to_the_first_hop_and_carries_its_polic
     const StreamTrigger first = StreamTrigger::on_reference();
     CHECK(first.kind() == TriggerKind::OnReference);
     CHECK(first.policy() == ReferencePolicy::First);
-    CHECK_STR_EQ(first.kind_name(), "SRG_TRIGGER_ON_REFERENCE");
-    CHECK_STR_EQ(first.policy_name(), "SRG_REF_FIRST");
+    CHECK_STR_EQ(first.kind_name(), "SR_STREAM_TRIGGER_KIND_ON_REFERENCE");
+    CHECK_STR_EQ(first.policy_name(), "SR_REFERENCE_POLICY_FIRST");
 
     const StreamTrigger slowest = StreamTrigger::on_reference(ReferencePolicy::Slowest);
     CHECK(slowest.policy() == ReferencePolicy::Slowest);
-    CHECK_STR_EQ(slowest.policy_name(), "SRG_REF_SLOWEST");
+    CHECK_STR_EQ(slowest.policy_name(), "SR_REFERENCE_POLICY_SLOWEST");
 
     // Two policies are two different requests: the engine picks a different
     // hop, so the stream is composed off a different sensor's clock.
@@ -239,16 +227,60 @@ TCN_SQE_TEST(same_terms_compares_the_evaluation_mode)
     CHECK(!engine.same_terms_as(local));
 }
 
-// 0.10.7 (engine B94): a domain node is named with no client and its domain id.
-TCN_SQE_TEST(a_domain_frame_ref_has_no_client_and_the_domain_id)
+TCN_SQE_TEST(reoptimise_and_fusion_policy_ordinals_match_the_idl_declaration_order)
 {
-    const auto f = FrameRef::domain("tcn/ksv1/rig01", "camera01_color");
-    CHECK_OK(f);
-    if (!f) { return; }
-    CHECK(f.value().client().empty());
-    CHECK_STR_EQ(f.value().node(), "@tcn/ksv1/rig01::camera01_color");
-    CHECK(f.value().is_domain());
-    CHECK(!frame("tcn/ksv1/rig01", "camera01_color").is_domain());
-    CHECK_ERR(FrameRef::domain("tcn::ksv1", "cam"), Error::IllegalCharacter);
-    CHECK_ERR(FrameRef::domain("tcn/ksv1", "a/b"), Error::ContainsSlash);
+    CHECK_INT_EQ(static_cast<int>(ReoptimisePolicy::Unknown), 0);
+    CHECK_INT_EQ(static_cast<int>(ReoptimisePolicy::BestAvailableNow), 1);
+    CHECK_INT_EQ(static_cast<int>(ReoptimisePolicy::BestPossible), 2);
+    CHECK_INT_EQ(static_cast<int>(FusionPolicy::Unknown), 0);
+    CHECK_INT_EQ(static_cast<int>(FusionPolicy::BestPath), 1);
+    CHECK_INT_EQ(static_cast<int>(FusionPolicy::Fused), 2);
+    CHECK_INT_EQ(static_cast<int>(FusionPolicy::Filtered), 3);
+}
+
+// The fusion policy is part of the engine's stream identity (a differing start
+// is refused CONFLICT + TERMS_CONFLICT). The reoptimise policy is not -- the
+// engine takes the union -- but it is compared for local lease deduplication:
+// the lease table sends one start per relation, so a second component's
+// different policy would otherwise never reach the engine.
+TCN_SQE_TEST(same_terms_compares_the_reoptimise_and_fusion_policies)
+{
+    const RelationStreamRequest base =
+        RelationStreamRequest::make(frame("a", "x"), frame("b", "y"), hz(30.0)).value();
+    CHECK(base.reoptimise() == ReoptimisePolicy::BestAvailableNow);
+    CHECK(base.fusion() == FusionPolicy::BestPath);
+
+    const RelationStreamRequest best_possible =
+        RelationStreamRequest::make(frame("a", "x"), frame("b", "y"), hz(30.0), kDefaultFreshnessBias,
+                                    EvaluationMode::Engine, ReoptimisePolicy::BestPossible)
+            .value();
+    const RelationStreamRequest fused =
+        RelationStreamRequest::make(frame("a", "x"), frame("b", "y"), hz(30.0), kDefaultFreshnessBias,
+                                    EvaluationMode::Engine, ReoptimisePolicy::BestAvailableNow,
+                                    FusionPolicy::Fused)
+            .value();
+    const RelationStreamRequest spelled_out =
+        RelationStreamRequest::make(frame("a", "x"), frame("b", "y"), hz(30.0), kDefaultFreshnessBias,
+                                    EvaluationMode::Engine, ReoptimisePolicy::BestAvailableNow,
+                                    FusionPolicy::BestPath)
+            .value();
+    CHECK(best_possible.reoptimise() == ReoptimisePolicy::BestPossible);
+    CHECK(fused.fusion() == FusionPolicy::Fused);
+    CHECK(!base.same_terms_as(best_possible));
+    CHECK(!base.same_terms_as(fused));
+    CHECK(base.same_terms_as(spelled_out));
+    CHECK(base.relation() == fused.relation());
+}
+
+// A domain frame is one more FrameRef: a request names it like any other
+// (#35 N2a), and two scopes with the same owner and name are two relations.
+TCN_SQE_TEST(a_domain_frame_is_a_relation_end_like_any_other)
+{
+    const FrameRef dom = FrameRef::domain("tcn/ksv1/rig01", "camera01_color").value();
+    const RelationStreamRequest a =
+        RelationStreamRequest::make(frame("a", "x"), dom, hz(30.0)).value();
+    const RelationStreamRequest b =
+        RelationStreamRequest::make(frame("a", "x"), frame("tcn/ksv1/rig01", "camera01_color"), hz(30.0)).value();
+    CHECK(a.target().scope() == NodeScope::Domain);
+    CHECK(!(a.relation() == b.relation()));
 }

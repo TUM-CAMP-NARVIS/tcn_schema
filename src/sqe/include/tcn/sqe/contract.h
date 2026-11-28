@@ -17,11 +17,18 @@
 #ifndef TCN_SQE_CONTRACT_H
 #define TCN_SQE_CONTRACT_H
 
+// The protocol floor, `kProtocolBreak` / `TCN_SQE_PROTOCOL_BREAK` (#35 R5).
+#include "tcn/sqe/protocol.h"
+
+#include "tcn/sqe/capabilities.h"
 #include "tcn/sqe/client_id.h"
 #include "tcn/sqe/error.h"
+#include "tcn/sqe/frame_ref.h"
 #include "tcn/sqe/handle.h"
 #include "tcn/sqe/node_name.h"
+#include "tcn/sqe/reply.h"
 #include "tcn/sqe/result.h"
+#include "tcn/sqe/scope.h"
 #include "tcn/sqe/status.h"
 #include "tcn/sqe/topics.h"
 #include "tcn/sqe/tracker.h"
@@ -36,58 +43,5 @@
 static_assert(__BYTE_ORDER__ != __ORDER_BIG_ENDIAN__,
               "tcn::sqe assumes a little-endian target; the CDR fixtures are little-endian");
 #endif
-
-namespace tcn {
-namespace sqe {
-
-/// The **floor**: the highest entry in the engine's
-/// `docs/reference/compatibility-breaks.md` such that every contract-core
-/// obligation at or below it is implemented here.
-///
-/// A consumer writes `static_assert(tcn::sqe::kContractBLevel >= 35);` next to
-/// code that depends on the `Pending`/`Active` status split and gets a compile
-/// error instead of a retry loop against an acceptance.
-///
-/// It is 35, not 42, and the number is a floor rather than a boast:
-///   * B36 — the relation lease table's local refcount — is not here. It
-///     needs a start and a stop to go out, so it belongs to the `sqe_session`
-///     component, where `RelationLeaseTable` implements it; a consumer that
-///     links only `sqe_contract` does not have it, and this number must not
-///     say otherwise. `tcn/sqe/session.h` declares its own floor,
-///     `kSessionBLevel`, which is above this one.
-///   * B39 — the identifier/fragment split — *is* implemented (see
-///     validate.h), above the floor. A floor is not a boast.
-///   * B41 is the liveliness token, a transport obligation: this component
-///     names the key (`ClientId::alive_key`) but cannot declare the token.
-///     The same is true of the marker announcement (`marker_announce_key`),
-///     which is a token on a different key and no entry in the B-log at all:
-///     the engine added a subscription, and a client that declares nothing is
-///     exactly as correct as it was before.
-///   * B40 and B42 concern the engine's own example clients and CLI.
-inline constexpr int kContractBLevel = 35;
-
-/// The **revision**: the highest entry in the engine's
-/// `compatibility-breaks.md` whose wire shape this header describes -- its
-/// keys, request modes, reply types, registered type names and encoding
-/// annotation. 78 as of tcn_schema 0.9.0 (B73 mutations as queries, B74 engine
-/// presence, B76 the versioned annotation, B77 clock domains, B78 the target
-/// registry).
-///
-/// A different question from `kContractBLevel`, and deliberately a separate
-/// number rather than a bump of that one. The floor says what this library
-/// *does* for a client, and it cannot pass 35 because B36 is implemented in
-/// `sqe_session`, not here; raising it to 78 would claim, among other things,
-/// that this component watches the engine's liveliness token, which it cannot
-/// -- it opens no session. The revision says what it *describes*: a consumer
-/// that asserts `kProtocolBLevel >= 73` is asserting that `publish_request`
-/// will refuse to compile on a join, which is a fact about the table in
-/// session.h and holds whether or not the floor ever moves.
-inline constexpr int kProtocolBLevel = 78;
-
-}  // namespace sqe
-}  // namespace tcn
-
-#define TCN_SQE_CONTRACT_B_LEVEL 35
-#define TCN_SQE_PROTOCOL_B_LEVEL 78
 
 #endif  // TCN_SQE_CONTRACT_H

@@ -34,6 +34,7 @@ def main(argv) -> int:
     mv.add_argument("--spec", type=Path, required=True)
     mv.add_argument("--json", type=Path)
     mv.add_argument("--markdown", type=Path)
+    mv.add_argument("--plan", default="plan 3", help="provenance for the generated markdown, e.g. 'plan 5'")
 
     an = sub.add_parser("annotate", help="add explicit @appendable/@final to every tcn struct, union and enum (E1, E7)")
     an.add_argument("--dds-root", type=Path, required=True)
@@ -70,7 +71,8 @@ def main(argv) -> int:
     if args.cmd == "enums":
         import json
         from .enums import migration_rows, write_markdown
-        table = json.loads(args.table.read_text(encoding="utf-8"))["enums"]
+        spec = json.loads(args.table.read_text(encoding="utf-8"))
+        table = spec["enums"]
         schema = load_schema(args.dds_root)
         decls = schema.decls()
         missing = sorted(set(table) - set(decls))
@@ -86,7 +88,7 @@ def main(argv) -> int:
             new = apply_enums(text, f.decls, table)
             if new != text:
                 p.write_text(new, encoding="utf-8")
-        write_markdown(rows, args.markdown)
+        write_markdown(rows, args.markdown, spec["plan"], args.table.name)
         print(f"{len(table)} enums renamed")
         return 0
     if args.cmd == "annotate":
@@ -122,7 +124,7 @@ def main(argv) -> int:
                          spec.get("expect"))
         for p in report.problems:
             print(p)
-        write_reports(report, old, new, args.json, args.markdown)
+        write_reports(report, old, new, args.json, args.markdown, plan=args.plan, spec_name=args.spec.name)
         print(f"{len(report.mapped)} moved, {len(report.deleted)} deleted, {len(report.problems)} problems")
         return 1 if report.problems else 0
     if args.cmd == "roundtrip":

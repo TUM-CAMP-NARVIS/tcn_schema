@@ -1,0 +1,271 @@
+{
+ "deleted": [
+  {
+   "old": "sqe_msgs::msg::SREdgeTemporalType",
+   "old_header": "sqe_msgs/msg/Graph.h"
+  },
+  {
+   "old": "sqe_msgs::msg::SRIntrinsics",
+   "old_header": "sqe_msgs/msg/Transforms.h"
+  },
+  {
+   "old": "sqe_msgs::msg::SRNodeTemplate",
+   "old_header": "sqe_msgs/msg/Graph.h"
+  },
+  {
+   "old": "sqe_msgs::msg::SRPose6DWithCovariance",
+   "old_header": "sqe_msgs/msg/Transforms.h"
+  },
+  {
+   "old": "sqe_msgs::msg::SRTranslation3DWithCovariance",
+   "old_header": "sqe_msgs/msg/Transforms.h"
+  },
+  {
+   "old": "sqe_msgs::rpc::SISFrameRef",
+   "old_header": "sqe_msgs/rpc/Streams.h"
+  },
+  {
+   "old": "sqe_msgs::rpc::SISGraphQueryStatus",
+   "old_header": "sqe_msgs/rpc/Queries.h"
+  },
+  {
+   "old": "sqe_msgs::rpc::SISMutationStatus",
+   "old_header": "sqe_msgs/rpc/Mutations.h"
+  },
+  {
+   "old": "sqe_msgs::rpc::SISRelationSampleStatus",
+   "old_header": "sqe_msgs/rpc/Sample.h"
+  },
+  {
+   "old": "sqe_msgs::rpc::SISRelationStreamHandle",
+   "old_header": "sqe_msgs/rpc/Streams.h"
+  },
+  {
+   "old": "sqe_msgs::rpc::SISRelationStreamHandleKind",
+   "old_header": "sqe_msgs/rpc/Streams.h"
+  },
+  {
+   "old": "sqe_msgs::rpc::SISRelationStreamStatus",
+   "old_header": "sqe_msgs/rpc/Streams.h"
+  },
+  {
+   "old": "sqe_msgs::rpc::SISTargetQueryStatus",
+   "old_header": "sqe_msgs/rpc/Targets.h"
+  }
+ ],
+ "moved": [
+  {
+   "new": "tcn_types::msg::SRNodeScope",
+   "new_header": "tcn_types/msg/Frames.h",
+   "old": "sqe_msgs::msg::SRNodeScope",
+   "old_header": "sqe_msgs/msg/Graph.h"
+  },
+  {
+   "new": "tcn_types::msg::SISTargetKind",
+   "new_header": "tcn_types/msg/Tracking.h",
+   "old": "sqe_msgs::rpc::SISTargetKind",
+   "old_header": "sqe_msgs/rpc/Targets.h"
+  }
+ ],
+ "relocated": [
+  {
+   "name": "sqe_msgs::rpc::SISFragmentSummary",
+   "new_header": "sqe_msgs/rpc/Queries.h",
+   "old_header": "sqe_msgs/rpc/Operator.h"
+  }
+ ],
+ "reshaped": [
+  {
+   "header": "sqe_msgs/msg/Graph.h",
+   "name": "sqe_msgs::msg::SRCalibration"
+  },
+  {
+   "header": "sqe_msgs/msg/Graph.h",
+   "name": "sqe_msgs::msg::SREdge"
+  },
+  {
+   "header": "sqe_msgs/msg/Graph.h",
+   "name": "sqe_msgs::msg::SREdgeView"
+  },
+  {
+   "header": "sqe_msgs/msg/Graph.h",
+   "name": "sqe_msgs::msg::SRGraph"
+  },
+  {
+   "header": "sqe_msgs/msg/Graph.h",
+   "name": "sqe_msgs::msg::SRNode"
+  },
+  {
+   "header": "sqe_msgs/msg/Graph.h",
+   "name": "sqe_msgs::msg::SRNodeView"
+  },
+  {
+   "header": "sqe_msgs/msg/Transforms.h",
+   "name": "sqe_msgs::msg::SRPoint2D"
+  },
+  {
+   "header": "sqe_msgs/msg/Transforms.h",
+   "name": "sqe_msgs::msg::SRTransform"
+  },
+  {
+   "header": "sqe_msgs/msg/Transforms.h",
+   "name": "sqe_msgs::msg::SRTransformType"
+  },
+  {
+   "header": "sqe_msgs/rpc/Streams.h",
+   "name": "sqe_msgs::rpc::SISBlockingRelation"
+  },
+  {
+   "header": "sqe_msgs/rpc/Mutations.h",
+   "name": "sqe_msgs::rpc::SISEdgeRemoveRequest"
+  },
+  {
+   "header": "sqe_msgs/rpc/Session.h",
+   "name": "sqe_msgs::rpc::SISEngineInfoReply"
+  },
+  {
+   "header": "sqe_msgs/rpc/Operator.h",
+   "name": "sqe_msgs::rpc::SISExplainReply"
+  },
+  {
+   "header": "sqe_msgs/rpc/Operator.h",
+   "name": "sqe_msgs::rpc::SISExplainRequest"
+  },
+  {
+   "header": "sqe_msgs/rpc/Operator.h",
+   "name": "sqe_msgs::rpc::SISFragmentListReply"
+  },
+  {
+   "header": "sqe_msgs/rpc/Operator.h",
+   "name": "sqe_msgs::rpc::SISFragmentListRequest"
+  },
+  {
+   "header": "sqe_msgs/rpc/Queries.h",
+   "name": "sqe_msgs::rpc::SISFragmentSummary"
+  },
+  {
+   "header": "sqe_msgs/rpc/Targets.h",
+   "name": "sqe_msgs::rpc::SISGlobalTarget"
+  },
+  {
+   "header": "sqe_msgs/rpc/Operator.h",
+   "name": "sqe_msgs::rpc::SISGraphChangeNotification"
+  },
+  {
+   "header": "sqe_msgs/rpc/Queries.h",
+   "name": "sqe_msgs::rpc::SISGraphQueryReply"
+  },
+  {
+   "header": "sqe_msgs/rpc/Queries.h",
+   "name": "sqe_msgs::rpc::SISGraphQueryRequest"
+  },
+  {
+   "header": "sqe_msgs/rpc/Session.h",
+   "name": "sqe_msgs::rpc::SISLeaveRequest"
+  },
+  {
+   "header": "sqe_msgs/rpc/Mutations.h",
+   "name": "sqe_msgs::rpc::SISMutationReply"
+  },
+  {
+   "header": "sqe_msgs/rpc/Mutations.h",
+   "name": "sqe_msgs::rpc::SISNodeRemoveRequest"
+  },
+  {
+   "header": "sqe_msgs/rpc/Operator.h",
+   "name": "sqe_msgs::rpc::SISOperatorMutationRequest"
+  },
+  {
+   "header": "sqe_msgs/rpc/Queries.h",
+   "name": "sqe_msgs::rpc::SISPatternInput"
+  },
+  {
+   "header": "sqe_msgs/rpc/Queries.h",
+   "name": "sqe_msgs::rpc::SISPatternInstance"
+  },
+  {
+   "header": "sqe_msgs/rpc/Queries.h",
+   "name": "sqe_msgs::rpc::SISPatternQueryReply"
+  },
+  {
+   "header": "sqe_msgs/rpc/Queries.h",
+   "name": "sqe_msgs::rpc::SISPatternQueryRequest"
+  },
+  {
+   "header": "sqe_msgs/rpc/Queries.h",
+   "name": "sqe_msgs::rpc::SISPatternRole"
+  },
+  {
+   "header": "sqe_msgs/rpc/Queries.h",
+   "name": "sqe_msgs::rpc::SISPatternSegment"
+  },
+  {
+   "header": "sqe_msgs/rpc/Streams.h",
+   "name": "sqe_msgs::rpc::SISPlanHop"
+  },
+  {
+   "header": "sqe_msgs/rpc/Streams.h",
+   "name": "sqe_msgs::rpc::SISPlanInput"
+  },
+  {
+   "header": "sqe_msgs/rpc/Streams.h",
+   "name": "sqe_msgs::rpc::SISPlanOp"
+  },
+  {
+   "header": "sqe_msgs/rpc/Sample.h",
+   "name": "sqe_msgs::rpc::SISRelationSampleReply"
+  },
+  {
+   "header": "sqe_msgs/rpc/Sample.h",
+   "name": "sqe_msgs::rpc::SISRelationSampleRequest"
+  },
+  {
+   "header": "sqe_msgs/rpc/Streams.h",
+   "name": "sqe_msgs::rpc::SISRelationStreamReply"
+  },
+  {
+   "header": "sqe_msgs/rpc/Streams.h",
+   "name": "sqe_msgs::rpc::SISRelationStreamStartRequest"
+  },
+  {
+   "header": "sqe_msgs/rpc/Streams.h",
+   "name": "sqe_msgs::rpc::SISRelationStreamStatusNotification"
+  },
+  {
+   "header": "sqe_msgs/rpc/Targets.h",
+   "name": "sqe_msgs::rpc::SISTargetAlias"
+  },
+  {
+   "header": "sqe_msgs/rpc/Targets.h",
+   "name": "sqe_msgs::rpc::SISTargetChange"
+  },
+  {
+   "header": "sqe_msgs/rpc/Targets.h",
+   "name": "sqe_msgs::rpc::SISTargetQueryReply"
+  },
+  {
+   "header": "sqe_msgs/rpc/Targets.h",
+   "name": "sqe_msgs::rpc::SISTargetQueryRequest"
+  },
+  {
+   "header": "sqe_msgs/rpc/Operator.h",
+   "name": "sqe_msgs::rpc::SISTransactionLogReply"
+  },
+  {
+   "header": "sqe_msgs/rpc/Streams.h",
+   "name": "sqe_msgs::rpc::SISTranslationPlan"
+  },
+  {
+   "header": "sqe_msgs/rpc/Streams.h",
+   "name": "sqe_msgs::rpc::SRStreamTrigger"
+  },
+  {
+   "header": "tcn_types/msg/Tracking.h",
+   "name": "tcn_types::msg::Target"
+  },
+  {
+   "header": "tcnart_msgs/msg/PoseTracking.h",
+   "name": "tcnart_msgs::msg::Pose6DMessage"
+  }
+ ]
+}
