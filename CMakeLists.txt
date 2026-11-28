@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.19)  # string(JSON) for the package table
-project(tcn_schema VERSION 0.10.7 LANGUAGES CXX)
+project(tcn_schema VERSION 0.11.0 LANGUAGES CXX)
 
 
 option(WITH_DDS "Compile with DDS Implementation" OFF)
@@ -55,6 +55,9 @@ install(FILES "${CMAKE_CURRENT_SOURCE_DIR}/src/dds/tcn/type_map_0_11.json" DESTI
 # The plan 5 (#35) moves, deletions and reshaped types. Apply type_map_0_11.json first, then this one: it supersedes
 # the plan 3 entries for SRNodeScope and SISTargetKind (moved again) and for types deleted since.
 install(FILES "${CMAKE_CURRENT_SOURCE_DIR}/src/dds/tcn/type_map_0_11_sqe.json" DESTINATION share/tcn_schema)
+# The plan 6 (#35/#36/#37/#38) stream, descriptor, camera, parameter and conversation moves. Apply the two maps above
+# first, then this one.
+install(FILES "${CMAKE_CURRENT_SOURCE_DIR}/src/dds/tcn/type_map_0_11_streams.json" DESTINATION share/tcn_schema)
 # The joint-set table's generated arrays (decisions §7 HumanPose; source tcnart_msgs/msg/joint_sets.yaml): the
 # header-only C++ arrays, and the C# arrays and JSON for the other languages.
 install(FILES "${CMAKE_CURRENT_SOURCE_DIR}/src/joint_sets/include/tcn/joint_sets.h" DESTINATION include/tcn)
@@ -72,11 +75,14 @@ add_subdirectory(src/sqe)
 # Machine-readable tables of every IDL declaration (decisions O7): share/tcn_schema/{types,enums}.json.
 file(GLOB_RECURSE TCN_IDL_FILES CONFIGURE_DEPENDS "${CMAKE_CURRENT_SOURCE_DIR}/src/dds/*.idl")
 file(GLOB_RECURSE TCN_IDL_TOOLS CONFIGURE_DEPENDS "${CMAKE_CURRENT_SOURCE_DIR}/tools/idl/*.py")
+# CMake's VERSION cannot carry a pre-release suffix, so the label (conanfile.py's version, written into the tables'
+# schema_version) is kept here. At 0.11.0 itself it becomes "0.11.0"; conanfile.py changes with it.
+set(TCN_SCHEMA_VERSION_LABEL "0.11.0-rc1")
 set(TCN_TABLES_DIR "${PROJECT_BINARY_DIR}/share")
 add_custom_command(
         OUTPUT "${TCN_TABLES_DIR}/types.json" "${TCN_TABLES_DIR}/enums.json"
         COMMAND "${Python3_EXECUTABLE}" -I -B "${CMAKE_CURRENT_SOURCE_DIR}/tools/idl_cli.py" tables
-                --dds-root "${CMAKE_CURRENT_SOURCE_DIR}/src/dds" --version "${PROJECT_VERSION}" --out "${TCN_TABLES_DIR}"
+                --dds-root "${CMAKE_CURRENT_SOURCE_DIR}/src/dds" --version "${TCN_SCHEMA_VERSION_LABEL}" --out "${TCN_TABLES_DIR}"
         DEPENDS ${TCN_IDL_FILES} ${TCN_IDL_TOOLS} "${CMAKE_CURRENT_SOURCE_DIR}/tools/idl_cli.py"
         COMMENT "Generating types.json and enums.json"
         VERBATIM)
