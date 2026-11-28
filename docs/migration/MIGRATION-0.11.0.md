@@ -23,6 +23,14 @@ becomes that release's migration note.
 brought it; the details are in that plan's part of §1. Items marked *(wire)* need the lockstep cut-over; all others
 can be done ahead of it. §3 lists what is decided for 0.11.x.
 
+**How to report.** Status goes in the pinned tracking issue
+[#55](https://github.com/TUM-CAMP-NARVIS/tcn_schema/issues/55): tick your team's sections there (one box per section
+of your checklist in §2, then "Ready for the cut-over"), and comment there when you reach a milestone or are blocked.
+Each question, problem or schema bug gets **its own issue** in milestone `0.11.0`, labelled `0.11`, your team
+(`team:sqe`, `team:tcnart`, `team:hta`, `team:web`, `team:iva`) and `question`, `bug` or `schema-change`; link it in
+#55. A difference between this log and the decisions is reported the same way. The open review questions (the
+"For SQE review" lists in §1) are #50–#54; they block `0.11.0`.
+
 ## 1. Changes so far, for everyone
 
 ### Plan 1: layout and tooling (no wire change)
