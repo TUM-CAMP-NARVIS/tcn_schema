@@ -114,8 +114,8 @@ module tcnart_msgs {
     // whose live inputs come from two domains (REJECTED + CLOCK_DOMAIN_MISMATCH, or PENDING for a running stream)
     // rather than compose stamps that cannot be compared.
     // `frame_rate`: Hz; 0 means irregular (no nominal rate).
-    // `sensor_latency_ns`: ns between the measurement and the header's capture_time_ns; 0 if unknown. A consumer
-    // interpolating across sensors subtracts it before use.
+    // `sensor_latency_ns`: ns between the measurement and the messages' StreamHeader.capture_time_ns; 0 if
+    // unknown. A consumer interpolating across sensors subtracts it before use.
     // `calib_topic`: where the sensor's calibration is published; "" if none.
     // `info`: the typed part for the stream's kind.
     // `properties`: vendor extensions only; nothing the typed fields can say.

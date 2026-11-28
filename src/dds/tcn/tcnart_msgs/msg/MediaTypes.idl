@@ -41,7 +41,7 @@ module tcnart_msgs {
       VIDEO_PIXEL_FORMAT_L8,
       VIDEO_PIXEL_FORMAT_L16,
       VIDEO_PIXEL_FORMAT_RGBA32,
-      // float32 depth in metres (0.11, #37 T9/#38 A2); depth_units_per_meter is absent with it.
+      // float32 depth in metres (0.11, #38 A2); depth_units_per_meter is absent with it.
       VIDEO_PIXEL_FORMAT_DEPTH_F32
     };
 

@@ -229,5 +229,51 @@ class ReshapedTest(unittest.TestCase):
             self.assertEqual(json.loads(js.read_text())["reshaped"], [{"name": "p::msg::V", "header": "p/msg/V.h"}])
 
 
+class ReportSectionsTest(unittest.TestCase):
+    """The type-map Markdown: a New section from the spec's new_types, and "none" under an empty section."""
+
+    OLD = {"p/msg/A.idl": "module p { module msg { struct A { long x; }; struct Gone { long y; }; }; };"}
+    NEW = {"p/msg/A.idl": "module p { module msg { struct A { long x; }; }; };",
+           "p/msg/B.idl": "module p { module msg { struct B { long z; }; enum K { K_UNKNOWN }; }; };"}
+
+    def _write(self, r, old, new):
+        import json
+        from tools.idl.moves import write_reports
+        with tempfile.TemporaryDirectory() as d:
+            md, js = Path(d) / "m.md", Path(d) / "m.json"
+            write_reports(r, old, new, js, md, plan="plan 6", spec_name="streams_0_11.json")
+            return md.read_text(), json.loads(js.read_text())
+
+    def _section(self, text, title):
+        body = text.split(f"## {title}\n", 1)[1]
+        return body.split("\n## ", 1)[0]
+
+    def test_new_types_are_reported_with_their_header(self):
+        old, new = _schema(self.OLD), _schema(self.NEW)
+        r = compare(old, new, {}, {"p::msg::Gone"}, new_types=["p::msg::K", "p::msg::B"])
+        self.assertEqual(r.problems, [])
+        self.assertEqual(r.new, ["p::msg::B", "p::msg::K"])
+        text, data = self._write(r, old, new)
+        self.assertIn("| `p::msg::B` | `p/msg/B.h` |", self._section(text, "New"))
+        self.assertIn("| `p::msg::K` | `p/msg/B.h` |", self._section(text, "New"))
+        self.assertLess(text.index("## New"), text.index("## Moved"))
+        self.assertEqual(data["new"], [{"name": "p::msg::B", "header": "p/msg/B.h"},
+                                       {"name": "p::msg::K", "header": "p/msg/B.h"}])
+
+    def test_an_empty_section_says_none(self):
+        old, new = _schema(self.OLD), _schema(self.NEW)
+        r = compare(old, new, {}, {"p::msg::Gone"}, new_types=["p::msg::K", "p::msg::B"])
+        text, _ = self._write(r, old, new)
+        for title in ("Moved", "Same name, new header", "Reshaped"):
+            section = self._section(text, title)
+            self.assertIn("\nnone\n", section, title)
+            self.assertNotIn("|---|", section, title)
+        self.assertIn("| `p::msg::Gone` |", self._section(text, "Deleted"))
+        self.assertNotIn("\nnone\n", self._section(text, "Deleted"))
+        text, _ = self._write(compare(old, old, {}, set()), old, old)
+        self.assertIn("\nnone\n", self._section(text, "New"))
+        self.assertIn("\nnone\n", self._section(text, "Deleted"))
+
+
 if __name__ == "__main__":
     unittest.main()

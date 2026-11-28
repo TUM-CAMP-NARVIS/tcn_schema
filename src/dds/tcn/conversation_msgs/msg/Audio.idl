@@ -37,6 +37,8 @@ module conversation_msgs {
   };
 
   // #36 A1: an onset (speech_active) or an offset, at its position in the utterance stream.
+  // `stream_position_ms`: ms since the first sample of the session's input audio stream (the audio the VAD
+  // consumes), so every onset and offset of one session is on one timeline.
   @appendable struct VadEvent {
     MessageHeader header;
 

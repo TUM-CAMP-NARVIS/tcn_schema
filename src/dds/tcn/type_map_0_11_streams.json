@@ -74,6 +74,140 @@
   }
  ],
  "moved": [],
+ "new": [
+  {
+   "header": "conversation_msgs/msg/Common.h",
+   "name": "conversation_msgs::msg::BargeInMode"
+  },
+  {
+   "header": "conversation_msgs/msg/Face.h",
+   "name": "conversation_msgs::msg::FaceAnimationLayout"
+  },
+  {
+   "header": "conversation_msgs/msg/Face.h",
+   "name": "conversation_msgs::msg::FaceRig"
+  },
+  {
+   "header": "conversation_msgs/msg/Control.h",
+   "name": "conversation_msgs::msg::PlaybackEvent"
+  },
+  {
+   "header": "conversation_msgs/msg/Control.h",
+   "name": "conversation_msgs::msg::PlaybackState"
+  },
+  {
+   "header": "conversation_msgs/msg/Common.h",
+   "name": "conversation_msgs::msg::SessionStateReason"
+  },
+  {
+   "header": "pcpd_msgs/rpc/ServiceController.h",
+   "name": "pcpd_msgs::rpc::StreamMode"
+  },
+  {
+   "header": "pcpd_msgs/rpc/ServiceController.h",
+   "name": "pcpd_msgs::rpc::StreamRole"
+  },
+  {
+   "header": "tcn_types/msg/Camera.h",
+   "name": "tcn_types::msg::CalibrationProvenance"
+  },
+  {
+   "header": "tcn_types/msg/Stream.h",
+   "name": "tcn_types::msg::StreamHeader"
+  },
+  {
+   "header": "tcnart_msgs/msg/StreamDescriptor.h",
+   "name": "tcnart_msgs::msg::EyeStreamInfo"
+  },
+  {
+   "header": "tcnart_msgs/msg/StreamDescriptor.h",
+   "name": "tcnart_msgs::msg::HandStreamInfo"
+  },
+  {
+   "header": "tcnart_msgs/msg/HumanPose.h",
+   "name": "tcnart_msgs::msg::HumanShape"
+  },
+  {
+   "header": "tcnart_msgs/msg/HumanPose.h",
+   "name": "tcnart_msgs::msg::HumanShapeMessage"
+  },
+  {
+   "header": "tcnart_msgs/msg/StreamDescriptor.h",
+   "name": "tcnart_msgs::msg::ImuStreamInfo"
+  },
+  {
+   "header": "tcnart_msgs/msg/JointSet.h",
+   "name": "tcnart_msgs::msg::JointSet"
+  },
+  {
+   "header": "tcnart_msgs/msg/HumanPose.h",
+   "name": "tcnart_msgs::msg::JointSource"
+  },
+  {
+   "header": "tcnart_msgs/msg/MediaTypes.h",
+   "name": "tcnart_msgs::msg::MeshEncoding"
+  },
+  {
+   "header": "tcnart_msgs/msg/StreamDescriptor.h",
+   "name": "tcnart_msgs::msg::MeshStreamInfo"
+  },
+  {
+   "header": "tcnart_msgs/msg/HumanPose.h",
+   "name": "tcnart_msgs::msg::PersonSmoothing"
+  },
+  {
+   "header": "tcnart_msgs/msg/HumanPose.h",
+   "name": "tcnart_msgs::msg::PersonState"
+  },
+  {
+   "header": "tcnart_msgs/msg/HumanPose.h",
+   "name": "tcnart_msgs::msg::PersonStreamInfo"
+  },
+  {
+   "header": "tcnart_msgs/msg/PersonTracking.h",
+   "name": "tcnart_msgs::msg::PersonTrackState"
+  },
+  {
+   "header": "tcnart_msgs/msg/MediaTypes.h",
+   "name": "tcnart_msgs::msg::PixelSemantics"
+  },
+  {
+   "header": "tcnart_msgs/msg/HumanPose.h",
+   "name": "tcnart_msgs::msg::SmplGender"
+  },
+  {
+   "header": "tcnart_msgs/msg/HumanPose.h",
+   "name": "tcnart_msgs::msg::SmplModel"
+  },
+  {
+   "header": "tcnart_msgs/msg/HumanPose.h",
+   "name": "tcnart_msgs::msg::SmplParams"
+  },
+  {
+   "header": "tcnart_msgs/msg/StreamDescriptor.h",
+   "name": "tcnart_msgs::msg::StreamInfo"
+  },
+  {
+   "header": "tcnart_msgs/msg/MediaTypes.h",
+   "name": "tcnart_msgs::msg::StreamKind"
+  },
+  {
+   "header": "tcnart_msgs/msg/StreamDescriptor.h",
+   "name": "tcnart_msgs::msg::SurfelStreamInfo"
+  },
+  {
+   "header": "tcnart_msgs/msg/StreamDescriptor.h",
+   "name": "tcnart_msgs::msg::TrackerStreamInfo"
+  },
+  {
+   "header": "tcnart_msgs/msg/MediaTypes.h",
+   "name": "tcnart_msgs::msg::VideoCodec"
+  },
+  {
+   "header": "tcnart_msgs/msg/StreamDescriptor.h",
+   "name": "tcnart_msgs::msg::VideoStreamInfo"
+  }
+ ],
  "relocated": [],
  "reshaped": [
   {
