@@ -712,6 +712,33 @@ satisfies the spec. Each needs an answer from the SQE side before `0.11.0` (Plan
     `FUSED`/`FILTERED` `UNSUPPORTED`). ENGINE, LOCAL and BOTH are all accepted and the engine evaluates the sample in
     every mode; a client that wants the route asks with `include_plan`.
 
+**SQE answers (2026-11-28, engine):**
+
+1. Agreed: `SRGraph.name` removed; `display_name` serves.
+2. Agreed: `SRMaterialization` with `marker_domain` and an `SRFrameRef` template device.
+3. Agreed: `SISPlanInput` names its edge by `SRRelationRef`.
+4. **Keep the hop counts per `SISRelationOutput`, defined conservatively.** With `[instances]`, `covariance_hops`/
+   `total_hops` are those of the instance with the lowest `covariance_hops / total_hops` (the least complete), so
+   "complete" on an output means every instance is. Per-target counts would put SQE bookkeeping into
+   `tcn_types::Target`, which trackers share. No consumer gates on completeness yet. If one needs per-instance values,
+   a parallel `@optional sequence` indexed like `targets` can be appended in 0.11.x under E1.
+5. Agreed: `sequence_number`.
+6. Agreed: `NOT_IN_SCOPE` for scope, `NOT_PERMITTED` for authorization; a transaction log without a directory is
+   `REJECTED` + `UNSUPPORTED`.
+7. Agreed: on a non-OK reply the state is `UNKNOWN`, with no park reason and an empty `blocked_by`.
+8. Agreed: the engine refuses an `UNKNOWN` term as `REJECTED` + `MALFORMED`, for fusion, reoptimise, evaluation and
+   trigger alike.
+9. Agreed: these are `@optional`, and the engine writes them absent where it wrote `0` for "none".
+10. **Capability wording: confirmed.** `rational_lens` is exactly B96: the engine accepts the model and projects
+    through it; without the capability such an edge is refused. `marker_domain` is exactly B97, now carried in fields.
+    The engine announces `sample`, `domain`, `rational_lens` and `marker_domain` from 0.11.0 on.
+11. Agreed: `SLOWEST` is the lowest declared `frame_rate`; a hop with none does not count.
+12. Agreed, including the `cursor` exception.
+13. **Agreed.** A LOCAL `SRFrameRef` in a mutation must have the key's client as its `owner`, or an empty owner inside
+    a join, which means this fragment; anything else is `REJECTED` + `NOT_PERMITTED`. Shared nodes (GLOBAL, DOMAIN)
+    remain nameable by every fragment, as today.
+14. Agreed: a sample validates `evaluation` and `fusion` like a start and is evaluated by the engine in every mode.
+
 #### Tools
 
 - `tools/idl_cli.py moves --old <plan 4 src/dds> --new src/dds --spec tools/idl/sqe_0_11.json --plan "plan 5"
@@ -1170,6 +1197,23 @@ presence byte.
    frame (the frame the poses are expressed in, an `SRFrameRef`) and `targets.header.capture_time_ns` = the evaluation
    instant in the output's `clock_domain`; `targets.header.clock` absent, `targets.header.sequence_number` = the outer
    one. Confirm the engine can name the source frame as an `SRFrameRef`.
+
+**SQE answers (2026-11-28, engine):**
+
+1. **The B-number is 99.** The engine's last 0.10 break is B98 (deployed 2026-11-27), and the 0.11 break is one
+   entry, B99. Set `kProtocolBreak` to 99 at 0.11.0.
+2. **Confirmed:** `marker_system` is `family[:variant]`, split at the **first** `:`. A variant may contain further
+   `:`. An `@` is malformed, and `marker_domain` is its own field. The engine refuses a tracker descriptor that breaks
+   this, as B97 refuses a bad marker domain today, so it is never read engine-wide by accident.
+3. **Confirmed,** with one statement of precedence. The engine binds a tracker stream to its device node through the
+   claim (the node or edge naming the descriptor topic), as today. `header.frame` is checked against that node and
+   logged when it disagrees, but never re-routes a stream. An absent `Target.pose` is no measurement, like
+   `is_tracked = false` since B98. A per-target `capture_time_ns` is that target's sample time for interpolation.
+4. **Confirmed:** a changed `revision` is changed content; an absent one means compare the content (the engine has
+   compared content since B93).
+5. **Confirmed.** The source frame is the request's observer, already an `SRFrameRef` in `SISRelationTerms`, and the
+   engine writes it as `targets.header.frame`. `capture_time_ns` is the evaluation instant in the output's
+   `clock_domain`, `clock` is absent, and the inner `sequence_number` is the outer one.
 
 #### Tools
 
