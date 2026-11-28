@@ -52,7 +52,7 @@ ctest --test-dir build/Release
 | Test | What it checks |
 |---|---|
 | `roundtrip` | Every struct and union of every package survives encode → decode. It is generated from `types.json`. |
-| `golden` | Fixed values encode to exactly the bytes in [test/golden/](test/golden/). These files are the shared contract for all hand-written codecs. |
+| `golden` | Fixed values encode to exactly the bytes in [test/golden/](test/golden/). These files are the shared contract for all hand-written codecs: XCDR1 for a ROS type, XCDR2 for tcn types, and two versions of one appendable type (`evo_v1_Thing`, `evo_v2_Thing`, from [test/idl/evo/](test/idl/evo/)) that prove decoding across versions in both directions. |
 | `tcnart_msgs_*` | Hand-written round trips (PersonTracking, HumanPose, TimeRef). |
 | `idl_lint` | The IDL style rules, against the shrinking baseline `tools/idl/lint_baseline.txt`. |
 | `idl_tools` | The Python tools' unit tests: `python3 -m unittest discover -s tools -p 'test_*.py' -t .` |
@@ -82,7 +82,7 @@ under `share/tcn_schema/dds/`.
   [docs/design/2026-08-31-sqe-contract-library-design.md](docs/design/2026-08-31-sqe-contract-library-design.md).
 - **Protocol description:** the canonical description is the engine's `docs/reference/protocol.md`, and each change
   is a B-entry in its `docs/reference/compatibility-breaks.md`.
-- **Version check:** every SQE payload's encoding annotation carries the release, `;tcn_schema=0.10`
+- **Version check:** every SQE payload's encoding annotation carries the release, `;tcn_schema=0.11`
   (`tcn::sqe::kWireSchemaVersion`). Peers compare major.minor, so a minor bump is a lockstep rebuild of every peer.
 - **C++ clients** use sqe_client_cpp, which builds on this library.
 - **Since 0.11** these types are in their own package, `sqe_msgs`; the shared ones are in `tcn_types` (decisions §3).
@@ -92,10 +92,25 @@ under `share/tcn_schema/dds/`.
 - **What it is:** `src/dds/tcn/conversation_msgs/` is the realtime conversational pipeline's protocol:
   `conversation_msgs::msg` (common, control, audio, stt, llm, tts, metrics) and `conversation_msgs::rpc` (discovery,
   `AppServerInfo`). Type names, field names, field order and enum order are the pipeline's.
-- **Encoding today:** these types travel as plain CDR: OMG CDR v1 little-endian *without* the 4-byte encapsulation
-  header, zenoh encoding `application/cdr`. Every other package keeps the encapsulation (since 0.10.2,
-  [MIGRATION-0.10.2.md](docs/migration/MIGRATION-0.10.2.md)).
-- **In 0.11** they get the encapsulation header and XCDR2 like every tcn type (decisions E4).
+- **Encoding:** since 0.11 XCDR2 with the encapsulation header, like every tcn type (decisions E4). Up to 0.10 they
+  travelled as plain CDR without the header.
+
+## Encoding
+
+The encoding belongs to the package family (decisions E1–E3):
+
+| Family | Extensibility | Encoding | Encapsulation (LE) |
+|---|---|---|---|
+| tcn (`tcn_types`, `sqe_msgs`, `tcnart_msgs`, `pcpd_msgs`, `conversation_msgs`) | `@appendable`; `@final` only for `Vector2`, `Vector3`, `Quaternion`, `RigidTransform`, `SRPoint2D` | XCDR2 (`D_CDR2`) | `00 09 00 00` |
+| ros2 | `@final` | XCDR1 (`CDR`), byte-compatible with ROS 2 | `00 01 00 00` |
+
+- **fast-cdr writers** of tcn types: `CdrVersion::XCDRv2`, then `set_encoding_flag(EncodingAlgorithmFlag::DELIMIT_CDR2)`,
+  then `serialize_encapsulation()`.
+- **Readers** pick the version from the encapsulation id, decode into a fresh object, skip trailing members they do
+  not know, and give missing members their defaults.
+- **New members after 0.11.0** are appended and `@optional`, unless 0, `""` or empty is a true reading (E8).
+- **The details for hand-written codecs** are in
+  [docs/migration/MIGRATION-0.11.0.md](docs/migration/MIGRATION-0.11.0.md) (Plan 4).
 
 ## Releases and migration notes
 

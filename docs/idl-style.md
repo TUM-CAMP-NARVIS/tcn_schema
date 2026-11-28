@@ -11,7 +11,8 @@ The lint also runs in `ctest` as `idl_lint` when `TCN_SCHEMA_BUILD_MSG_TESTS=ON`
 - `tools/idl/lint_baseline.txt` lists the findings that existed when the lint was introduced.
 - The lint fails on any new finding, and also on any baseline entry that no longer occurs. So when you fix a finding,
   remove its line (or regenerate the baseline with `--update-baseline`, and check the diff only removes lines).
-- The baseline shrinks as the 0.11 plans land, and is empty at 0.11.0.
+- The baseline shrinks as the 0.11 plans land, and is empty at 0.11.0. Since 0.11 plan 4 it holds only `sqe_msgs`
+  enums, which the #35 redesign (plan 5) replaces.
 
 Two families of packages follow different rules:
 - **tcn** (`src/dds/tcn/`): `tcn_types`, `sqe_msgs`, `tcnart_msgs`, `pcpd_msgs` and `conversation_msgs`. The package

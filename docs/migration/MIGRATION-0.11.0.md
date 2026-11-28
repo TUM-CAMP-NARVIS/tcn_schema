@@ -13,9 +13,10 @@ note.
 |---|---|---|---|
 | 1 | Layout and tooling: docs, out-of-tree generation, package table, `types.json`/`enums.json`, lint, round-trip tests | **none** | merged (#41) |
 | 2 | ROS 2 tree regenerated from Jazzy, `@final`, service/action types, `ros2_types.json`, tiers | ROS types only (`Range.variance`) | merged (#42) |
-| 3 | Moves and deletions: `sqe_msgs`, `tcn_types`, parameter RPC → `pcpd_msgs`, `custom/` → `tcn/`, deleted types | type names, removals | in review (branch `0.11-plan3-moves`) |
-| 4 | XCDR2 (E1–E9), field removals (F1–F5), #35 SQE changes | **yes** | planned |
-| 5 | #36, #37, #38 changes, HumanPose and joint sets; `0.11.0-rc1` | **yes** | planned |
+| 3 | Moves and deletions: `sqe_msgs`, `tcn_types`, parameter RPC → `pcpd_msgs`, `custom/` → `tcn/`, deleted types | type names, removals | merged (#43) |
+| 4 | Encoding (XCDR2, `tcn_schema=0.11`), enum renames outside `sqe_msgs`, field removals F1, F2, F5 | **yes** | in review (branch `0.11-plan4-encoding`) |
+| 5 | The #35 SQE redesign, with F3/F4 and the `sqe_msgs` enums | **yes** | planned |
+| 6 | #36, #37, #38 changes, HumanPose and joint sets; `0.11.0-rc1` | **yes** | planned |
 
 **How to use this log.** Find your section in §2. Each item says which plan brought it, what changes for you and what
 to do. Items marked *(wire)* need the lockstep cut-over; all others can be done ahead of it.
@@ -227,6 +228,92 @@ that moved has exactly the same fields, enumerators and union cases.
 - **Source tree:** `src/dds/custom/` is now `src/dds/tcn/`, and the IDL install path is
   `share/tcn_schema/dds/<pkg>/…` as before. Every tcn file now has an include guard.
 
+### Plan 4: encoding, enum names, field removals (wire change)
+
+**The roadmap was split here.** The decided "Plan 4" is now three steps, so the SQE types change once, not twice:
+Plan 4 (this one) does the encoding for every package and the cleanup outside the SQE; Plan 5 is the #35 SQE redesign
+with its field removals (F3, F4) and enum changes; Plan 6 is #36–#38 and rc1.
+
+**Encoding (decisions E1–E9).** Every hand-written codec has to implement this; fast-cdr users set two things.
+
+| | tcn types (`tcn_types`, `sqe_msgs`, `tcnart_msgs`, `pcpd_msgs`, `conversation_msgs`) | ROS 2 types (top level) |
+|---|---|---|
+| Encoding | XCDR2, `D_CDR2` | XCDR1, `CDR` |
+| Encapsulation (LE) | `00 09 00 00` | `00 01 00 00` |
+| fast-cdr writer | `Cdr(buf, LITTLE_ENDIANNESS, CdrVersion::XCDRv2)`, then `set_encoding_flag(EncodingAlgorithmFlag::DELIMIT_CDR2)`, then `serialize_encapsulation()` | `CdrVersion::DDS_CDR` |
+| fast-cdr reader | pick the version from byte 1 of the encapsulation (`>= 0x06`: `XCDRv2`, else `DDS_CDR`), then `read_encapsulation()` | same |
+
+- **Pitfall: without `set_encoding_flag`** an `XCDRv2` writer emits `00 07` (`PLAIN_CDR2`) and no DHEADERs.
+- **The XCDR2 rules a codec needs:**
+  - **DHEADER** (uint32, byte length of what follows) before every `@appendable` struct and union, and before
+    every sequence or array whose element type is not primitive (strings count as non-primitive; enums count as
+    primitive);
+  - **no DHEADER** for `@final` types: `tcn_types::msg::{Vector2, Vector3, Quaternion, RigidTransform}`,
+    `sqe_msgs::msg::SRPoint2D`, and every ROS type, including a `std_msgs/Header` nested in a tcn message;
+  - **maximum alignment 4:** `int64`, `uint64` and `double` align to 4, not 8. This also applies inside a nested ROS
+    `Header`, because the whole payload is XCDR2;
+  - **`@optional`:** one presence byte (0 or 1), then the value if present;
+  - **enums:** int32.
+- **Reading (E3, E5, E6, E8):**
+  - switch on the encapsulation id;
+  - decode into a fresh object;
+  - when a struct's DHEADER says more bytes follow than you know members for, skip the rest (a newer writer);
+  - when it says fewer, the missing members take their defaults (`0`, `""`, empty, the first enumerator, absent).
+  - An unknown enumerator decodes as the enum's first enumerator (`…_UNKNOWN`/`…_NONE`).
+- **Annotation (V1):** `application/cdr;<type>;tcn_schema=0.11`. A reader refuses any other major.minor; a 0.10
+  payload is refused, not misread. The contract library does this already.
+- **E4:** `conversation_msgs` payloads carry the encapsulation header like every other tcn type.
+- **Golden files to test a codec against:** `test/golden/*.hex`, with the values in `test/golden/golden_test.cpp`.
+  - `std_msgs_Header`: XCDR1;
+  - `tcnart_msgs_TargetTrackingMessage`, `sqe_msgs_SRGraph`: XCDR2 with nested `@final` and appendable types;
+  - **`evo_v1_Thing` / `evo_v2_Thing`:** one appendable type in two versions (`test/idl/evo/`). V2 appends
+    `@optional double c` and `int64 d`. A codec must:
+    - decode `evo_v2_Thing` with the V1 layout (skip by DHEADER);
+    - decode `evo_v1_Thing` with the V2 layout (`c` absent, `d` = 0).
+
+**Enum renames (E6, O5) outside `sqe_msgs`:**
+- **The complete old → new map, with values:** **[0.11-enum-map.md](0.11-enum-map.md)** (source:
+  `tools/idl/enum_renames_0_11.json`).
+- **Every enumerator now starts with its enum's name** (`PixelFormat_NV12` → `VIDEO_PIXEL_FORMAT_NV12`,
+  `PVT_STRING` → `PARAMETER_VALUE_TYPE_STRING`, `ERROR_TIMEOUT` → `ERROR_CODE_TIMEOUT`, …).
+- **Every enum starts with `…_UNKNOWN` or `…_NONE`.**
+- **Values changed where an `…_UNKNOWN` was inserted, or (`VideoH26xProfile`) where `NONE` moved first.** Code that
+  writes or compares numbers (TypeScript, Rust, C#, JSON mirrors, databases) must take the new values from the map.
+  Unchanged values: `CameraModelType`, `XRGazeSpaceType` and `conversation_msgs::msg::ErrorCode` (renamed only).
+- `sqe_msgs` enums change in Plan 5.
+
+**Fields removed (decisions §4: nobody writes them).** Decode code that reads them must go; the decisions' field
+appendix lists the readers.
+
+| Type | Removed |
+|---|---|
+| `tcnart_msgs::msg::StreamDescriptorMessage` | `calib_topic_schema`, `pose`, `audio_channels`, `aac_profile` (and the enum `AudioAACProfile`) |
+| `tcnart_msgs::msg::BufferInfo` | `is_valid`, `is_fixed_size` |
+| `pcpd_msgs::msg::MeshBitstreamMessage` | `origin_offset`, `is_compressed` |
+| `pcpd_msgs::msg::CameraSensor` | `camera_type` (and `CameraSensorTypesEnum`), `raw_calibration`, `timestamp_offset_ns` |
+| `pcpd_msgs::rpc::DeviceContextReply` | `timestamp_offset`, `is_valid` (gate on `status` instead) |
+| `tcnart_msgs::msg::TargetTrackingMessage` | `target_origin` |
+| `tcn_types::msg::Target` | `quality`, `markers` (and the struct `Marker`; `MarkerType` stays) |
+| `tcnart_msgs::msg::HandState` | `tracked`, `aim_valid`, `aim` (an untracked hand is left out) |
+| `tcnart_msgs::msg::HandJointPose` | `accuracy` (and `JointPoseAccuracy`) |
+| `tcnart_msgs::msg::Person` | `role`, `role_confidence`, `has_root_orientation`, `root_orientation`, `joint_rotations`, `joint_rotation_confidence` |
+| `conversation_msgs::msg::AudioOpusFrame` | `packet_loss_concealment_applied` |
+| `conversation_msgs::msg::AudioPcmChunk`, `TtsAudioChunk` | `payload_kind`, `shm_ref` (and `PayloadKind`, `ShmRef`) |
+| `conversation_msgs::msg::TtsRequest` | `backend`, `voice`, `language`, `speaking_rate`, `pitch`, `volume_gain_db`, `stream_output` |
+| `conversation_msgs::msg::LlmRequest` | `system_prompt`, `low_latency_mode` |
+| `conversation_msgs::msg::RetrievalOptions` | `preferred_domains`, `excluded_domains` |
+| `conversation_msgs::msg::SttPartial` | `stability` |
+| `conversation_msgs::msg::StageMetric` | `gpu_utilization_pct` |
+
+- **Made `@optional` (decisions §4):** `EyeTrackingMessage.gaze_space` and `scene_point`.
+  - An absent gaze space means LOCAL (the header's frame).
+  - `scene_point` is present only when measured, and `EYE_VALID_SCENE_POINT` is set exactly then.
+  - tcnart's live producer leaves both absent; HTA's Tobii recordings fill them.
+- **Not in this plan:** `PersonTrackingMessage.{up, world_frame}` move into `StreamHeader` with #38 (Plan 6).
+- **Tools:**
+  - `tools/idl_cli.py annotate`, `enums` and `fields` applied these changes; their inputs are the record.
+  - `tools/idl_cli.py moves --spec` with an `expect` block proved that nothing else changed.
+
 ## 2. Per consumer
 
 Each list collects the items of §1 that need action from that consumer, plus the decided changes still to come (with
@@ -242,10 +329,21 @@ their plan), so that each team can prepare.
 - *Plan 1:* optional:
   - check the Rust codec against `test/golden/*.hex`;
   - start checking the `messages.rs` registry against `share/tcn_schema/types.json`.
+- *Plan 4:*
+  - **Rust codec to XCDR2** for every tcn type: `00 09`, DHEADERs, 4-byte maximum alignment, optional flags, also
+    inside the nested ROS `Header`. Today `messages.rs:3737` and `serialization.rs:256` assert `00 01`.
+  - Test against `test/golden/*.hex`, including the two `evo_*` files.
+  - Annotation `tcn_schema=0.11`.
+  - **Removed fields it reads:**
+    - `TargetTrackingMessage.target_origin` (`src/ingest.rs:718-730`, the warning at `messages.rs:2167`);
+    - `Target.quality` (#35 G2).
+  - Media enum and `CoordinateAxis` mirrors in `messages.rs` take the new names and values (enum map).
 
 ### sqe_client_cpp
 
 - *Plan 1:* nothing to do.
+- *Plan 4:* the contract library sends `tcn_schema=0.11`. Encode with `XCDRv2` + `DELIMIT_CDR2`, and decode by the
+  encapsulation id (see the table above).
 
 ### tcnart (v3)
 
@@ -271,6 +369,15 @@ their plan), so that each team can prepare.
 - *Plan 1:*
   - Check that no C++ code uses `operator==` on the 14 parameter and service-info types listed in §1 (it compares pointers).
   - Optional: point the C# codec tests at `test/golden/*.hex`.
+- *Plan 4:*
+  - **XCDR2 in every codec:** the C# codec, the zero-copy encoders, the mesh-bitstream decoder and the C API.
+    `docs/developers/interop.md:63` documents `DDS_CDR` today.
+  - **Removed fields it reads:**
+    - `MeshBitstreamMessage.origin_offset` and `is_compressed` (`mesh_bitstream_decode.cpp:61,77-78`);
+    - `DeviceContextReply.is_valid` (`TcnartRigCamera.cs:63` and Unreal: gate on `status`);
+    - `Target.quality` (XR writes a copy of `is_tracked`: drop it).
+  - **Eye tracking:** leave `scene_point` and `gaze_space` absent instead of writing (0,0) and `LOCAL`.
+  - **Enum renames:** media types, `CameraModelType`, `XRGazeSpaceType`, `CoordinateAxis`, the parameter RPC enums.
 
 ### HTA (holoscan-tcn-applications)
 
@@ -283,6 +390,15 @@ their plan), so that each team can prepare.
 - *Plan 1:*
   - Check that no C++ code uses `operator==` on the 14 parameter and service-info types listed in §1 (it compares pointers).
   - Requiring `fast-cdr` yourself is no longer necessary (it is harmless to keep).
+- *Plan 4:*
+  - **`tcn::zenoh` serde:** `XCDRv2` + `DELIMIT_CDR2` for tcn types, `DDS_CDR` for ROS types, and decode by
+    encapsulation id.
+  - **Removed fields it writes or passes through:**
+    - `DeviceContextReply.{timestamp_offset, is_valid}` (`mock_capture_server.cpp:77-82`);
+    - `Person` role and orientation fields (`person_wire.cpp`);
+    - the eye-tracking pass-through (`tcnart_mirror.cpp:127`) keeps `scene_point`/`gaze_space`, now optional: set
+      them only for samples that have them (the Tobii recordings).
+  - FlatBuffers mirrors and the enum renames (media types, parameter RPC).
 
 ### tcn web controller
 
@@ -293,6 +409,15 @@ their plan), so that each team can prepare.
 - *Plan 1:* optional:
   - check `@tcn-web/cdr` against `test/golden/*.hex`;
   - start generating `packages/sqe/src/schemas.ts` from `types.json` and `enums.json` (O7). The fields you asked for (member order, extensibility, `@optional`, bounds, union labels, fully qualified names) are in `types.json`.
+- *Plan 4:*
+  - **`packages/cdr`:**
+    - XCDR2 reader and writer (verified feasible);
+    - `reader.ts:14` and the tests expect `00 01` today;
+    - keep XCDR1 for ROS types.
+  - **Removed fields:** `Target.quality` (`apps/mcp/src/tools/srg.ts:487`), `target_origin` (done on
+    `srg-dead-fields`).
+  - **Enum names and values** in `schemas.ts` (media types, `CameraModelType`, `CoordinateAxis`,
+    `RPCResponseStatus`, the parameter RPC enums).
 
 ### IVA (realtime conversational pipeline)
 
@@ -305,21 +430,30 @@ their plan), so that each team can prepare.
 - *Plan 1:* optional:
   - check the `tcn-wire` mirrors against `types.json`;
   - the parameter types in `tcn-wire` are not affected by the C++ `operator==` defect.
+- *Plan 4:*
+  - **`tcn-wire`:**
+    - write and check `00 09 00 00` and DHEADERs (`crates/tcn-wire/src/encap.rs:8` has `00 01`);
+    - `conversation_msgs` now carry the encapsulation header too (E4; `crates/common-types/src/wire.rs:6` says plain
+      CDR without one).
+  - **Enum renames with value changes:** `MemoryScopeKind`, `InteractionMode`, `RetrievalPolicy`,
+    `ExecutionPreference` and `InteractionActivityState` gain `…_UNKNOWN` at 0, so every value moves up by one. Use
+    the names, and update any stored or JSON numbers.
+  - `ErrorCode` → `ERROR_CODE_*` (same values); the parameter RPC enums are renamed.
+  - **Removed F5 fields:** `TtsRequest` voice settings, `LlmRequest.{system_prompt, low_latency_mode}`,
+    `RetrievalOptions` domain lists, `SttPartial.stability`, `StageMetric.gpu_utilization_pct`,
+    `AudioOpusFrame.packet_loss_concealment_applied`, and `shm_ref`/`payload_kind` with `ShmRef`/`PayloadKind` (A2).
 
 ## 3. Coming, decided (not yet on `main`)
 
 Summary of what the later plans bring, so teams can plan their work. The details are in the decisions and will be
 written into §1 and §2 as each plan lands.
 
-- **Plan 4, encoding:**
-  - comments that still describe the deleted `Pose6DMapMessage` (`sqe_msgs/msg/Graph.idl` `SREdge.stream_item_id`,
-    `tcnart_msgs/msg/PoseTracking.idl` `XR_POSE_*`, `sqe_msgs/rpc/Streams.idl` example schema) are rewritten with
-    the #35 changes that replace them (E4, H3);
-  - every tcn type is XCDR2 `@appendable`, with encapsulation `00 09`;
-  - the unknown-enumerator and unknown-union-case rules (E6) and the default rule (E8) are normative;
-  - fields nobody writes are removed (decisions §4);
-  - the #35 SQE changes land.
-- **Plan 5:**
+- **Plan 5, the #35 SQE redesign:**
+  - `SISStatus` replaces the five status enums, and the other `sqe_msgs` enums get their prefix and `…_UNKNOWN`;
+  - the F3 and F4 field removals;
+  - the comments that still describe the deleted `Pose6DMapMessage` (`SREdge.stream_item_id`, `XR_POSE_*`, the
+    `Streams.idl` example schema) are rewritten.
+- **Plan 6:**
   - the #36, #37 and #38 changes land;
-  - HumanPose and the joint-set table;
+  - HumanPose and the joint-set table, `StreamHeader` (with `PersonTrackingMessage.up`/`world_frame`);
   - `0.11.0-rc1`.
