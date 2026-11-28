@@ -16,9 +16,7 @@
 #include <utility>
 #include <vector>
 
-// For kProtocolBreak. contract.h defines it before its own includes, so this
-// works whichever of the two headers a consumer includes first.
-#include "tcn/sqe/contract.h"
+#include "tcn/sqe/protocol.h"
 #include "tcn/sqe/error.h"
 #include "tcn/sqe/result.h"
 #include "tcn/sqe/scope.h"

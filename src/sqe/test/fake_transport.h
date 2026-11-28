@@ -13,7 +13,7 @@
 //
 // It backs two things: the session tests, and the lease table's status
 // subscriber. `RelationLeaseTable::StartFn` returns a `StreamClaim` — a handle
-// *and* the `{handle}/status` subscriber's `Declaration` — so the worked
+// *and* the status subscriber's `Declaration` — so the worked
 // example of a start function now runs against this fake: see the `Engine`
 // fixture at the top of test_lease.cpp, which declares that subscriber through
 // a `Transport&` and hands the `Declaration` to the table. `live_count` and

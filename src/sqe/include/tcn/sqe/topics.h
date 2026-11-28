@@ -45,11 +45,12 @@ inline std::string engine_key(std::string_view engine_id, std::string_view tail)
 
 }  // namespace detail
 
-/// `{output_topic}/status` — the key a relation stream's
-/// `SISRelationStreamStatusNotification`s arrive on.
+/// `{output_topic}/status` — how the *engine* derives a stream's status topic
+/// today.
 ///
-/// This one derivation *is* blessed: the IDL states it, and the engine
-/// derives it the same way from the same value.
+/// **Engine-side only.** Since 0.11 (#35 H2) the start reply carries
+/// `status_topic`, and a client reads it from `Handle::status_topic()`; one
+/// that composes it here subscribes to a key the engine is free to move.
 inline std::string status_topic_for(std::string_view output_topic)
 {
     std::string out;

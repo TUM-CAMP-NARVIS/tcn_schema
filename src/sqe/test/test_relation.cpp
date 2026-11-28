@@ -227,6 +227,48 @@ TCN_SQE_TEST(same_terms_compares_the_evaluation_mode)
     CHECK(!engine.same_terms_as(local));
 }
 
+TCN_SQE_TEST(reoptimise_and_fusion_policy_ordinals_match_the_idl_declaration_order)
+{
+    CHECK_INT_EQ(static_cast<int>(ReoptimisePolicy::Unknown), 0);
+    CHECK_INT_EQ(static_cast<int>(ReoptimisePolicy::BestAvailableNow), 1);
+    CHECK_INT_EQ(static_cast<int>(ReoptimisePolicy::BestPossible), 2);
+    CHECK_INT_EQ(static_cast<int>(FusionPolicy::Unknown), 0);
+    CHECK_INT_EQ(static_cast<int>(FusionPolicy::BestPath), 1);
+    CHECK_INT_EQ(static_cast<int>(FusionPolicy::Fused), 2);
+    CHECK_INT_EQ(static_cast<int>(FusionPolicy::Filtered), 3);
+}
+
+// All five terms are part of a stream's identity on the engine: two acquires
+// that differ in any one of them would be refused CONFLICT + TERMS_CONFLICT.
+TCN_SQE_TEST(same_terms_compares_the_reoptimise_and_fusion_policies)
+{
+    const RelationStreamRequest base =
+        RelationStreamRequest::make(frame("a", "x"), frame("b", "y"), hz(30.0)).value();
+    CHECK(base.reoptimise() == ReoptimisePolicy::BestAvailableNow);
+    CHECK(base.fusion() == FusionPolicy::BestPath);
+
+    const RelationStreamRequest best_possible =
+        RelationStreamRequest::make(frame("a", "x"), frame("b", "y"), hz(30.0), kDefaultFreshnessBias,
+                                    EvaluationMode::Engine, ReoptimisePolicy::BestPossible)
+            .value();
+    const RelationStreamRequest fused =
+        RelationStreamRequest::make(frame("a", "x"), frame("b", "y"), hz(30.0), kDefaultFreshnessBias,
+                                    EvaluationMode::Engine, ReoptimisePolicy::BestAvailableNow,
+                                    FusionPolicy::Fused)
+            .value();
+    const RelationStreamRequest spelled_out =
+        RelationStreamRequest::make(frame("a", "x"), frame("b", "y"), hz(30.0), kDefaultFreshnessBias,
+                                    EvaluationMode::Engine, ReoptimisePolicy::BestAvailableNow,
+                                    FusionPolicy::BestPath)
+            .value();
+    CHECK(best_possible.reoptimise() == ReoptimisePolicy::BestPossible);
+    CHECK(fused.fusion() == FusionPolicy::Fused);
+    CHECK(!base.same_terms_as(best_possible));
+    CHECK(!base.same_terms_as(fused));
+    CHECK(base.same_terms_as(spelled_out));
+    CHECK(base.relation() == fused.relation());
+}
+
 // A domain frame is one more FrameRef: a request names it like any other
 // (#35 N2a), and two scopes with the same owner and name are two relations.
 TCN_SQE_TEST(a_domain_frame_is_a_relation_end_like_any_other)

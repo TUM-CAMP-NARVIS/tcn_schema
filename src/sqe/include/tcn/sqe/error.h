@@ -50,12 +50,13 @@ enum class Error : int {
     OriginNotDeclared,
 
     // --- relation-stream replies (§4.4) -------------------------------------
-    /// The reply carried no handle. Not necessarily a fault: a `NoPath`,
-    /// `UnknownFrame`, `Rejected` or `Inactive` reply correctly carries none.
+    /// An OK stream reply carried no handle. Not a fault: the answer to a stop
+    /// (relation `Inactive`) correctly carries none. A refusal is
+    /// `ReplyRefused`, checked first.
     HandleAbsent,
-    /// The reply's status and handle disagree. `ASSIGNED` must occur exactly
-    /// when the status is `Active` or `Pending`. Reported rather than papered
-    /// over, because either half may be the wrong one.
+    /// An OK stream reply's relation state and handle disagree: the handle must
+    /// be present exactly when the state is `Active` or `Pending` (#35 H1).
+    /// Reported rather than papered over, because either half may be wrong.
     HandleInvariantViolated,
 
     /// A second `acquire` for a relation this process already leases, on
@@ -74,9 +75,11 @@ enum class Error : int {
     /// The encoding annotation carried no `;<type>` suffix at all. CDR is not
     /// self-describing, so an unannotated payload cannot be decoded safely.
     MissingDeclaredType,
-    /// The encoding annotation's media type was not one this library knows.
+    /// The encoding annotation's media type was not exactly `application/cdr`
+    /// or `application/json` (V1).
     UnknownEncoding,
-    /// The reply named an assigned handle whose topic was the empty string.
+    /// A start reply's handle had an empty string: the handle, or its data,
+    /// status or plan topic.
     EmptyHandleTopic,
 
     // --- the session layer (sqe_session) --------------------------------------

@@ -16,6 +16,7 @@ add_executable(${TCN_SQE_TEST_TARGET}
         test_scope.cpp
         test_capabilities.cpp
         test_status.cpp
+        test_reply.cpp
         test_topics.cpp
         test_wire_type.cpp
         test_handle.cpp
@@ -71,6 +72,7 @@ set(TCN_SQE_MUST_NOT_COMPILE
         session_unregistered_request
         session_publish_join
         session_wrong_reply_type
+        session_join_mutation_reply
         frame_ref_from_string
         client_scope_from_literal)
 

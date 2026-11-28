@@ -49,10 +49,13 @@ enum class RequestMode
 /// `Reply` is the third half of the same pairing, added with B73. Before it,
 /// `query_request` deduced the reply type from whatever the caller passed, so
 /// a join could be asked for a `SISRelationStreamReply`: the declared-type
-/// check then refused the engine's (correct) `SISMutationReply` at run time,
-/// as `WrongDeclaredType`, and the caller saw a protocol error for a mistake
-/// that was entirely its own. Now it does not compile. `void` for a `Publish`,
-/// and only for a `Publish` -- the static_assert in the macro holds that.
+/// check then refused the engine's (correct) reply at run time, as
+/// `WrongDeclaredType`, and the caller saw a protocol error for a mistake that
+/// was entirely its own. Now it does not compile. `void` for a `Publish`, and
+/// only for a `Publish` -- the static_assert in the macro holds that.
+///
+/// Every type named here is checked against the IDL by
+/// tools/idl/tests/test_contract_enums.py.
 template <class T>
 struct RequestKey;
 
@@ -67,20 +70,23 @@ struct RequestKey;
                       "a Publish has no reply type and a Query must name one");       \
     }
 
-// Every mutation is a `Query` since B73, answered with SISMutationReply.
-// `SIS_MU_ACCEPTED` means *stored*: a `stream/start` sent after the reply sees
-// the fragment, which is the race B73 exists to close -- a client that put its
-// join and started a stream at once could have the start resolved against a
-// graph that did not hold its fragment yet, and be told NO_PATH or
-// UNKNOWN_FRAME for frames it had just declared. A join is all or nothing:
-// any refused node or edge, or an origin not among the nodes, is REJECTED with
-// every reason in `detail`, and nothing is stored.
+// Every mutation is a `Query` since B73. `SIS_STATUS_OK` means *stored*: a
+// `stream/start` sent after the reply sees the fragment, which is the race B73
+// exists to close -- a client that put its join and started a stream at once
+// could have the start resolved against a graph that did not hold its fragment
+// yet, and be told NO_PATH or UNKNOWN_FRAME for frames it had just declared. A
+// join is all or nothing: any refused node or edge, or an origin not among the
+// nodes, is REJECTED with every reason in `detail`, and nothing is stored.
+//
+// The join has its own reply since 0.11 (#35 R5): SISJoinReply carries the
+// engine's capabilities (`Capabilities::from_wire`) beside the header. Every
+// other write answers SISMutationReply, which is the header alone.
 //
 // A `put` on any of these keys is ignored by the engine, and logged once per
 // key as a peer built against an older protocol. So a Publish left in this
 // table is not a degraded mode, it is a client that never joins.
 TCN_SQE_REGISTER_REQUEST_KEY(::sqe_msgs::rpc::SISJoinRequest,       keys::kJoin,       RequestMode::Query,
-                             ::sqe_msgs::rpc::SISMutationReply);
+                             ::sqe_msgs::rpc::SISJoinReply);
 // The deliberate exception, and it stays one: withdrawing the liveliness token
 // reaches the identical departure with no query behind it to answer, and one
 // route answering while the other cannot is worse than neither.
@@ -93,7 +99,7 @@ TCN_SQE_REGISTER_REQUEST_KEY(::sqe_msgs::rpc::SISNodeRemoveRequest, keys::kNodeR
 // A `Query`, not a `Publish`, since B47. `/sis/relation/update` stopped being a
 // subscriber and became a queryable: a `put` on that key now reaches **nothing
 // at all**, with no error on either side. It answers `SISMutationReply`, and
-// `SIS_MU_ACCEPTED` means *stored* -- the engine defers its reply until the
+// `SIS_STATUS_OK` means *stored* -- the engine defers its reply until the
 // writer's call has returned, so it is not merely "received".
 //
 // This line said `Publish` until 2026-09-02, because B47 landed in the engine
@@ -111,13 +117,13 @@ TCN_SQE_REGISTER_REQUEST_KEY(::sqe_msgs::rpc::SISRelationStreamStartRequest, key
 TCN_SQE_REGISTER_REQUEST_KEY(::sqe_msgs::rpc::SISRelationStreamStopRequest,  keys::kStreamStop,  RequestMode::Query,
                              ::sqe_msgs::rpc::SISRelationStreamReply);
 // The read. `Query` for the obvious reason and one less obvious: a read
-// answered by a subscriber would have nowhere to put SIS_GQ_TRUNCATED or a
+// answered by a subscriber would have nowhere to put SIS_STATUS_TRUNCATED or a
 // cursor, so paging could not exist at all.
 TCN_SQE_REGISTER_REQUEST_KEY(::sqe_msgs::rpc::SISGraphQueryRequest, keys::kGraphQuery, RequestMode::Query,
                              ::sqe_msgs::rpc::SISGraphQueryReply);
-// The pattern read (B63). Its reply reuses SISGraphQueryStatus and opens with
-// it, so a SISGraphQueryReply would decode from a pattern reply's bytes; the
-// `Reply` below and the declared-type check are what keep the two apart.
+// The pattern read (B63). Its reply opens with SISReplyHeader like every
+// other, so a SISGraphQueryReply would start decoding from a pattern reply's
+// bytes; the `Reply` below and the declared-type check keep the two apart.
 TCN_SQE_REGISTER_REQUEST_KEY(::sqe_msgs::rpc::SISPatternQueryRequest, keys::kPatternQuery, RequestMode::Query,
                              ::sqe_msgs::rpc::SISPatternQueryReply);
 // The target registry (B78): a read with its own reply, and a write answered
@@ -126,8 +132,8 @@ TCN_SQE_REGISTER_REQUEST_KEY(::sqe_msgs::rpc::SISTargetQueryRequest, keys::kTarg
                              ::sqe_msgs::rpc::SISTargetQueryReply);
 TCN_SQE_REGISTER_REQUEST_KEY(::sqe_msgs::rpc::SISTargetMutationRequest, keys::kTargetUpdate, RequestMode::Query,
                              ::sqe_msgs::rpc::SISMutationReply);
-// The relation sample (B93, 0.10.6): one value at one instant, with its own
-// reply. The engine may wait up to the request's wait_ms (capped at 5 s) for
+// The relation sample (B93, 0.10.6; `/sis/stream/sample` since 0.11): one
+// value at one instant, with its own reply. The engine may wait up to the request's wait_ms (capped at 5 s) for
 // data, after a graph read bounded like a start's, before it answers;
 // kDefaultQueryTimeoutMs is above both.
 TCN_SQE_REGISTER_REQUEST_KEY(::sqe_msgs::rpc::SISRelationSampleRequest, keys::kStreamSample, RequestMode::Query,
@@ -149,23 +155,6 @@ struct has_codec_shape<C, T, std::void_t<
     decltype(C::decode(std::declval<BytesView>(), std::declval<T&>()))>> : std::true_type {};
 
 }  // namespace detail
-
-/// The **floor** for the session layer, read the same way as
-/// `kContractBLevel`: the highest entry in the engine's
-/// `compatibility-breaks.md` such that every obligation at or below it that
-/// falls to a client is met by `sqe_contract` plus `sqe_session`.
-///
-/// It is 41, not 43:
-///   * B36 — the local refcount for shared handles — is implemented here, by
-///     `RelationLeaseTable`, which is what let the floor move past 35;
-///   * B41 — the liveliness token — is implemented here, by `declare_presence`,
-///     and `SisSession` cannot be opened without one;
-///   * B42 concerns the engine's own example clients and CLI, so no client-side
-///     obligation exists to meet and the floor stops below it rather than
-///     claiming something this library does not do;
-///   * B43 — the ASCII naming rule — *is* met, in `validate.h`, above the
-///     floor. A floor is not a boast.
-inline constexpr int kSessionBLevel = 41;
 
 /// The query timeout, in milliseconds.
 ///
@@ -199,10 +188,11 @@ inline Result<Declaration> declare_presence(Transport& t, const ClientId& id)
 
 /// A subscriber, held until the returned `Declaration` is destroyed.
 ///
-/// The one this library exists to make correct is `{handle}/status`: it is the
-/// only channel on which a client learns that a stream it holds went `NoPath`,
-/// or that the engine stopped answering, and those two are not distinguishable
-/// any other way. It is also the only teardown event guaranteed to arrive — the
+/// The one this library exists to make correct is a stream's status topic
+/// (`Handle::status_topic()`, the reply's string): it is the only channel on
+/// which a client learns that a stream it holds lost its route, or that the
+/// engine stopped answering, and those two are not distinguishable any other
+/// way. It is also the only teardown event guaranteed to arrive — the
 /// pipeline stop, the descriptor withdrawal and the derived-edge retraction are
 /// each gated on the stream still holding that thing — so a consumer waiting on
 /// a withdrawal instead simply hangs.
@@ -234,9 +224,9 @@ inline Result<Declaration> declare_subscription(Transport& t, std::string_view k
 /// Wiring the relation-stream half takes about a dozen lines and is not done
 /// for the consumer, because it is the one place the generated IDL types have
 /// to be named and this component names none. The start returns a
-/// `StreamClaim` — the handle *and* the `{handle}/status` subscriber — because
-/// the subscriber's lifetime is the lease's, and the table is what knows when
-/// that ends:
+/// `StreamClaim` — the handle *and* the status subscriber — because the
+/// subscriber's lifetime is the lease's, and the table is what knows when that
+/// ends:
 ///
 /// ```cpp
 /// RelationLeaseTable relations(
@@ -245,25 +235,27 @@ inline Result<Declaration> declare_subscription(Transport& t, std::string_view k
 ///     sqe_msgs::rpc::SISRelationStreamReply reply;
 ///     const auto q = session.query_request(req, reply);
 ///     if (!q) { return Result<StreamClaim>::fail(q.error()); }
-///     Result<Handle> h = Handle::from_reply(reply);   // enforces the invariant
+///     // ReplyRefused (read why with reply_header(reply)), or the invariant.
+///     Result<Handle> h = Handle::from_reply(reply);
 ///     if (!h) { return Result<StreamClaim>::fail(h.error()); }
 ///
-///     // Declared here, on the 0 -> 1 transition, and handed to the table.
+///     // Declared here, on the 0 -> 1 transition, on the reply's status
+///     // topic, and handed to the table.
 ///     Result<Declaration> sub = session.subscribe(
 ///         h.value().status_topic(),
-///         [](const Sample& s) { /* NoPath, Retired, engine gone */ (void)s; });
+///         [](const Sample& s) { /* PENDING + WITHDRAWN, engine gone */ (void)s; });
 ///     if (!sub) { return Result<StreamClaim>::fail(sub.error()); }
 ///
 ///     return Result<StreamClaim>::ok(
 ///         StreamClaim{std::move(h.value()), std::move(sub.value())});
 ///   },
-///   [&](const Handle& h) -> Result<Status> {
+///   [&](const Handle& h) -> Result<ReplyHeader> {
 ///     sqe_msgs::rpc::SISRelationStreamStopRequest req;
-///     req.handle(h.data_topic());
+///     req.handle(h.str());
 ///     sqe_msgs::rpc::SISRelationStreamReply reply;
 ///     const auto q = session.query_request(req, reply);
-///     if (!q) { return Result<Status>::fail(q.error()); }
-///     return reply_status(reply);
+///     if (!q) { return Result<ReplyHeader>::fail(q.error()); }
+///     return Result<ReplyHeader>::ok(reply_header(reply));   // OK or NOT_FOUND
 ///   });
 /// ```
 ///
@@ -329,17 +321,17 @@ public:
     /// type other than the one asked for.
     ///
     /// `Reply` must be the type `RequestKey<Req>` registers -- a mismatch is a
-    /// compile error, not a `WrongDeclaredType` at run time. For a mutation
-    /// that is `SISMutationReply`; a transport success with any status other
-    /// than `SIS_MU_ACCEPTED` is still a refusal, and this function does not
-    /// read the status for the caller, because it cannot name the generated
-    /// enum's accessors.
+    /// compile error, not a `WrongDeclaredType` at run time. A transport
+    /// success is not an acceptance: read the reply's header with
+    /// `reply_header(out)`, and anything but `ok()` is a refusal.
     ///
     /// The declared-type check is not optional and not a warning. CDR is not
     /// self-describing: a payload of the wrong type may decode into `Reply`
     /// cleanly and mean something else entirely, and one consumer's query
     /// wrapper today treats *any* `application/cdr;...` as acceptable, which
-    /// cannot distinguish those two cases at all.
+    /// cannot distinguish those two cases at all. Since 0.11 the reply must
+    /// also declare `tcn_schema=` (V1): an unversioned one is refused as
+    /// `MissingSchemaVersion`, undecoded.
     template <class Req, class Reply>
     Result<void> query_request(const Req& req, Reply& out)
     {

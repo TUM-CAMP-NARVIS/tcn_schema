@@ -10,6 +10,7 @@ using namespace tcn::sqe;
 namespace msg = tcnart_msgs::msg;
 namespace smsg = sqe_msgs::msg;
 namespace rpc = sqe_msgs::rpc;
+namespace tmsg = tcn_types::msg;
 
 TCN_SQE_TEST(cdr_encoding_names_every_registered_type_exactly)
 {
@@ -32,10 +33,8 @@ TCN_SQE_TEST(cdr_encoding_names_every_registered_type_exactly)
                  "application/cdr;sqe_msgs::rpc::SISRelationStreamStartRequest;tcn_schema=0.11");
     CHECK_STR_EQ(cdr_encoding<rpc::SISRelationStreamStopRequest>(),
                  "application/cdr;sqe_msgs::rpc::SISRelationStreamStopRequest;tcn_schema=0.11");
-    CHECK_STR_EQ(cdr_encoding<rpc::SISRelationStreamStatus>(),
-                 "application/cdr;sqe_msgs::rpc::SISRelationStreamStatus;tcn_schema=0.11");
-    CHECK_STR_EQ(cdr_encoding<rpc::SISRelationStreamHandle>(),
-                 "application/cdr;sqe_msgs::rpc::SISRelationStreamHandle;tcn_schema=0.11");
+    CHECK_STR_EQ(cdr_encoding<rpc::SISStreamHandle>(),
+                 "application/cdr;sqe_msgs::rpc::SISStreamHandle;tcn_schema=0.11");
     CHECK_STR_EQ(cdr_encoding<rpc::SISReoptimisePolicy>(),
                  "application/cdr;sqe_msgs::rpc::SISReoptimisePolicy;tcn_schema=0.11");
     CHECK_STR_EQ(cdr_encoding<rpc::SISBlockingRelation>(),
@@ -44,15 +43,33 @@ TCN_SQE_TEST(cdr_encoding_names_every_registered_type_exactly)
                  "application/cdr;sqe_msgs::rpc::SISRelationStreamReply;tcn_schema=0.11");
     CHECK_STR_EQ(cdr_encoding<rpc::SISRelationStreamStatusNotification>(),
                  "application/cdr;sqe_msgs::rpc::SISRelationStreamStatusNotification;tcn_schema=0.11");
+    // 0.11 (#35 H1-H3, R6): the data topic carries SISRelationOutput (no more
+    // TargetTrackingMessage + attachment), and plans have their own notification.
+    CHECK_STR_EQ(cdr_encoding<rpc::SISRelationOutput>(),
+                 "application/cdr;sqe_msgs::rpc::SISRelationOutput;tcn_schema=0.11");
+    CHECK_STR_EQ(cdr_encoding<rpc::SISPlanNotification>(),
+                 "application/cdr;sqe_msgs::rpc::SISPlanNotification;tcn_schema=0.11");
 
-    CHECK_STR_EQ(cdr_encoding<rpc::SISMutationStatus>(),
-                 "application/cdr;sqe_msgs::rpc::SISMutationStatus;tcn_schema=0.11");
+    // 0.11 (#35 R1-R5): one header, one status space, the join's own reply and
+    // the unscoped engine summary, both carrying the capabilities.
+    CHECK_STR_EQ(cdr_encoding<rpc::SISReplyHeader>(),
+                 "application/cdr;sqe_msgs::rpc::SISReplyHeader;tcn_schema=0.11");
+    CHECK_STR_EQ(cdr_encoding<rpc::SISStatus>(),
+                 "application/cdr;sqe_msgs::rpc::SISStatus;tcn_schema=0.11");
+    CHECK_STR_EQ(cdr_encoding<rpc::SISJoinReply>(),
+                 "application/cdr;sqe_msgs::rpc::SISJoinReply;tcn_schema=0.11");
+    CHECK_STR_EQ(cdr_encoding<rpc::SISEngineSummaryReply>(),
+                 "application/cdr;sqe_msgs::rpc::SISEngineSummaryReply;tcn_schema=0.11");
+    CHECK_STR_EQ(cdr_encoding<rpc::SISEngineCapabilities>(),
+                 "application/cdr;sqe_msgs::rpc::SISEngineCapabilities;tcn_schema=0.11");
+    // The frame reference moved to tcn_types (#35 N2a): the namespace is on the wire.
+    CHECK_STR_EQ(cdr_encoding<tmsg::SRFrameRef>(),
+                 "application/cdr;tcn_types::msg::SRFrameRef;tcn_schema=0.11");
+
     CHECK_STR_EQ(cdr_encoding<rpc::SISMutationReply>(),
                  "application/cdr;sqe_msgs::rpc::SISMutationReply;tcn_schema=0.11");
     CHECK_STR_EQ(cdr_encoding<rpc::SISGraphQueryKind>(),
                  "application/cdr;sqe_msgs::rpc::SISGraphQueryKind;tcn_schema=0.11");
-    CHECK_STR_EQ(cdr_encoding<rpc::SISGraphQueryStatus>(),
-                 "application/cdr;sqe_msgs::rpc::SISGraphQueryStatus;tcn_schema=0.11");
     CHECK_STR_EQ(cdr_encoding<rpc::SISGraphQueryRequest>(),
                  "application/cdr;sqe_msgs::rpc::SISGraphQueryRequest;tcn_schema=0.11");
     CHECK_STR_EQ(cdr_encoding<rpc::SISGraphQueryReply>(),
@@ -65,8 +82,9 @@ TCN_SQE_TEST(cdr_encoding_names_every_registered_type_exactly)
                  "application/cdr;sqe_msgs::rpc::SISPatternQueryRequest;tcn_schema=0.11");
     CHECK_STR_EQ(cdr_encoding<rpc::SISPatternQueryReply>(),
                  "application/cdr;sqe_msgs::rpc::SISPatternQueryReply;tcn_schema=0.11");
-    CHECK_STR_EQ(cdr_encoding<rpc::SISTargetKind>(),
-                 "application/cdr;sqe_msgs::rpc::SISTargetKind;tcn_schema=0.11");
+    // Moved to tcn_types in 0.11 (it describes a tracker target, not an RPC).
+    CHECK_STR_EQ(cdr_encoding<tmsg::SISTargetKind>(),
+                 "application/cdr;tcn_types::msg::SISTargetKind;tcn_schema=0.11");
     CHECK_STR_EQ(cdr_encoding<rpc::SISTargetAlias>(),
                  "application/cdr;sqe_msgs::rpc::SISTargetAlias;tcn_schema=0.11");
     CHECK_STR_EQ(cdr_encoding<rpc::SISGlobalTarget>(),
@@ -75,8 +93,6 @@ TCN_SQE_TEST(cdr_encoding_names_every_registered_type_exactly)
                  "application/cdr;sqe_msgs::rpc::SISTargetQueryKind;tcn_schema=0.11");
     CHECK_STR_EQ(cdr_encoding<rpc::SISTargetQueryRequest>(),
                  "application/cdr;sqe_msgs::rpc::SISTargetQueryRequest;tcn_schema=0.11");
-    CHECK_STR_EQ(cdr_encoding<rpc::SISTargetQueryStatus>(),
-                 "application/cdr;sqe_msgs::rpc::SISTargetQueryStatus;tcn_schema=0.11");
     CHECK_STR_EQ(cdr_encoding<rpc::SISTargetQueryReply>(),
                  "application/cdr;sqe_msgs::rpc::SISTargetQueryReply;tcn_schema=0.11");
     CHECK_STR_EQ(cdr_encoding<rpc::SISTargetMutationKind>(),
@@ -118,27 +134,27 @@ TCN_SQE_TEST(cdr_encoding_names_every_registered_type_exactly)
 
 // The two replies are answers to different questions on different keys, and a
 // reader of one must refuse the other. Nothing about their CDR layouts stops a
-// SISMutationReply decoding as a SISGraphQueryReply -- both open with an enum
-// -- so the annotation is the only thing that separates them.
+// SISMutationReply decoding as a SISGraphQueryReply -- both open with
+// SISReplyHeader -- so the annotation is the only thing that separates them.
 TCN_SQE_TEST(the_two_new_replies_do_not_answer_for_each_other)
 {
     CHECK_OK(check_declared_type<rpc::SISMutationReply>(
-        "application/cdr;sqe_msgs::rpc::SISMutationReply"));
+        "application/cdr;sqe_msgs::rpc::SISMutationReply;tcn_schema=0.11"));
     CHECK_OK(check_declared_type<rpc::SISGraphQueryReply>(
-        "application/cdr;sqe_msgs::rpc::SISGraphQueryReply"));
+        "application/cdr;sqe_msgs::rpc::SISGraphQueryReply;tcn_schema=0.11"));
 
     CHECK_ERR(check_declared_type<rpc::SISGraphQueryReply>(
-                  "application/cdr;sqe_msgs::rpc::SISMutationReply"),
+                  "application/cdr;sqe_msgs::rpc::SISMutationReply;tcn_schema=0.11"),
               Error::WrongDeclaredType);
     CHECK_ERR(check_declared_type<rpc::SISMutationReply>(
-                  "application/cdr;sqe_msgs::rpc::SISGraphQueryReply"),
+                  "application/cdr;sqe_msgs::rpc::SISGraphQueryReply;tcn_schema=0.11"),
               Error::WrongDeclaredType);
 
     // /sis/relation/update is a queryable: the `get` carries a request and is
     // answered with something else entirely, on one key. Reading the reply as
     // the request is the mistake that shape invites.
     CHECK_ERR(check_declared_type<rpc::SISMutationReply>(
-                  "application/cdr;sqe_msgs::rpc::SISEdgeUpdateRequest"),
+                  "application/cdr;sqe_msgs::rpc::SISEdgeUpdateRequest;tcn_schema=0.11"),
               Error::WrongDeclaredType);
 }
 
@@ -150,19 +166,19 @@ TCN_SQE_TEST(the_two_new_replies_do_not_answer_for_each_other)
 TCN_SQE_TEST(a_blocking_relation_is_not_the_reply_that_carries_it)
 {
     CHECK_OK(check_declared_type<rpc::SISBlockingRelation>(
-        "application/cdr;sqe_msgs::rpc::SISBlockingRelation"));
+        "application/cdr;sqe_msgs::rpc::SISBlockingRelation;tcn_schema=0.11"));
 
     CHECK_ERR(check_declared_type<rpc::SISBlockingRelation>(
-                  "application/cdr;sqe_msgs::rpc::SISRelationStreamReply"),
+                  "application/cdr;sqe_msgs::rpc::SISRelationStreamReply;tcn_schema=0.11"),
               Error::WrongDeclaredType);
     CHECK_ERR(check_declared_type<rpc::SISRelationStreamReply>(
-                  "application/cdr;sqe_msgs::rpc::SISBlockingRelation"),
+                  "application/cdr;sqe_msgs::rpc::SISBlockingRelation;tcn_schema=0.11"),
               Error::WrongDeclaredType);
 
     // It is an rpc type: it names frames the way a relation-stream request
     // does, not the way the graph's own `::msg::` declarations do.
     CHECK_ERR(check_declared_type<rpc::SISBlockingRelation>(
-                  "application/cdr;tcnart_msgs::msg::SISBlockingRelation"),
+                  "application/cdr;tcnart_msgs::msg::SISBlockingRelation;tcn_schema=0.11"),
               Error::WrongDeclaredType);
 }
 
@@ -175,18 +191,18 @@ TCN_SQE_TEST(a_blocking_relation_is_not_the_reply_that_carries_it)
 TCN_SQE_TEST(the_reoptimise_policy_is_not_the_request_that_carries_it)
 {
     CHECK_OK(check_declared_type<rpc::SISReoptimisePolicy>(
-        "application/cdr;sqe_msgs::rpc::SISReoptimisePolicy"));
+        "application/cdr;sqe_msgs::rpc::SISReoptimisePolicy;tcn_schema=0.11"));
 
     CHECK_ERR(check_declared_type<rpc::SISReoptimisePolicy>(
-                  "application/cdr;sqe_msgs::rpc::SISRelationStreamStartRequest"),
+                  "application/cdr;sqe_msgs::rpc::SISRelationStreamStartRequest;tcn_schema=0.11"),
               Error::WrongDeclaredType);
     CHECK_ERR(check_declared_type<rpc::SISRelationStreamStartRequest>(
-                  "application/cdr;sqe_msgs::rpc::SISReoptimisePolicy"),
+                  "application/cdr;sqe_msgs::rpc::SISReoptimisePolicy;tcn_schema=0.11"),
               Error::WrongDeclaredType);
 
     // And it is not the other enum on the same conversation.
     CHECK_ERR(check_declared_type<rpc::SISReoptimisePolicy>(
-                  "application/cdr;sqe_msgs::rpc::SISRelationStreamStatus"),
+                  "application/cdr;sqe_msgs::rpc::SISStatus;tcn_schema=0.11"),
               Error::WrongDeclaredType);
 }
 
@@ -197,17 +213,17 @@ TCN_SQE_TEST(the_reoptimise_policy_is_not_the_request_that_carries_it)
 TCN_SQE_TEST(the_view_types_are_msg_types_and_say_so)
 {
     CHECK_OK(check_declared_type<smsg::SRNodeView>(
-        "application/cdr;sqe_msgs::msg::SRNodeView"));
+        "application/cdr;sqe_msgs::msg::SRNodeView;tcn_schema=0.11"));
     CHECK_ERR(check_declared_type<smsg::SRNodeView>(
-                  "application/cdr;sqe_msgs::rpc::SISNodeView"),
+                  "application/cdr;sqe_msgs::rpc::SISNodeView;tcn_schema=0.11"),
               Error::WrongDeclaredType);
 
     // And a view is not the declaration it embeds.
     CHECK_ERR(check_declared_type<smsg::SRNodeView>(
-                  "application/cdr;sqe_msgs::msg::SRNode"),
+                  "application/cdr;sqe_msgs::msg::SRNode;tcn_schema=0.11"),
               Error::WrongDeclaredType);
     CHECK_ERR(check_declared_type<smsg::SREdge>(
-                  "application/cdr;sqe_msgs::msg::SREdgeView"),
+                  "application/cdr;sqe_msgs::msg::SREdgeView;tcn_schema=0.11"),
               Error::WrongDeclaredType);
 }
 
@@ -249,15 +265,15 @@ TCN_SQE_TEST(json_encoding_uses_the_same_type_name)
 TCN_SQE_TEST(a_payload_must_declare_the_type_that_is_being_read)
 {
     CHECK_OK(check_declared_type<rpc::SISRelationStreamReply>(
-        "application/cdr;sqe_msgs::rpc::SISRelationStreamReply"));
+        "application/cdr;sqe_msgs::rpc::SISRelationStreamReply;tcn_schema=0.11"));
 
     // The SISJoinMessage-class bug on the read side: CDR carrying something
     // else entirely, which decodes without complaint and means nothing.
     CHECK_ERR(check_declared_type<rpc::SISJoinRequest>(
-                  "application/cdr;sqe_msgs::rpc::SISJoinMessage"),
+                  "application/cdr;sqe_msgs::rpc::SISJoinMessage;tcn_schema=0.11"),
               Error::WrongDeclaredType);
     CHECK_ERR(check_declared_type<rpc::SISJoinRequest>(
-                  "application/cdr;sqe_msgs::rpc::SISLeaveRequest"),
+                  "application/cdr;sqe_msgs::rpc::SISLeaveRequest;tcn_schema=0.11"),
               Error::WrongDeclaredType);
 
     // A bare `application/cdr` is what both C++ repositories publish today.
@@ -273,23 +289,50 @@ TCN_SQE_TEST(a_payload_must_declare_the_type_that_is_being_read)
     CHECK_ERR(check_declared_type<rpc::SISJoinRequest>(""), Error::UnknownEncoding);
 }
 
-// The engine lower-cases the media type and trims the schema. Matching that
-// is what stops a peer being refused for a difference the engine tolerates.
-TCN_SQE_TEST(the_media_type_is_matched_case_insensitively_and_the_schema_trimmed)
+// V1 (§6): the media type is exactly `application/cdr` or `application/json`.
+// Not a substring -- `application/x-cdr` or `text/cdr` named something this
+// library does not decode -- and not case-folded. The schema is still trimmed.
+TCN_SQE_TEST(the_media_type_is_matched_exactly_and_the_schema_trimmed)
 {
     CHECK_OK(check_declared_type<rpc::SISJoinRequest>(
-        "APPLICATION/CDR;sqe_msgs::rpc::SISJoinRequest"));
+        "application/cdr; sqe_msgs::rpc::SISJoinRequest ;tcn_schema=0.11"));
     CHECK_OK(check_declared_type<rpc::SISJoinRequest>(
-        "application/cdr; sqe_msgs::rpc::SISJoinRequest "));
-    CHECK_OK(check_declared_type<rpc::SISJoinRequest>(
-        "application/json;sqe_msgs::rpc::SISJoinRequest"));
+        "application/json;sqe_msgs::rpc::SISJoinRequest;tcn_schema=0.11"));
+
+    const char* const not_ours[] = {
+        "application/x-cdr;sqe_msgs::rpc::SISJoinReply;tcn_schema=0.11",
+        "APPLICATION/CDR;sqe_msgs::rpc::SISJoinReply;tcn_schema=0.11",
+        "application/cdr2;sqe_msgs::rpc::SISJoinReply;tcn_schema=0.11",
+        "text/cdr;sqe_msgs::rpc::SISJoinReply;tcn_schema=0.11",
+        "application/jsonl;sqe_msgs::rpc::SISJoinReply;tcn_schema=0.11",
+        " application/cdr;sqe_msgs::rpc::SISJoinReply;tcn_schema=0.11",
+    };
+    for (const char* e : not_ours)
+    {
+        CHECK_ERR(check_declared_type<rpc::SISJoinReply>(e), Error::UnknownEncoding);
+    }
+}
+
+// V1 (§6): `application/cdr;{TYPE};tcn_schema=0.11` is mandatory. The full
+// form passes; without the version it is refused, so an unversioned payload
+// -- every pre-0.9 peer, and anything that forgot -- is never decoded.
+TCN_SQE_TEST(the_full_annotation_is_mandatory)
+{
+    CHECK_OK(check_declared_type<rpc::SISJoinReply>(
+        "application/cdr;sqe_msgs::rpc::SISJoinReply;tcn_schema=0.11"));
+    CHECK_ERR(check_declared_type<rpc::SISJoinReply>("application/cdr;sqe_msgs::rpc::SISJoinReply"),
+              Error::MissingSchemaVersion);
+    CHECK_ERR(check_declared_type<rpc::SISJoinReply>(
+                  "application/x-cdr;sqe_msgs::rpc::SISJoinReply;tcn_schema=0.11"),
+              Error::UnknownEncoding);
+    CHECK_STR_EQ(code(Error::MissingSchemaVersion), "missing_schema_version");
 }
 
 // A type name containing "json" must not be mistaken for a JSON media type:
 // only the half before the `;` is examined.
 TCN_SQE_TEST(only_the_media_half_decides_the_format)
 {
-    const WireEncoding e = parse_encoding("application/cdr;some::json::Type");
+    const WireEncoding e = parse_encoding("application/cdr;some::json::Type;tcn_schema=0.11");
     CHECK_STR_EQ(std::string(e.media), "application/cdr");
     CHECK_STR_EQ(std::string(e.type_name), "some::json::Type");
     CHECK(e.has_type_name);
@@ -360,12 +403,13 @@ TCN_SQE_TEST(a_patch_level_is_accepted_and_ignored)
         "application/cdr;sqe_msgs::rpc::SISMutationReply;tcn_schema=0.11.17"));
 }
 
-// Every pre-0.9 peer omits the parameter, and refusing them would make 0.9.0 a
-// flag day. Accepted -- and visible to a caller that wants to warn.
-TCN_SQE_TEST(an_absent_version_is_accepted_and_reported_as_absent)
+// 0.9 accepted an absent version so that 0.9.0 was not a flag day. 0.11 is a
+// break anyway (XCDR2), so an absent version is refused (V1, §6) -- and still
+// reported as absent by the parser, distinct from a malformed one.
+TCN_SQE_TEST(an_absent_version_is_refused_and_reported_as_absent)
 {
     const char* old_peer = "application/cdr;sqe_msgs::rpc::SISMutationReply";
-    CHECK_OK(check_declared_type<rpc::SISMutationReply>(old_peer));
+    CHECK_ERR(check_declared_type<rpc::SISMutationReply>(old_peer), Error::MissingSchemaVersion);
     const WireEncoding parsed = parse_encoding(old_peer);
     CHECK(!parsed.has_schema_version);
     CHECK(parsed.schema_version.empty());
@@ -381,15 +425,19 @@ TCN_SQE_TEST(unknown_parameters_are_ignored)
         "application/cdr;sqe_msgs::rpc::SISMutationReply;foo=bar;tcn_schema=0.11;x=1"));
     CHECK_OK(check_declared_type<rpc::SISMutationReply>(
         "application/cdr;sqe_msgs::rpc::SISMutationReply;flag;tcn_schema=0.11"));
-    CHECK_OK(check_declared_type<rpc::SISMutationReply>(
-        "application/cdr;sqe_msgs::rpc::SISMutationReply;foo=bar"));
-    // ... but an unknown parameter does not hide a bad version.
+    // ... an unknown parameter is not a version ...
+    CHECK_ERR(check_declared_type<rpc::SISMutationReply>(
+                  "application/cdr;sqe_msgs::rpc::SISMutationReply;foo=bar"),
+              Error::MissingSchemaVersion);
+    // ... and does not hide a bad version.
     CHECK_ERR(check_declared_type<rpc::SISMutationReply>(
                   "application/cdr;sqe_msgs::rpc::SISMutationReply;foo=bar;tcn_schema=0.8"),
               Error::SchemaVersionMismatch);
-    // The key is matched exactly: `TCN_SCHEMA` is some other parameter.
-    CHECK_OK(check_declared_type<rpc::SISMutationReply>(
-        "application/cdr;sqe_msgs::rpc::SISMutationReply;TCN_SCHEMA=0.8"));
+    // The key is matched exactly: `TCN_SCHEMA` is some other parameter, so
+    // this annotation carries no version at all.
+    CHECK_ERR(check_declared_type<rpc::SISMutationReply>(
+                  "application/cdr;sqe_msgs::rpc::SISMutationReply;TCN_SCHEMA=0.11"),
+              Error::MissingSchemaVersion);
 }
 
 // The engine trims every segment; so does this reader, key and value apart.
@@ -451,8 +499,8 @@ TCN_SQE_TEST(schema_version_mismatch_has_a_description)
                  "encoding declares another tcn_schema version");
 }
 
-// The pattern reply reuses SISGraphQueryStatus and so opens with the same enum
-// as the graph reply; the annotation is the only separator.
+// The pattern reply and the graph reply both open with SISReplyHeader; the
+// annotation is the only separator.
 TCN_SQE_TEST(a_pattern_reply_is_not_a_graph_reply)
 {
     CHECK_OK(check_declared_type<rpc::SISPatternQueryReply>(cdr_encoding<rpc::SISPatternQueryReply>()));

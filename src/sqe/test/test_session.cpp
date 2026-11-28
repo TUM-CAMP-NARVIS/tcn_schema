@@ -63,10 +63,12 @@ static_assert(RequestKey<rpc::SISEdgeRemoveRequest>::mode  == RequestMode::Query
 static_assert(RequestKey<rpc::SISNodeRemoveRequest>::suffix == keys::kNodeRemove, "");
 static_assert(RequestKey<rpc::SISEdgeRemoveRequest>::suffix == keys::kEdgeRemove, "");
 
-// And the reply each one is answered with, pinned the same way. Every write --
-// including the registry's -- answers SISMutationReply; each read has its own.
+// And the reply each one is answered with, pinned the same way. The join has
+// its own reply since 0.11 (#35 R5: it carries the engine's capabilities);
+// every other write -- including the registry's -- answers SISMutationReply;
+// each read has its own.
 static_assert(std::is_void<RequestKey<rpc::SISLeaveRequest>::Reply>::value, "");
-static_assert(std::is_same<RequestKey<rpc::SISJoinRequest>::Reply,       rpc::SISMutationReply>::value, "");
+static_assert(std::is_same<RequestKey<rpc::SISJoinRequest>::Reply,       rpc::SISJoinReply>::value, "");
 static_assert(std::is_same<RequestKey<rpc::SISNodeUpdateRequest>::Reply, rpc::SISMutationReply>::value, "");
 static_assert(std::is_same<RequestKey<rpc::SISNodeRemoveRequest>::Reply, rpc::SISMutationReply>::value, "");
 static_assert(std::is_same<RequestKey<rpc::SISEdgeUpdateRequest>::Reply, rpc::SISMutationReply>::value, "");
@@ -100,12 +102,9 @@ static_assert(RequestKey<rpc::SISGraphQueryRequest>::suffix == keys::kGraphQuery
 // this library -- which is how it stayed unreachable until now.
 static_assert(RequestKey<rpc::SISGraphQueryRequest>::mode == RequestMode::Query, "");
 
-// The floor a consumer static_asserts against.
-static_assert(kSessionBLevel >= 41, "");
-static_assert(kSessionBLevel > kContractBLevel, "");
-// The revision is a description, not a floor, and it is at least the entry that
-// made every mutation a query: the table above is what it describes.
-static_assert(kProtocolBLevel >= 78, "");
+// One protocol floor (#35 R5, §6): the B-levels are gone, and the session
+// layer speaks the same break the contract core does.
+static_assert(kProtocolBreak == TCN_SQE_PROTOCOL_BREAK, "");
 
 // ---------------------------------------------------------------------------
 // B41: the token, and nothing before it
@@ -222,7 +221,7 @@ TCN_SQE_TEST(a_request_the_codec_cannot_encode_never_reaches_the_wire)
     rpc::SISLeaveRequest leave;
     CHECK_ERR(s.value().publish_request(leave), Error::EncodeFailed);
     rpc::SISJoinRequest join;
-    rpc::SISMutationReply reply;
+    rpc::SISJoinReply reply;
     CHECK_ERR(s.value().query_request(join, reply), Error::EncodeFailed);
     StubCodec::encode_fails = false;
     CHECK_INT_EQ(t.published.size(), 0);
@@ -253,6 +252,15 @@ QueryReply mutation_reply(std::uint8_t status, std::uint64_t epoch, const std::s
     return r;
 }
 
+QueryReply join_reply(std::uint8_t status, std::uint64_t epoch, const std::string& engine_id,
+                      const char* encoding = "application/cdr;sqe_msgs::rpc::SISJoinReply;tcn_schema=0.11")
+{
+    QueryReply r;
+    r.encoding = encoding;
+    r.payload = rpc::SISJoinReply::stub_encode(status, epoch, engine_id);
+    return r;
+}
+
 }  // namespace
 
 // ---------------------------------------------------------------------------
@@ -272,10 +280,10 @@ TCN_SQE_TEST(a_join_goes_out_as_a_query_and_returns_the_decoded_reply)
     CHECK_OK(s);
     if (!s) { return; }
 
-    t.scripted_replies.push_back(mutation_reply(0, 1762300800123ull, "lab1"));
+    t.scripted_replies.push_back(join_reply(1, 1762300800123ull, "lab1"));
 
     rpc::SISJoinRequest join;
-    rpc::SISMutationReply reply;
+    rpc::SISJoinReply reply;
     CHECK_OK(s.value().query_request(join, reply));
 
     CHECK_INT_EQ(t.published.size(), 0);
@@ -286,14 +294,14 @@ TCN_SQE_TEST(a_join_goes_out_as_a_query_and_returns_the_decoded_reply)
                  "application/cdr;sqe_msgs::rpc::SISJoinRequest;tcn_schema=0.11");
     CHECK_INT_EQ(t.queried[0].timeout_ms, kDefaultQueryTimeoutMs);
 
-    CHECK_INT_EQ(reply.status(), 0);
-    CHECK_STR_EQ(reply.engine_id(), "lab1");
-    CHECK(reply.engine_epoch() == 1762300800123ull);
+    const ReplyHeader h = reply_header(reply);
+    CHECK(h.ok());
+    CHECK_STR_EQ(h.engine_id, "lab1");
+    CHECK(h.engine_epoch == 1762300800123ull);
 }
 
 // A refused join is still a successful *query*: the transport delivered an
-// answer. The session hands it back undisturbed, and reading the status is the
-// caller's -- this library cannot name the generated enum's values.
+// answer. The session hands it back undisturbed; `reply_header` reads it.
 TCN_SQE_TEST(a_rejected_join_is_a_delivered_reply_not_a_transport_failure)
 {
     FakeTransport t;
@@ -301,11 +309,34 @@ TCN_SQE_TEST(a_rejected_join_is_a_delivered_reply_not_a_transport_failure)
     CHECK_OK(s);
     if (!s) { return; }
 
-    t.scripted_replies.push_back(mutation_reply(1, 42, "lab1"));
+    t.scripted_replies.push_back(join_reply(2, 42, "lab1"));
     rpc::SISJoinRequest join;
-    rpc::SISMutationReply reply;
+    rpc::SISJoinReply reply;
     CHECK_OK(s.value().query_request(join, reply));
-    CHECK_INT_EQ(reply.status(), 1);
+    CHECK(reply_header(reply).status == ReplyStatus::Rejected);
+    CHECK(!reply_header(reply).ok());
+}
+
+// The join is answered by SISJoinReply, and only by it. A SISMutationReply has
+// the same leading header, so it would decode cleanly into the wrong struct --
+// the annotation is what refuses it, before the decode.
+TCN_SQE_TEST(a_join_is_answered_by_a_join_reply_and_not_by_a_mutation_reply)
+{
+    FakeTransport t;
+    Result<Session> s = Session::open(t, client());
+    CHECK_OK(s);
+    if (!s) { return; }
+
+    rpc::SISJoinRequest join;
+    rpc::SISJoinReply reply;
+    t.scripted_replies.push_back(join_reply(
+        1, 7, "lab1", "application/cdr;sqe_msgs::rpc::SISMutationReply;tcn_schema=0.11"));
+    CHECK_ERR(s.value().query_request(join, reply), Error::WrongDeclaredType);
+    CHECK(reply_header(reply).engine_id.empty());   // not decoded
+
+    t.scripted_replies.push_back(join_reply(1, 7, "lab1"));
+    CHECK_OK(s.value().query_request(join, reply));
+    CHECK_STR_EQ(reply_header(reply).engine_id, "lab1");
 }
 
 TCN_SQE_TEST(every_mutation_request_is_a_query_to_its_own_key)
@@ -315,7 +346,8 @@ TCN_SQE_TEST(every_mutation_request_is_a_query_to_its_own_key)
     CHECK_OK(s);
     if (!s) { return; }
 
-    for (int i = 0; i < 6; ++i) { t.scripted_replies.push_back(mutation_reply(0, 7, "e")); }
+    for (int i = 0; i < 5; ++i) { t.scripted_replies.push_back(mutation_reply(1, 7, "e")); }
+    t.scripted_replies.push_back(join_reply(1, 7, "e"));
 
     rpc::SISMutationReply reply;
     rpc::SISNodeUpdateRequest node_update;
@@ -324,12 +356,13 @@ TCN_SQE_TEST(every_mutation_request_is_a_query_to_its_own_key)
     rpc::SISEdgeRemoveRequest edge_remove;
     rpc::SISTargetMutationRequest target_update;
     rpc::SISJoinRequest join;
+    rpc::SISJoinReply joined;
     CHECK_OK(s.value().query_request(node_update, reply));
     CHECK_OK(s.value().query_request(node_remove, reply));
     CHECK_OK(s.value().query_request(edge_update, reply));
     CHECK_OK(s.value().query_request(edge_remove, reply));
     CHECK_OK(s.value().query_request(target_update, reply));
-    CHECK_OK(s.value().query_request(join, reply));
+    CHECK_OK(s.value().query_request(join, joined));
 
     CHECK_INT_EQ(t.published.size(), 0);
     CHECK_INT_EQ(t.queried.size(), 6);
@@ -347,26 +380,30 @@ TCN_SQE_TEST(every_mutation_request_is_a_query_to_its_own_key)
 // A mutation reply from an engine built against another tcn_schema minor is
 // refused before it is decoded: SISMutationReply grew two fields in 0.9.0
 // under an unchanged name, and that is exactly the change a name cannot carry.
-// One from an engine that predates B76 and declares no version is accepted.
-TCN_SQE_TEST(a_reply_from_another_schema_minor_is_refused_and_one_without_a_version_is_not)
+// Since 0.11 (V1, §6) one that declares no version is refused as well.
+TCN_SQE_TEST(a_reply_from_another_schema_minor_or_without_a_version_is_refused)
 {
     FakeTransport t;
     Result<Session> s = Session::open(t, client());
     CHECK_OK(s);
     if (!s) { return; }
 
-    rpc::SISJoinRequest join;
+    rpc::SISNodeUpdateRequest update;
     rpc::SISMutationReply reply;
 
     t.scripted_replies.push_back(mutation_reply(
-        0, 1, "e", "application/cdr;sqe_msgs::rpc::SISMutationReply;tcn_schema=0.8"));
-    CHECK_ERR(s.value().query_request(join, reply), Error::SchemaVersionMismatch);
-    CHECK_INT_EQ(reply.status(), -1);   // not decoded
+        1, 1, "e", "application/cdr;sqe_msgs::rpc::SISMutationReply;tcn_schema=0.8"));
+    CHECK_ERR(s.value().query_request(update, reply), Error::SchemaVersionMismatch);
+    CHECK(reply_header(reply).engine_id.empty());   // not decoded
 
     t.scripted_replies.push_back(mutation_reply(
-        0, 1, "e", "application/cdr;sqe_msgs::rpc::SISMutationReply"));
-    CHECK_OK(s.value().query_request(join, reply));
-    CHECK_INT_EQ(reply.status(), 0);
+        1, 1, "e", "application/cdr;sqe_msgs::rpc::SISMutationReply"));
+    CHECK_ERR(s.value().query_request(update, reply), Error::MissingSchemaVersion);
+    CHECK(reply_header(reply).engine_id.empty());   // not decoded
+
+    t.scripted_replies.push_back(mutation_reply(1, 1, "e"));
+    CHECK_OK(s.value().query_request(update, reply));
+    CHECK(reply_header(reply).ok());
 }
 
 // The 0.9.0 reads: the pattern query (B63) and the registry read (B78), each to
@@ -441,7 +478,7 @@ TCN_SQE_TEST(a_query_goes_to_the_stream_key_with_a_timeout_above_the_engines_res
     CHECK_OK(s);
     if (!s) { return; }
 
-    t.scripted_replies.push_back(reply_bytes("application/cdr;sqe_msgs::rpc::SISRelationStreamReply"));
+    t.scripted_replies.push_back(reply_bytes("application/cdr;sqe_msgs::rpc::SISRelationStreamReply;tcn_schema=0.11"));
 
     rpc::SISRelationStreamStartRequest start;
     rpc::SISRelationStreamReply reply;
@@ -473,7 +510,7 @@ TCN_SQE_TEST(the_graph_read_goes_to_its_own_key_and_names_its_own_type)
     CHECK_OK(s);
     if (!s) { return; }
 
-    t.scripted_replies.push_back(reply_bytes("application/cdr;sqe_msgs::rpc::SISGraphQueryReply"));
+    t.scripted_replies.push_back(reply_bytes("application/cdr;sqe_msgs::rpc::SISGraphQueryReply;tcn_schema=0.11"));
 
     rpc::SISGraphQueryRequest request;
     rpc::SISGraphQueryReply reply;
@@ -504,7 +541,7 @@ TCN_SQE_TEST(a_reply_that_declares_another_type_is_refused_before_it_is_decoded)
     rpc::SISRelationStreamStartRequest start;
     rpc::SISRelationStreamReply reply;
 
-    t.scripted_replies.push_back(reply_bytes("application/cdr;sqe_msgs::rpc::SISJoinRequest"));
+    t.scripted_replies.push_back(reply_bytes("application/cdr;sqe_msgs::rpc::SISJoinRequest;tcn_schema=0.11"));
     CHECK_ERR(s.value().query_request(start, reply), Error::WrongDeclaredType);
 
     // An unannotated CDR payload is refused too. The declaration is mandatory.
@@ -535,7 +572,7 @@ TCN_SQE_TEST(a_reply_of_the_right_type_that_will_not_decode_is_reported_as_such)
     CHECK_OK(s);
     if (!s) { return; }
 
-    t.scripted_replies.push_back(reply_bytes("application/cdr;sqe_msgs::rpc::SISRelationStreamReply"));
+    t.scripted_replies.push_back(reply_bytes("application/cdr;sqe_msgs::rpc::SISRelationStreamReply;tcn_schema=0.11"));
     StubCodec::decode_fails = true;
     rpc::SISRelationStreamStartRequest start;
     rpc::SISRelationStreamReply reply;

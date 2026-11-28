@@ -33,7 +33,7 @@ namespace tcn {
 namespace sqe {
 
 /// `SRStreamTriggerKind`, with the ordinals pinned to the IDL's declaration
-/// order for the same reason `Status`'s are.
+/// order for the same reason `ReplyStatus`'s are (status.h).
 ///
 /// `Unknown` is the IDL's `..._UNKNOWN` at 0 (E6): what a zeroed or newer
 /// value reads as. No named constructor makes one, and the engine refuses it.
@@ -54,11 +54,13 @@ enum class ReferencePolicy : std::int32_t
     /// The hop closest to the **observer** — first in path order, the request
     /// naming its path as "target located in observer".
     First = 1,
-    /// The hop with the highest declared `frame_rate`. A hop declaring none
-    /// is never chosen while any declared one exists.
+    /// The hop with the highest declared `frame_rate`. `frame_rate` is
+    /// optional; a hop that declares none is never chosen while any declared
+    /// one exists.
     Fastest = 2,
-    /// The hop with the lowest declared non-zero `frame_rate`, so the
-    /// composed relation is never published faster than its slowest input.
+    /// The hop with the lowest declared `frame_rate`, so the composed relation
+    /// is never published faster than its slowest input. A hop that declares
+    /// no rate is never chosen while any declared one exists.
     Slowest = 3,
 };
 
@@ -211,6 +213,44 @@ enum class EvaluationMode : std::int32_t
     Both = 3,
 };
 
+/// When the engine re-routes a running stream (B51): the ordinals of
+/// `SISReoptimisePolicy`.
+///
+/// - `BestAvailableNow`: serve the best route available when the stream is
+///   compiled, and re-evaluate only when something on that route changes. The
+///   default, and the usual choice.
+/// - `BestPossible`: also move to a better route when one appears.
+///
+/// `Unknown` is refused by the engine (`Rejected` + `Malformed`). Not part of
+/// stream identity *on the engine*, which re-optimises a shared stream if any
+/// requester asked for `BestPossible`; it is one of the terms
+/// `RelationLeaseTable` compares all the same (see `same_terms_as`).
+enum class ReoptimisePolicy : std::int32_t
+{
+    Unknown = 0,
+    BestAvailableNow = 1,
+    BestPossible = 2,
+};
+
+/// How the routes between the two frames are combined: the ordinals of
+/// `SISFusionPolicy`.
+///
+/// - `BestPath`: one route, the pathfinder's cheapest. The default, and the
+///   only one an engine serves today.
+/// - `Fused`: every route, combined per instant.
+/// - `Filtered`: every route, combined by a filter over time.
+///
+/// Part of a stream's terms. `Unknown` is refused (`Rejected` + `Malformed`);
+/// `Fused` and `Filtered` are refused `Rejected` + `Unsupported` until an
+/// engine implements them.
+enum class FusionPolicy : std::int32_t
+{
+    Unknown = 0,
+    BestPath = 1,
+    Fused = 2,
+    Filtered = 3,
+};
+
 /// `SISRelationStreamStartRequest`, validated.
 ///
 /// There is one constructor and it validates. `freshness_bias` is refused
@@ -224,7 +264,9 @@ public:
                                               FrameRef target,
                                               StreamTrigger trigger,
                                               double freshness_bias = kDefaultFreshnessBias,
-                                              EvaluationMode evaluation = EvaluationMode::Engine)
+                                              EvaluationMode evaluation = EvaluationMode::Engine,
+                                              ReoptimisePolicy reoptimise = ReoptimisePolicy::BestAvailableNow,
+                                              FusionPolicy fusion = FusionPolicy::BestPath)
     {
         // Positive test again: NaN fails it.
         if (!(freshness_bias >= 0.0 && freshness_bias <= 1.0))
@@ -233,7 +275,7 @@ public:
         }
         return Result<RelationStreamRequest>::ok(
             RelationStreamRequest(std::move(observer), std::move(target),
-                                  std::move(trigger), freshness_bias, evaluation));
+                                  std::move(trigger), freshness_bias, evaluation, reoptimise, fusion));
     }
 
     const FrameRef& observer() const noexcept { return observer_; }
@@ -241,15 +283,17 @@ public:
     const StreamTrigger& trigger() const noexcept { return trigger_; }
     double freshness_bias() const noexcept { return bias_; }
     EvaluationMode evaluation() const noexcept { return evaluation_; }
+    ReoptimisePolicy reoptimise() const noexcept { return reoptimise_; }
+    FusionPolicy fusion() const noexcept { return fusion_; }
 
     /// The two frames, and nothing else.
     ///
     /// This is what "the same relation" means, and it deliberately excludes the
-    /// trigger, the bias and the evaluation mode. `RelationLeaseTable` keys its request memo on this
-    /// so that a second acquire for the same relation on *different* terms is
-    /// caught locally as `Error::ConflictingLease` rather than sent to the
-    /// engine, which answers it `Rejected` with no way for the caller to tell
-    /// which of the two requests was the odd one.
+    /// five terms (`same_terms_as`). `RelationLeaseTable` keys its request memo
+    /// on this so that a second acquire for the same relation on *different*
+    /// terms is caught locally as `Error::ConflictingLease` rather than sent to
+    /// the engine, which answers it `Conflict` + `TermsConflict` with no way
+    /// for the caller to tell which of the two requests was the odd one.
     struct Relation
     {
         FrameRef observer;
@@ -269,21 +313,35 @@ public:
 
     Relation relation() const { return Relation{observer_, target_}; }
 
-    /// The terms two acquires of the same relation must agree on.
+    /// The terms two acquires of the same relation must agree on: all five --
+    /// trigger, freshness bias, evaluation mode, reoptimise policy and fusion
+    /// policy.
+    ///
+    /// The engine serves one stream per relation and refuses a second start on
+    /// other identity terms (`Conflict` + `TermsConflict`). The reoptimise
+    /// policy is not identity there (the engine takes the union), but it is
+    /// compared here too: `RelationLeaseTable` sends one start per relation, so
+    /// a second component's different policy would otherwise never reach the
+    /// engine at all -- dropped without a word instead of refused locally.
     bool same_terms_as(const RelationStreamRequest& o) const noexcept
     {
-        return trigger_ == o.trigger_ && bias_ == o.bias_ && evaluation_ == o.evaluation_;
+        return trigger_ == o.trigger_ && bias_ == o.bias_ && evaluation_ == o.evaluation_
+               && reoptimise_ == o.reoptimise_ && fusion_ == o.fusion_;
     }
 
 private:
-    RelationStreamRequest(FrameRef o, FrameRef t, StreamTrigger tr, double b, EvaluationMode e) noexcept
-        : observer_(std::move(o)), target_(std::move(t)), trigger_(std::move(tr)), bias_(b), evaluation_(e) {}
+    RelationStreamRequest(FrameRef o, FrameRef t, StreamTrigger tr, double b, EvaluationMode e,
+                          ReoptimisePolicy r, FusionPolicy f) noexcept
+        : observer_(std::move(o)), target_(std::move(t)), trigger_(std::move(tr)), bias_(b), evaluation_(e),
+          reoptimise_(r), fusion_(f) {}
 
     FrameRef observer_;
     FrameRef target_;
     StreamTrigger trigger_;
     double bias_;
     EvaluationMode evaluation_;
+    ReoptimisePolicy reoptimise_;
+    FusionPolicy fusion_;
 };
 
 }  // namespace sqe
