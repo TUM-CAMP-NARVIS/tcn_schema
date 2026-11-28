@@ -4,23 +4,34 @@
 module tcnart_msgs {
   module msg {
 
-    @appendable enum SensorType {
-        SENSOR_TYPE_NONE,
-        SENSOR_TYPE_VIDEO_COLOR,
-        SENSOR_TYPE_VIDEO_DEPTH,
-        SENSOR_TYPE_VIDEO_IR,
-        SENSOR_TYPE_TRACKING_POSE,
-        SENSOR_TYPE_TRACKING_EYE,
-        SENSOR_TYPE_TRACKING_HAND,
-        SENSOR_TYPE_TRACKING_BODY,
-        SENSOR_TYPE_AUDIO,
-        SENSOR_TYPE_IMU_ACCEL,
-        SENSOR_TYPE_IMU_GYRO,
-        SENSOR_TYPE_IMU_MAG,
-        SENSOR_TYPE_MESH_BITSTREAM,
-        SENSOR_TYPE_SURFEL
+    // What a stream carries: the discriminator of the stream descriptor's StreamInfo (0.11, #35 S1, #38 A2). It
+    // replaces SensorType: colour, depth, IR and masks are one VIDEO kind told apart by PixelSemantics.
+    // Append only; a reader skips a kind it does not know (E6).
+    @appendable enum StreamKind {
+      STREAM_KIND_UNKNOWN,
+      STREAM_KIND_VIDEO,     // VideoStreamMessage
+      STREAM_KIND_TRACKER,   // TargetTrackingMessage, Pose6DMessage
+      STREAM_KIND_PERSONS,   // PersonTrackingMessage, HumanPoseMessage (+ HumanShapeMessage)
+      STREAM_KIND_MESH,      // MeshBitstreamMessage, MeshStream v2 ("TMS2")
+      STREAM_KIND_SURFELS,
+      STREAM_KIND_EYE,       // EyeTrackingMessage
+      STREAM_KIND_HAND,      // HandTrackingMessage
+      STREAM_KIND_IMU        // ImuMessage
     };
 
+    // What a video stream's pixels mean (#38 A2; #37 T9 withdrawn in its favour).
+    // COLOR: an image to look at. DEPTH: distance along the optical axis (units: VideoStreamInfo's
+    // depth_units_per_meter for integer formats, metres for DEPTH_F32). IR: infrared intensity. MASK: a per-pixel
+    // label or alpha (e.g. a mono8 segmentation mask).
+    @appendable enum PixelSemantics {
+      PIXEL_SEMANTICS_UNKNOWN,
+      PIXEL_SEMANTICS_COLOR,
+      PIXEL_SEMANTICS_DEPTH,
+      PIXEL_SEMANTICS_IR,
+      PIXEL_SEMANTICS_MASK
+    };
+
+    // The pixel layout of a decoded frame. Append only.
     @appendable enum VideoPixelFormat {
       VIDEO_PIXEL_FORMAT_UNKNOWN,
       VIDEO_PIXEL_FORMAT_NV12,
@@ -29,27 +40,45 @@ module tcnart_msgs {
       VIDEO_PIXEL_FORMAT_BGRA32,
       VIDEO_PIXEL_FORMAT_L8,
       VIDEO_PIXEL_FORMAT_L16,
-      VIDEO_PIXEL_FORMAT_RGBA32
+      VIDEO_PIXEL_FORMAT_RGBA32,
+      // float32 depth in metres (0.11, #38 A2); depth_units_per_meter is absent with it.
+      VIDEO_PIXEL_FORMAT_DEPTH_F32
     };
 
-    @appendable enum VideoImageCompression {
-        VIDEO_IMAGE_COMPRESSION_UNKNOWN,
-        VIDEO_IMAGE_COMPRESSION_RAW,
-        VIDEO_IMAGE_COMPRESSION_PNG,
-        VIDEO_IMAGE_COMPRESSION_H26X,
-        VIDEO_IMAGE_COMPRESSION_ZDEPTH,
-        VIDEO_IMAGE_COMPRESSION_JPEG,
-        // JPEG-LS (ISO 14495-1, CharLS): lossless or near-lossless 16-bit images (IR, depth); appended in 0.9.0,
-        // receivers that do not know it skip the stream.
-        VIDEO_IMAGE_COMPRESSION_JPEG_LS
+    // How a video stream's frames are compressed (#38 A2). It replaces VideoImageCompression, and it alone selects
+    // the codec: VideoH26xProfile no longer does. Append only; a receiver skips a stream whose codec it does not
+    // know.
+    // JPEG_LS: ISO 14495-1 (CharLS), lossless or near-lossless 16-bit images (IR, depth). H264_LOSSLESS: H.264
+    // in a lossless profile. ZDEPTH, NDQ: depth codecs.
+    @appendable enum VideoCodec {
+      VIDEO_CODEC_UNKNOWN,
+      VIDEO_CODEC_RAW,
+      VIDEO_CODEC_PNG,
+      VIDEO_CODEC_JPEG,
+      VIDEO_CODEC_JPEG_LS,
+      VIDEO_CODEC_H264,
+      VIDEO_CODEC_H265,
+      VIDEO_CODEC_H264_LOSSLESS,
+      VIDEO_CODEC_ZDEPTH,
+      VIDEO_CODEC_NDQ
     };
 
+    // The H.26x profile of an H264/H265 stream: the profile only. The codec is VideoCodec (since 0.11).
     @appendable enum VideoH26xProfile {
         VIDEO_H26X_PROFILE_NONE,
         VIDEO_H26X_PROFILE_H264_BASE,
         VIDEO_H26X_PROFILE_H264_MAIN,
         VIDEO_H26X_PROFILE_H264_HIGH,
         VIDEO_H26X_PROFILE_H265_MAIN
+    };
+
+    // How a mesh stream's payload is encoded (#38 A2, with #37 T12).
+    // BITSTREAM_V1: MeshBitstreamMessage, format A (28-byte vertices). STREAM_V2: the MeshStream v2 binary ("TMS2"),
+    // which comes into the IDL with T12 (0.11.x).
+    @appendable enum MeshEncoding {
+      MESH_ENCODING_UNKNOWN,
+      MESH_ENCODING_BITSTREAM_V1,
+      MESH_ENCODING_STREAM_V2
     };
 
   };

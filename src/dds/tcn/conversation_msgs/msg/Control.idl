@@ -12,27 +12,14 @@ module conversation_msgs {
     string display_name;
   };
 
+  // #36 S1: formats, backends and the language/voice defaults come from discovery (rpc::AppServerInfo) only.
   @appendable struct SessionStart {
     MessageHeader header;
-    StreamDirection direction;
-
-    AudioFormat ingress_format;
-    AudioFormat expected_stt_format;
-    AudioFormat expected_tts_format;
-    AudioFormat egress_format;
-
-    string stt_backend;
-    string llm_backend;
-    string tts_backend;
-
-    string language_hint;
-    string voice_hint;
-
-    boolean allow_barge_in;
-    boolean enable_partial_stt;
-    boolean enable_partial_llm;
-    boolean enable_partial_tts;
     ClientIdentity identity;
+
+    boolean allow_barge_in;  // false is the simple off switch, whatever barge_in_mode says
+    boolean enable_partial_stt;
+    @optional BargeInMode barge_in_mode;  // a lower mode than the server's; absent = the server's (never OFF)
   };
 
   @appendable struct SessionStop {
@@ -46,32 +33,31 @@ module conversation_msgs {
     string reason;
   };
 
-  @appendable struct SessionConfigUpdate {
-    MessageHeader header;
-
-    boolean has_language_hint;
-    string language_hint;
-
-    boolean has_voice_hint;
-    string voice_hint;
-
-    boolean has_allow_barge_in;
-    boolean allow_barge_in;
-
-    boolean has_enable_partial_stt;
-    boolean enable_partial_stt;
-
-    boolean has_enable_partial_llm;
-    boolean enable_partial_llm;
-
-    boolean has_enable_partial_tts;
-    boolean enable_partial_tts;
-  };
-
+  // SESSION_STATE_PLAYING lies between TtsDone (synthesis done) and the client's PLAYBACK_STATE_DRAINED (#36 S3).
   @appendable struct SessionStateEvent {
     MessageHeader header;
     SessionState state;
-    Status status;
+    SessionStateReason reason;  // why (#36 S5)
+    Status status;              // the error detail
+  };
+
+  // #36 S4: STARTED at the turn's first audible sample, DRAINED when its last chunk has played, CLEARED when queued
+  // audio was dropped (barge-in, a new turn).
+  @appendable enum PlaybackState {
+    PLAYBACK_STATE_UNKNOWN,
+    PLAYBACK_STATE_STARTED,
+    PLAYBACK_STATE_DRAINED,
+    PLAYBACK_STATE_CLEARED
+  };
+
+  // Published by the client per turn (header.turn_id) on {session}/control/playback, and only to a server that
+  // advertises the capability `playback_events` (#36 S4, D4). Playback is measured at the client's mixer, excluding
+  // the device output latency (D3); without these events the server falls back to TtsDone.total_samples (T1).
+  @appendable struct PlaybackEvent {
+    MessageHeader header;
+    PlaybackState state;
+    unsigned long long played_samples;  // of this turn, at sample_rate_hz
+    unsigned long sample_rate_hz;
   };
 
   };

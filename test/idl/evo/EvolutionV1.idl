@@ -14,6 +14,22 @@ module evo_v1 {
       sequence<Thing> things;
       int32 tail;
     };
+
+    // A union and a member after it (0.11 plan 6, Review Focus 4): V2 adds a case; a V1 reader meeting it skips the
+    // union by its DHEADER and still decodes `tail` (decisions E6).
+    @appendable enum Kind {
+      KIND_UNKNOWN,
+      KIND_A
+    };
+
+    @appendable union Choice switch (Kind) {
+      case KIND_A: int32 a;
+    };
+
+    @appendable struct Boxed {
+      Choice choice;
+      int32 tail;
+    };
   };
 };
 

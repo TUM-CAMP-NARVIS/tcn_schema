@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.19)  # string(JSON) for the package table
-project(tcn_schema VERSION 0.10.7 LANGUAGES CXX)
+project(tcn_schema VERSION 0.11.0 LANGUAGES CXX)
 
 
 option(WITH_DDS "Compile with DDS Implementation" OFF)
@@ -55,6 +55,14 @@ install(FILES "${CMAKE_CURRENT_SOURCE_DIR}/src/dds/tcn/type_map_0_11.json" DESTI
 # The plan 5 (#35) moves, deletions and reshaped types. Apply type_map_0_11.json first, then this one: it supersedes
 # the plan 3 entries for SRNodeScope and SISTargetKind (moved again) and for types deleted since.
 install(FILES "${CMAKE_CURRENT_SOURCE_DIR}/src/dds/tcn/type_map_0_11_sqe.json" DESTINATION share/tcn_schema)
+# The plan 6 (#35/#36/#37/#38) stream, descriptor, camera, parameter and conversation moves. Apply the two maps above
+# first, then this one.
+install(FILES "${CMAKE_CURRENT_SOURCE_DIR}/src/dds/tcn/type_map_0_11_streams.json" DESTINATION share/tcn_schema)
+# The joint-set table's generated arrays (decisions §7 HumanPose; source tcnart_msgs/msg/joint_sets.yaml): the
+# header-only C++ arrays, and the C# arrays and JSON for the other languages.
+install(FILES "${CMAKE_CURRENT_SOURCE_DIR}/src/joint_sets/include/tcn/joint_sets.h" DESTINATION include/tcn)
+install(FILES "${CMAKE_CURRENT_SOURCE_DIR}/src/joint_sets/joint_sets.json"
+              "${CMAKE_CURRENT_SOURCE_DIR}/src/joint_sets/cs/JointSets.cs" DESTINATION share/tcn_schema)
 
 # The SQE contract core. Header-only and dependency-free, so it adds nothing to
 # a link line; it is added last because its INTERFACE target names
@@ -67,11 +75,14 @@ add_subdirectory(src/sqe)
 # Machine-readable tables of every IDL declaration (decisions O7): share/tcn_schema/{types,enums}.json.
 file(GLOB_RECURSE TCN_IDL_FILES CONFIGURE_DEPENDS "${CMAKE_CURRENT_SOURCE_DIR}/src/dds/*.idl")
 file(GLOB_RECURSE TCN_IDL_TOOLS CONFIGURE_DEPENDS "${CMAKE_CURRENT_SOURCE_DIR}/tools/idl/*.py")
+# CMake's VERSION cannot carry a pre-release suffix, so the label (conanfile.py's version, written into the tables'
+# schema_version) is kept here. At 0.11.0 itself it becomes "0.11.0"; conanfile.py changes with it.
+set(TCN_SCHEMA_VERSION_LABEL "0.11.0-rc1")
 set(TCN_TABLES_DIR "${PROJECT_BINARY_DIR}/share")
 add_custom_command(
         OUTPUT "${TCN_TABLES_DIR}/types.json" "${TCN_TABLES_DIR}/enums.json"
         COMMAND "${Python3_EXECUTABLE}" -I -B "${CMAKE_CURRENT_SOURCE_DIR}/tools/idl_cli.py" tables
-                --dds-root "${CMAKE_CURRENT_SOURCE_DIR}/src/dds" --version "${PROJECT_VERSION}" --out "${TCN_TABLES_DIR}"
+                --dds-root "${CMAKE_CURRENT_SOURCE_DIR}/src/dds" --version "${TCN_SCHEMA_VERSION_LABEL}" --out "${TCN_TABLES_DIR}"
         DEPENDS ${TCN_IDL_FILES} ${TCN_IDL_TOOLS} "${CMAKE_CURRENT_SOURCE_DIR}/tools/idl_cli.py"
         COMMENT "Generating types.json and enums.json"
         VERBATIM)
@@ -89,6 +100,25 @@ if(TCN_SCHEMA_BUILD_MSG_TESTS)
   # `cmake --install` (what conan's package() runs) of this build tree into a scratch prefix must succeed: every
   # header the install lists has to exist (enum-only IDL files once listed CdrAux headers fastddsgen never writes).
   add_test(NAME install_smoke COMMAND "${CMAKE_COMMAND}" --install "${CMAKE_BINARY_DIR}" --prefix "${CMAKE_BINARY_DIR}/install_smoke")
+  # ... and put the files consumers look for in place (sha256sum fails on a missing file).
+  set(_smoke "${CMAKE_BINARY_DIR}/install_smoke")
+  add_test(NAME install_smoke_files COMMAND "${CMAKE_COMMAND}" -E sha256sum
+           "${_smoke}/include/tcn/joint_sets.h" "${_smoke}/share/tcn_schema/joint_sets.json"
+           "${_smoke}/share/tcn_schema/JointSets.cs" "${_smoke}/share/tcn_schema/dds/tcnart_msgs/msg/JointSets.md"
+           "${_smoke}/share/tcn_schema/dds/tcnart_msgs/msg/JointSet.idl" "${_smoke}/include/tcnart_msgs/msg/JointSet.h")
+  # ... and the installed C++ joint-set header compiles on its own, against the install prefix only (no source-tree
+  # or build-tree include directory).
+  set(_smoke_tu "${CMAKE_BINARY_DIR}/install_smoke_joint_sets.cpp")
+  file(WRITE "${_smoke_tu}" "#include <tcn/joint_sets.h>\n")
+  set(_smoke_inc "${_smoke}/include")
+  if(MSVC)
+    set(_smoke_cc /nologo /std:c++17 /Zs "/I${_smoke_inc}" "${_smoke_tu}")
+  else()
+    set(_smoke_cc -std=c++17 -fsyntax-only "-I${_smoke_inc}" "${_smoke_tu}")
+  endif()
+  add_test(NAME install_smoke_header COMMAND "${CMAKE_CXX_COMPILER}" ${_smoke_cc})
+  set_tests_properties(install_smoke PROPERTIES FIXTURES_SETUP install_smoke)
+  set_tests_properties(install_smoke_files install_smoke_header PROPERTIES FIXTURES_REQUIRED install_smoke)
 endif()
 
 # generated cpp/h files need one import from fastrtps, which we provide to avoid pulling the dependency, if it should be build without

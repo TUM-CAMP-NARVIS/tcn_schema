@@ -1,0 +1,180 @@
+{
+ "_comment": "0.11 plan 6 (#36-#38): the expected differences between the plan 5 tree and the plan 6 tree, for `idl_cli.py moves --old <plan 5 src/dds> --new src/dds --spec tools/idl/streams_0_11.json`. Each task appends what it changes.",
+ "files": [],
+ "deleted": [
+  "tcnart_msgs::msg::PERSON_STATE_TENTATIVE",
+  "tcnart_msgs::msg::PERSON_STATE_CONFIRMED",
+  "tcnart_msgs::msg::PERSON_STATE_PREDICTED",
+  "tcnart_msgs::msg::HUMAN_POSE_TRACKED",
+  "tcnart_msgs::msg::HUMAN_POSE_COASTING",
+  "tcnart_msgs::msg::HUMAN_POSE_LOST",
+  "tcnart_msgs::msg::HUMAN_JOINT_OBSERVED",
+  "tcnart_msgs::msg::HUMAN_JOINT_DERIVED",
+  "tcnart_msgs::msg::HUMAN_JOINT_DEFAULTED",
+  "tcnart_msgs::msg::HUMAN_JOINT_HAS_ROTATION",
+  "tcnart_msgs::msg::SensorType",
+  "tcnart_msgs::msg::VideoImageCompression",
+  "tcnart_msgs::msg::BufferInfo",
+  "tcnart_msgs::msg::CameraModel",
+  "tcnart_msgs::msg::CameraModelType",
+  "conversation_msgs::msg::SessionConfigUpdate",
+  "conversation_msgs::msg::SttRequest",
+  "conversation_msgs::msg::EventState"
+ ],
+ "new_types": [
+  "tcn_types::msg::StreamHeader",
+  "tcn_types::msg::CalibrationProvenance",
+  "tcnart_msgs::msg::JointSet",
+  "tcnart_msgs::msg::HumanShape",
+  "tcnart_msgs::msg::HumanShapeMessage",
+  "tcnart_msgs::msg::PersonStreamInfo",
+  "tcnart_msgs::msg::SmplParams",
+  "tcnart_msgs::msg::PersonState",
+  "tcnart_msgs::msg::PersonTrackState",
+  "tcnart_msgs::msg::JointSource",
+  "tcnart_msgs::msg::SmplModel",
+  "tcnart_msgs::msg::SmplGender",
+  "tcnart_msgs::msg::PersonSmoothing",
+  "tcnart_msgs::msg::VideoStreamInfo",
+  "tcnart_msgs::msg::TrackerStreamInfo",
+  "tcnart_msgs::msg::MeshStreamInfo",
+  "tcnart_msgs::msg::SurfelStreamInfo",
+  "tcnart_msgs::msg::EyeStreamInfo",
+  "tcnart_msgs::msg::HandStreamInfo",
+  "tcnart_msgs::msg::ImuStreamInfo",
+  "tcnart_msgs::msg::StreamInfo",
+  "tcnart_msgs::msg::StreamKind",
+  "tcnart_msgs::msg::PixelSemantics",
+  "tcnart_msgs::msg::VideoCodec",
+  "tcnart_msgs::msg::MeshEncoding",
+  "pcpd_msgs::rpc::StreamRole",
+  "pcpd_msgs::rpc::StreamMode",
+  "conversation_msgs::msg::BargeInMode",
+  "conversation_msgs::msg::SessionStateReason",
+  "conversation_msgs::msg::PlaybackState",
+  "conversation_msgs::msg::PlaybackEvent",
+  "conversation_msgs::msg::FaceRig",
+  "conversation_msgs::msg::FaceAnimationLayout"
+ ],
+ "expect": {
+  "reshaped": [
+   "tcn_types::msg::Target",
+   "tcnart_msgs::msg::VideoStreamMessage",
+   "tcnart_msgs::msg::Pose6DMessage",
+   "tcnart_msgs::msg::TargetTrackingMessage",
+   "tcnart_msgs::msg::EyeTrackingMessage",
+   "tcnart_msgs::msg::HandTrackingMessage",
+   "tcnart_msgs::msg::ImuMessage",
+   "pcpd_msgs::msg::MeshBitstreamMessage",
+   "tcnart_msgs::msg::HumanJoint",
+   "tcnart_msgs::msg::HumanPose",
+   "tcnart_msgs::msg::HumanPoseMessage",
+   "tcnart_msgs::msg::Person",
+   "tcnart_msgs::msg::PersonTrackingMessage",
+   "tcnart_msgs::msg::StreamDescriptorMessage",
+   "tcnart_msgs::msg::VideoPixelFormat",
+   "pcpd_msgs::msg::CameraSensor",
+   "pcpd_msgs::rpc::DeviceContextReply",
+   "pcpd_msgs::rpc::ParameterValueType",
+   "pcpd_msgs::rpc::ParameterValue",
+   "pcpd_msgs::rpc::StreamAnnouncement",
+   "pcpd_msgs::rpc::ProcessInfo",
+   "tcnart_msgs::msg::TcnartPresenceMessage",
+   "tcnart_msgs::msg::ServiceInfo",
+   "conversation_msgs::msg::SessionStart",
+   "conversation_msgs::msg::SessionStateEvent",
+   "conversation_msgs::msg::VadEvent",
+   "conversation_msgs::msg::AudioOpusFrame",
+   "conversation_msgs::msg::SttPartial",
+   "conversation_msgs::msg::SttFinal",
+   "conversation_msgs::msg::LlmPartial",
+   "conversation_msgs::msg::LlmFinal",
+   "conversation_msgs::msg::InteractionActivity",
+   "conversation_msgs::msg::TtsAudioChunk",
+   "conversation_msgs::msg::TtsDone",
+   "conversation_msgs::msg::HealthStatus",
+   "conversation_msgs::rpc::AppServerInfo"
+  ],
+  "removed_members": {
+   "tcnart_msgs::msg::VideoStreamMessage": [
+    "camera_focal_length",
+    "camera_principal_point",
+    "camera_radial_distortion",
+    "camera_tangential_distortion"
+   ],
+   "tcnart_msgs::msg::HandTrackingMessage": [
+    "gaze_valid"
+   ],
+   "tcnart_msgs::msg::PersonTrackingMessage": [
+    "group",
+    "world_frame",
+    "up"
+   ],
+   "tcnart_msgs::msg::HumanPoseMessage": [
+    "source"
+   ],
+   "tcnart_msgs::msg::HumanPose": [
+    "participant",
+    "bone_lengths"
+   ],
+   "tcnart_msgs::msg::HumanJoint": [
+    "flags"
+   ],
+   "tcnart_msgs::msg::StreamDescriptorMessage": [
+    "header",
+    "sensor_type",
+    "buffer_info",
+    "marker_type",
+    "image_height",
+    "image_width",
+    "image_step",
+    "image_format",
+    "image_compression",
+    "h26x_profile",
+    "h26x_bitrate",
+    "clock_domain",
+    "marker_system"
+   ],
+   "tcnart_msgs::msg::ServiceInfo": [
+    "service_info"
+   ],
+   "conversation_msgs::msg::SessionStart": [
+    "direction",
+    "ingress_format",
+    "expected_stt_format",
+    "expected_tts_format",
+    "egress_format",
+    "stt_backend",
+    "llm_backend",
+    "tts_backend",
+    "language_hint",
+    "voice_hint",
+    "enable_partial_llm",
+    "enable_partial_tts"
+   ],
+   "conversation_msgs::msg::VadEvent": [
+    "start_ms",
+    "end_ms",
+    "state"
+   ],
+   "conversation_msgs::msg::SttPartial": [
+    "state"
+   ],
+   "conversation_msgs::msg::SttFinal": [
+    "has_confidence",
+    "state"
+   ],
+   "conversation_msgs::msg::LlmPartial": [
+    "state"
+   ],
+   "conversation_msgs::msg::LlmFinal": [
+    "has_prompt_tokens",
+    "has_generated_tokens",
+    "state"
+   ],
+   "conversation_msgs::msg::HealthStatus": [
+    "component"
+   ]
+  }
+ }
+}

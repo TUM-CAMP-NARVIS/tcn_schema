@@ -2,11 +2,13 @@ import re
 import unittest
 from pathlib import Path
 
-from tools.idl.parser import load_schema
+from tools.idl.model import Schema
+from tools.idl.parser import load_schema, parse_file
 from tools.idl.roundtrip import generate
 from tools.idl.tables import build_types
 
 REPO = Path(__file__).resolve().parents[3]
+FIX = Path(__file__).resolve().parent / "fixtures"
 
 
 class RoundtripGenTest(unittest.TestCase):
@@ -36,13 +38,20 @@ class RoundtripGenTest(unittest.TestCase):
             self.assertIn(f'#include "{h}CdrAux.hpp"', src)
 
     def test_forward_referenced_members_compare_bytes_only(self):
+        # fixtures/forward.idl: P.value is a union declared later; fastddsgen 3.0.0 stores it as a pointer and its
+        # operator== compares the pointers.
+        f = parse_file(FIX / "forward.idl", "fx/msg/forward.idl")
+        src = generate(build_types(Schema([f], {"fx": "tcn"}), "9.9.9"), "fx")
+        for name in ("P", "L", "V", "Holder"):
+            self.assertIn(f"TCN_ROUNDTRIP_BYTES(fx::msg::{name})", src)
+        self.assertIn("TCN_ROUNDTRIP(fx::msg::Plain)", src)
+
+    def test_parameters_compare_values(self):
+        # 0.11 plan 6 task 5 (T13): no forward declarations left, so the parameter types compare by value.
         src = generate(self.types, "pcpd_msgs")
-        # Parameter.value is a ParameterValue declared later in Requests.idl: fastddsgen 3.0.0 stores it as a pointer
-        # and its operator== compares the pointers.
-        self.assertIn("TCN_ROUNDTRIP_BYTES(pcpd_msgs::rpc::Parameter)", src)
-        self.assertNotIn("TCN_ROUNDTRIP(pcpd_msgs::rpc::Parameter)", src)
-        self.assertIn("TCN_ROUNDTRIP_BYTES(pcpd_msgs::rpc::ParameterList)", src)
-        self.assertIn("TCN_ROUNDTRIP_BYTES(pcpd_msgs::rpc::ServiceInfoReply)", src)
+        for name in ("Parameter", "ParameterList", "ParameterValue", "ParameterDescriptor", "ServiceInfoReply"):
+            self.assertIn(f"TCN_ROUNDTRIP(pcpd_msgs::rpc::{name})", src)
+        self.assertNotIn("TCN_ROUNDTRIP_BYTES(", src)
         self.assertIn("TCN_ROUNDTRIP(tcnart_msgs::msg::TargetTrackingMessage)", generate(self.types, "tcnart_msgs"))
 
     def test_enum_only_file_has_no_cdraux(self):

@@ -20,6 +20,9 @@ module conversation_msgs {
     AudioFormat format;
     unsigned long chunk_index;
     boolean is_final_chunk;
+    // The first sample's position on the turn timeline, at format.sample_rate_hz (#36 F1): 0 at the turn's first TTS
+    // sample, continuous across the turn's segments.
+    unsigned long long turn_sample_index;
     sequence<float> samples_f32;
   };
 
@@ -28,6 +31,8 @@ module conversation_msgs {
     string backend;
     string voice;
     unsigned long total_chunks;
+    unsigned long long total_samples;  // the reply's length (#36 T1), at sample_rate_hz
+    unsigned long sample_rate_hz;
     Status status;
   };
 

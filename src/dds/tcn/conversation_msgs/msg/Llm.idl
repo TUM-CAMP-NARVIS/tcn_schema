@@ -79,6 +79,7 @@ module conversation_msgs {
   };
 
   @appendable struct InteractionActivity {
+    MessageHeader header;
     string request_id;
     string call_id;
     string tool_name;
@@ -111,19 +112,15 @@ module conversation_msgs {
     string text_delta;
     unsigned long token_count;
     string model;
-    EventState state;
   };
 
   @appendable struct LlmFinal {
     MessageHeader header;
     string text;
     string finish_reason;
-    unsigned long prompt_tokens;
-    unsigned long generated_tokens;
-    boolean has_prompt_tokens;
-    boolean has_generated_tokens;
+    @optional unsigned long prompt_tokens;
+    @optional unsigned long generated_tokens;
     string model;
-    EventState state;
   };
 
   };

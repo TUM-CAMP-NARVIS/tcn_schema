@@ -58,8 +58,8 @@ fastddsgen preprocesses each file, and a type included twice without a guard is 
 - A reader decodes an enumerator it does not know as that value.
 - A member missing from an older payload also reads as that value (E8), never as a real value.
 
-**`enum-prefix`** (tcn, O5): Every enumerator starts with the enum's name in UPPER_SNAKE_CASE: `enum SensorType {
-SENSOR_TYPE_NONE, SENSOR_TYPE_VIDEO_COLOR, … }`. This keeps the generated C++ free of clashes, such as
+**`enum-prefix`** (tcn, O5): Every enumerator starts with the enum's name in UPPER_SNAKE_CASE: `enum StreamKind {
+STREAM_KIND_UNKNOWN, STREAM_KIND_VIDEO, … }`. This keeps the generated C++ free of clashes, such as
 `ERROR_TIMEOUT` with Windows macros (0.11: `conversation_msgs::msg::ErrorCode` is `ERROR_CODE_*`). The 0.11
 renames are listed in [migration/0.11-enum-map.md](migration/0.11-enum-map.md).
 
@@ -68,11 +68,34 @@ renames are listed in [migration/0.11-enum-map.md](migration/0.11-enum-map.md).
 ## Rules not (yet) checked by the lint
 
 - **`@optional` instead of placeholders.** Absence is explicit: use `@optional`, not flag pairs (`has_x` + `x`),
-  sentinel values (`-1`, NaN, an identity pose) or "empty means absent". A documented exception is
-  `HumanShape.bone_lengths` (decisions §7).
+  sentinel values (`-1`, NaN, an identity pose) or "empty means absent". Documented exceptions are
+  `tcnart_msgs::msg::HumanShape.bone_lengths` (decisions §7) and `tcnart_msgs::msg::Person.bone_lengths`
+  (`PersonTracking.idl`): NaN for a bone whose length is not frozen yet. An element of a fixed-length per-bone
+  sequence cannot be `@optional`.
+
+  A second named exception is `pcpd_msgs::rpc::ParameterDescriptor`: it keeps its `has_minimum` + `minimum`,
+  `has_maximum` + `maximum` and `has_step` + `step` pairs. They predate 0.11 (0.9.0, when XCDR1 could not round-trip
+  an `@optional` member), and no 0.11 decision asks for the change, so 0.11 leaves the parameter protocol's
+  descriptor as it is. A false flag means the value is meaningless and must be ignored.
 - **New members from 0.11.x on** are `@optional`, unless 0, `""` or empty is a true reading of them (E8).
 - **Payload last.** In messages that zero-copy encoders write (`VideoStreamMessage`, point clouds, meshes), the
   payload is the last member, so its offset follows from the members before it.
+- **Stream messages start with `tcn_types::msg::StreamHeader header`** (0.11, #38 A1), never `std_msgs/Header`. The
+  ten stream messages are `VideoStreamMessage`, `Pose6DMessage`, `TargetTrackingMessage`, `EyeTrackingMessage`,
+  `HandTrackingMessage`, `ImuMessage`, `PersonTrackingMessage`, `HumanPoseMessage`, `HumanShapeMessage`
+  (`tcnart_msgs`) and `MeshBitstreamMessage` (`pcpd_msgs`); a new stream message joins them.
+  `TcnartPresenceMessage` is not a stream message and keeps `std_msgs/Header`. `tools/idl/tests/test_stream_header.py`
+  checks the list.
+- **A stream kind's descriptor part is a `*StreamInfo` case** of the `StreamInfo` union in
+  `tcnart_msgs/msg/StreamDescriptor.idl` (`VideoStreamInfo`, `TrackerStreamInfo`, `PersonStreamInfo`, …), switched on
+  `StreamKind`. A new kind appends a `StreamKind` enumerator and a case; a new field of a kind is a trailing
+  `@optional` member of its `*StreamInfo`. `StreamDescriptorMessage.properties` holds vendor extensions only, never
+  something a typed field can say.
+- **The joint-set table is the only source.** Joints, bones, parents and rest poses live in
+  `tcnart_msgs/msg/joint_sets.yaml`; `JointSet.idl`, `JointSets.md` and the C++, C# and JSON arrays are generated from
+  it (`python3 -I tools/idl_cli.py joint-sets --table src/dds/tcn/tcnart_msgs/msg/joint_sets.yaml`). Never edit a
+  generated file or copy a row into an IDL comment; `joint-sets --check` and the drift test in
+  `tools/idl/tests/test_joint_sets.py` (ctest `idl_tools`) fail on drift.
 - **Every top-level message documents its key or topic and its encoding** in a comment above it.
 - **ROS 2 types are never edited by hand.** `src/dds/ros2/` is generated from ROS 2 Jazzy by
   `python3 -I tools/ros2_cli.py refresh` (see [src/dds/ros2/UPSTREAM.md](../src/dds/ros2/UPSTREAM.md)). The generated

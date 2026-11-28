@@ -1,66 +1,136 @@
+// The stream descriptor (0.11, #35 S1, #38 A2): what a stream is, announced latched beside it. A common header
+// (topic, revision, frame, clock, rate) and one typed part per stream kind (StreamInfo). It replaces the 0.10 flat
+// struct, its BufferInfo and the property bag that carried H.26x parameter sets, target names, person and mesh
+// settings.
+
 #ifndef TCNART_MSGS_MSG_STREAMDESCRIPTOR_IDL
 #define TCNART_MSGS_MSG_STREAMDESCRIPTOR_IDL
 
-#include "std_msgs/msg/Header.idl"
+#include "tcn_types/msg/Camera.idl"
+#include "tcn_types/msg/Clock.idl"
+#include "tcn_types/msg/Frames.idl"
 #include "tcn_types/msg/Geometry.idl"
 #include "tcn_types/msg/Tracking.idl"
 #include "tcnart_msgs/msg/DataflowBufferInfo.idl"
+#include "tcnart_msgs/msg/HumanPose.idl"
 #include "tcnart_msgs/msg/MediaTypes.idl"
 
 module tcnart_msgs {
   module msg {
 
+    // A video stream (VideoStreamMessage): colour, depth, IR or mask, told apart by `semantics`.
+    // `width`, `height`: pixels. `step`: bytes per row of a decoded frame.
+    // `codec` selects the compression; `h26x_profile` is the H.26x profile only (NONE for other codecs).
+    // `bitrate`: bit/s, a lossy encoder's target. Absent: not applicable (lossless or uncompressed) or not stated.
+    // `depth_units_per_meter`: present for DEPTH with an integer pixel format (e.g. 1000 for L16 in mm); absent for
+    // DEPTH_F32 (metres) and for every other semantics.
+    // `intrinsics`: the nominal intrinsics (#37 T8). A frame's VideoStreamMessage.intrinsics overrides them for that
+    // frame; absent there means these. Absent here: the stream states none.
+    // `codec_data`: the codec's out-of-band configuration, e.g. the Annex-B parameter sets (VPS/SPS/PPS) of an
+    // H.26x stream. Empty if none or not known yet; filling it later is a new revision.
+    @appendable struct VideoStreamInfo {
+      uint32 width;
+      uint32 height;
+      uint32 step;
+      VideoPixelFormat pixel_format;
+      PixelSemantics semantics;
+      VideoCodec codec;
+      VideoH26xProfile h26x_profile;
+      @optional uint32 bitrate;
+      @optional float depth_units_per_meter;
+      @optional tcn_types::msg::CameraIntrinsics intrinsics;
+      sequence<uint8> codec_data;
+    };
+
+    // A pose tracker (TargetTrackingMessage, Pose6DMessage).
+    // `marker_type`: what it tracks.
+    // `marker_system`: the marker system, `family[:variant]` ("art", "aruco:DICT_4X4_50"), never with an `@domain`.
+    // For a template marker tracker (a node-level SQE claim), the engine splits it at the first ':' into
+    // SISTargetAlias family and variant ("" without ':'): a marker id N registered under (family, variant, "N")
+    // becomes the registered target's Global node; otherwise, and when `marker_system` is empty, the engine names
+    // the node itself (SRNode.materialization says where it came from; the name is opaque).
+    // `marker_domain` (#35 N6): the domain the marker ids are unique in, copied into
+    // SRMaterialization.marker_domain; "" means engine-wide. In 0.10 it was appended to `marker_system` as
+    // `{system}@{domain}` (B97); from 0.11 it travels only here, and a `marker_system` containing '@' is malformed.
+    // `targets` (#37 T7): the targets the stream reports, with explicit ids: `id` is Target.target_id in the stream's
+    // messages. It replaces the 0.10 `target/<name>` = id properties. May be empty (a template marker tracker
+    // reports ids it discovers).
+    // `nominal_covariance`: the tracker's nominal accuracy, the default fusion weight for a target whose
+    // Target.pose_covariance is absent. Absent: not stated.
+    @appendable struct TrackerStreamInfo {
+      tcn_types::msg::MarkerType marker_type;
+      string marker_system;
+      string marker_domain;
+      sequence<tcn_types::msg::SISTargetInfo> targets;
+      @optional tcn_types::msg::SRCovariance6 nominal_covariance;
+    };
+
+    // A mesh stream (#38 A2, with #37 T12). The capacities size a receiver's preallocated buffers:
+    // `vertices_capacity`, `faces_capacity`: the most vertices and faces one message carries; absent: unbounded
+    // (the receiver grows its buffers as messages arrive).
+    // `camera_id_count`: the number of camera ids per vertex.
+    @appendable struct MeshStreamInfo {
+      MeshEncoding encoding;
+      @optional uint64 vertices_capacity;
+      @optional uint64 faces_capacity;
+      uint32 camera_id_count;
+    };
+
+    // Empty in 0.11.0; their typed fields come as trailing @optional members in 0.11.x. Until then their settings
+    // stay in the descriptor's properties (e.g. `eye/*` until XRViewInfo with CameraIntrinsics' FOV_ANGLES case).
+    @appendable struct SurfelStreamInfo {
+    };
+
+    @appendable struct EyeStreamInfo {
+    };
+
+    @appendable struct HandStreamInfo {
+    };
+
+    @appendable struct ImuStreamInfo {
+    };
+
+    // The typed part of a descriptor, one case per stream kind (#35 S1, #38 A2). A reader that meets a kind it does
+    // not know (a 0.11.x case) skips the union by its DHEADER and reads the members after it (E6).
+    @appendable union StreamInfo switch (StreamKind) {
+      case STREAM_KIND_VIDEO: VideoStreamInfo video;
+      case STREAM_KIND_TRACKER: TrackerStreamInfo tracker;
+      case STREAM_KIND_PERSONS: PersonStreamInfo persons;
+      case STREAM_KIND_MESH: MeshStreamInfo mesh;
+      case STREAM_KIND_SURFELS: SurfelStreamInfo surfels;
+      case STREAM_KIND_EYE: EyeStreamInfo eye;
+      case STREAM_KIND_HAND: HandStreamInfo hand;
+      case STREAM_KIND_IMU: ImuStreamInfo imu;
+    };
+
+    // `stream_topic`: the data topic this describes. `stream_topic_schema`: its type name
+    // (e.g. "tcnart_msgs::msg::VideoStreamMessage").
+    // `revision` (#38 A7): a changed revision means changed content, and a reader (the SQE engine) re-reads the
+    // descriptor; an unchanged revision means unchanged content. Absent: unversioned, the reader compares the
+    // content.
+    // `frame`: the frame the stream's data is expressed in (the messages' header.frame).
+    // `clock` (#37 T10, C-D1): the clock the stream's stamps are taken on. It is authoritative: a message whose
+    // StreamHeader.clock is absent is in this clock, never in the deployment clock by default. `id` "" is the
+    // deployment clock; two streams are comparable exactly when their ids are equal. The SQE refuses a relation
+    // whose live inputs come from two domains (REJECTED + CLOCK_DOMAIN_MISMATCH, or PENDING for a running stream)
+    // rather than compose stamps that cannot be compared.
+    // `frame_rate`: Hz; 0 means irregular (no nominal rate).
+    // `sensor_latency_ns`: ns between the measurement and the messages' StreamHeader.capture_time_ns; absent:
+    // unknown (0 is a stated zero latency). A consumer interpolating across sensors subtracts it before use.
+    // `calib_topic`: where the sensor's calibration is published; "" if none.
+    // `info`: the typed part for the stream's kind.
+    // `properties`: vendor extensions only; nothing the typed fields can say.
     @appendable struct StreamDescriptorMessage {
-
-      std_msgs::msg::Header header;
-
       string stream_topic;
       string stream_topic_schema;
-
+      @optional uint32 revision;
+      tcn_types::msg::SRFrameRef frame;
+      tcn_types::msg::ClockDomain clock;
+      double frame_rate;
+      @optional int64 sensor_latency_ns;
       string calib_topic;
-
-      SensorType sensor_type;
-
-      uint32 frame_rate;
-
-      BufferInfo buffer_info;
-
-      // used for pose trackers
-      tcn_types::msg::MarkerType marker_type;
-
-      // used for image sensors
-      uint32 image_height;
-      uint32 image_width;
-      uint32 image_step;
-      VideoPixelFormat image_format;
-      VideoImageCompression image_compression;
-
-      // used for h26x compression
-      VideoH26xProfile h26x_profile;
-      uint32 h26x_bitrate;
-
-      // nanoseconds between the measurement and the header stamp; 0 if unknown.
-      // A consumer interpolating across sensors subtracts this before use.
-      int64 sensor_latency_ns;
-
-      // Which clock the header stamps were taken on. Empty means the default
-      // synchronized domain. Read by the SQE since 0.9.0 (engine B77): a
-      // relation whose live inputs come from two different domains is
-      // refused (REJECTED + CLOCK_DOMAIN_MISMATCH, or PENDING +
-      // CLOCK_DOMAIN_MISMATCH for a running stream) rather than composed from
-      // stamps that cannot be compared. Any non-empty string names a domain;
-      // two streams are comparable exactly when the strings are equal.
-      string clock_domain;
-
-      // For a template marker tracker (a node-level SQE claim): the target
-      // registry alias system its marker ids live in, e.g. "art",
-      // "aruco:DICT_4X4_50" (0.9.0, engine B78). A marker id N registered
-      // under (marker_system, "N") becomes the registered target's Global
-      // node; otherwise, and when empty, the engine names the node
-      // itself (SRNode.materialization says where it came from; the name is
-      // opaque).
-      string marker_system;
-
+      StreamInfo info;
+      sequence<BufferInfoProperty> properties;
     };
 
   };

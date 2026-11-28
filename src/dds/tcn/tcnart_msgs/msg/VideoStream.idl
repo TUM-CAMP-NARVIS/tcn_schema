@@ -1,23 +1,22 @@
 #ifndef TCNART_MSGS_MSG_VIDEOSTREAM_IDL
 #define TCNART_MSGS_MSG_VIDEOSTREAM_IDL
 
-#include "std_msgs/msg/Header.idl"
+#include "tcn_types/msg/Camera.idl"
 #include "tcn_types/msg/Geometry.idl"
+#include "tcn_types/msg/Stream.idl"
 
 module tcnart_msgs {
   module msg {
 
     @appendable struct VideoStreamMessage {
 
-      std_msgs::msg::Header header;
+      tcn_types::msg::StreamHeader header;
 
       tcn_types::msg::RigidTransform pose;
 
-      float camera_focal_length[2];
-      float camera_principal_point[2];
-      
-      float camera_radial_distortion[3];
-      float camera_tangential_distortion[2];
+      // This frame's intrinsics (#37 T8). Absent: the stream descriptor's
+      // nominal intrinsics -- never zeros.
+      @optional tcn_types::msg::CameraIntrinsics intrinsics;
 
       uint64 image_bytes;
       sequence<uint8> image;

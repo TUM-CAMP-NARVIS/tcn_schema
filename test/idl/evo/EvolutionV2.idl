@@ -17,6 +17,23 @@ module evo_v2 {
       sequence<Thing> things;
       int32 tail;
     };
+
+    // V2 of evo_v1::msg::Choice: KIND_B and its case appended (0.11 plan 6). A V1 reader skips the unknown case.
+    @appendable enum Kind {
+      KIND_UNKNOWN,
+      KIND_A,
+      KIND_B
+    };
+
+    @appendable union Choice switch (Kind) {
+      case KIND_A: int32 a;
+      case KIND_B: string b;
+    };
+
+    @appendable struct Boxed {
+      Choice choice;
+      int32 tail;
+    };
   };
 };
 

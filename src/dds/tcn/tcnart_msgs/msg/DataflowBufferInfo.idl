@@ -16,31 +16,13 @@ module tcnart_msgs {
 
     @appendable struct BufferInfoProperty {
         @verbatim (language="comment", text=
-                "BufferInfoProperty properties for BufferInfo")
+                "BufferInfoProperty: a vendor extension property of a stream descriptor (StreamDescriptorMessage.properties)")
 
         string name;
 
         int32 value;
 
         sequence<BufferInfoPropertyUserData> user_data;
-    };
-
-    @verbatim (language="comment", text=
-      "BufferInfo struct for memory preallocation.")
-    @appendable struct BufferInfo {
-      @verbatim (language="comment", text=
-        "Provides information about buffer allocation.")
-
-      uint64 semantic_type;
-      uint64 frame_size;
-
-      uint32 width;
-      uint32 height;
-      uint32 bits_per_element;
-      uint32 stride;
-
-      sequence<BufferInfoProperty> properties;
-
     };
 
   };

@@ -1,8 +1,8 @@
 #ifndef TCNART_MSGS_MSG_EYETRACKING_IDL
 #define TCNART_MSGS_MSG_EYETRACKING_IDL
 
-#include "std_msgs/msg/Header.idl"
 #include "tcn_types/msg/Geometry.idl"
+#include "tcn_types/msg/Stream.idl"
 
 module tcnart_msgs {
   module msg {
@@ -41,10 +41,10 @@ module tcnart_msgs {
     const uint32 EYE_VALID_SCENE_POINT = 4096;         // scene_point (0.10.4)
 
     // One eye-tracker sample. Rays: origin in metres, direction a unit vector, both in gaze_space (absent or LOCAL:
-    // the header's frame_id). viewpoint: the head pose at the sample. Openness, squeeze, wide in [0,1].
+    // header.frame). viewpoint: the head pose at the sample. Openness, squeeze, wide in [0,1].
     @appendable struct EyeTrackingMessage {
 
-      std_msgs::msg::Header header;
+      tcn_types::msg::StreamHeader header;
       
       tcn_types::msg::RigidTransform viewpoint;
 
@@ -67,7 +67,7 @@ module tcnart_msgs {
       float right_squeeze;
       float left_wide;              // [0,1]
       float right_wide;
-      // The space the rays are in. Absent means LOCAL (the header's frame_id); a producer that only ever has the
+      // The space the rays are in. Absent means LOCAL (header.frame); a producer that only ever has the
       // local space leaves it absent (0.11, decisions §4).
       @optional XRGazeSpaceType gaze_space;
 
