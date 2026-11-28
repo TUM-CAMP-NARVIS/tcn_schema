@@ -187,8 +187,11 @@ inline const char* describe(Error e) noexcept
         case Error::EmptyTriggerTopic:       return "on-stream trigger names no topic";
         case Error::PresenceUnavailable:     return "the liveliness token could not be declared";
         case Error::SchemaVersionMismatch:   return "encoding declares another tcn_schema version";
-        case Error::MissingScheme:           return "frame reference has no scheme";
-        case Error::UnknownScheme:           return "frame reference scheme is not local, global or domain";
+        case Error::MissingScheme:           return "frame reference has no scheme; use local:<fragment>/<name>, "
+                                                    "global:<name> or domain:<domain>/<name>, optionally + [instances]";
+        case Error::UnknownScheme:           return "frame reference scheme is not local, global or domain; use "
+                                                    "local:<fragment>/<name>, global:<name> or domain:<domain>/<name>, "
+                                                    "optionally + [instances]";
         case Error::MissingOwner:            return "local or domain frame reference has no owner";
         case Error::UnexpectedOwner:         return "global frame reference has an owner";
         case Error::MalformedSelector:       return "frame selector is not a single trailing [instances]";

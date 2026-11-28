@@ -40,10 +40,11 @@
 #   on the wire; it has no text form.
 #
 # THE FILE
-#   UTF-8. One record per line, fields separated by exactly one TAB (0x09),
-#   no quoting, no escaping, no trimming: a field is every byte between two
-#   TABs. No field contains a TAB or a newline. Lines that are empty or begin
-#   with '#' are comments.
+#   UTF-8. One record per line, ending in LF; one CR directly before the LF
+#   is stripped (a CRLF checkout reads the same), and nothing else is. Fields
+#   are separated by exactly one TAB (0x09), no quoting, no escaping, no
+#   trimming: a field is every byte between two TABs. No field contains a
+#   TAB or a newline. Lines that are empty or begin with '#' are comments.
 #
 #   ok<TAB>text<TAB>scope<TAB>owner<TAB>name<TAB>selector
 #       text parses; scope is local|global|domain, owner is "" for global,

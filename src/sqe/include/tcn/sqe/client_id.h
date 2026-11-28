@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: internal
 //
-// ClientId — a validated Zenoh key prefix, and the fifteen keys built from it.
+// ClientId — a validated Zenoh key prefix, and the fourteen keys built from it.
 //
 // See docs/design/2026-08-31-sqe-contract-library-design.md §4.2.
 #ifndef TCN_SQE_CLIENT_ID_H
@@ -17,7 +17,7 @@
 namespace tcn {
 namespace sqe {
 
-/// The fifteen key suffixes. A client's key is `{client_id}{SUFFIX}`; every
+/// The fourteen key suffixes. A client's key is `{client_id}{SUFFIX}`; every
 /// suffix begins with `/`, which is why a client id must not end with one.
 ///
 /// Since B73 every key here that changes the graph -- join, node
@@ -100,9 +100,9 @@ public:
 
     const std::string& str() const noexcept { return id_; }
 
-    // -- the fifteen keys ---------------------------------------------------
+    // -- the fourteen keys ---------------------------------------------------
     //
-    // Fifteen named accessors, and no `key(std::string_view suffix)` overload.
+    // Fourteen named accessors, and no `key(std::string_view suffix)` overload.
     // That is the point: a free-form suffix parameter re-opens exactly the
     // failure a rename causes, where the publisher writes to a key nothing is
     // subscribed to and is told nothing by anything.

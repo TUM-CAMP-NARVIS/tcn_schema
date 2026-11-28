@@ -373,3 +373,18 @@ TCN_SQE_TEST(every_error_has_a_distinct_code)
         seen.push_back(c);
     }
 }
+
+// N2a: a text with no scheme, or an unknown one, is refused with a message
+// that says which forms exist.
+TCN_SQE_TEST(a_scheme_error_names_the_forms_that_exist)
+{
+    const Error errors[] = {Error::MissingScheme, Error::UnknownScheme};
+    for (const Error e : errors)
+    {
+        const std::string d = describe(e);
+        CHECK_MSG(d.find("local:<fragment>/<name>") != std::string::npos, d.c_str());
+        CHECK_MSG(d.find("global:<name>") != std::string::npos, d.c_str());
+        CHECK_MSG(d.find("domain:<domain>/<name>") != std::string::npos, d.c_str());
+        CHECK_MSG(d.find("[instances]") != std::string::npos, d.c_str());
+    }
+}
