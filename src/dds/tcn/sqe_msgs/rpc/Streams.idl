@@ -272,6 +272,15 @@ module sqe_msgs {
     // sequence off these republications and is done when ACTIVE arrives. An
     // empty `blocked_by` on any other PENDING is meaningful: there is nothing
     // for a calibration routine to do.
+    //
+    // **On a reply whose `header.status` is not OK** (a start, stop, sample or
+    // explain that was refused or not carried out), `state` is UNKNOWN,
+    // `park_reason` is absent and `blocked_by` is empty: the request was not
+    // carried out, so there is no relation state to report. For a route
+    // refusal (REJECTED + NO_PATH or CLOCK_DOMAIN_MISMATCH) `detail` says why
+    // the frames do not connect; otherwise it is empty and `header.detail`
+    // carries the reason. A status notification always has `header.status`
+    // OK and a real state.
     @appendable struct SISRelationStatus {
         SISRelationState state;
         @optional SISParkReason park_reason;   // present exactly when `state` is PENDING
@@ -391,9 +400,6 @@ module sqe_msgs {
     };
 
     // --- replies and notifications ------------------------------------------
-    //
-    // `_sequence` below is an IDL escaped identifier (IDL 4.2 7.2.3): the
-    // member is named `sequence`, which is an IDL keyword when written bare.
 
     // The topics of one running stream (#35 H1, H2). Read every topic from
     // here; never compose one. `handle` is opaque: it is what a stop names,
@@ -408,12 +414,19 @@ module sqe_msgs {
 
     // The answer to SISRelationStreamStartRequest and SISRelationStreamStopRequest.
     //
+    // `relation.state`, by `header.status`:
+    //   start, OK       ACTIVE or PENDING (with `park_reason`)
+    //   stop, OK        INACTIVE
+    //   not OK          UNKNOWN, as SISRelationStatus states for every reply
+    //                   (REJECTED + NO_PATH, UNKNOWN_FRAME, CONFLICT +
+    //                   TERMS_CONFLICT, NOT_FOUND for a stop of an unknown
+    //                   handle, ...); `header.detail` is the same text the
+    //                   engine logs for it
+    //
     // `handle` is present exactly when `header.status` is OK and
     // `relation.state` is ACTIVE or PENDING -- the two states that mean "there
-    // is a stream on these topics for you". A stop answers OK + INACTIVE with
-    // no handle; a refusal (REJECTED + NO_PATH, UNKNOWN_FRAME, CONFLICT +
-    // TERMS_CONFLICT, ...) has none either, and `header.detail` is then the
-    // same text the engine logs for it.
+    // is a stream on these topics for you". A stop and every refusal carry no
+    // handle.
     //
     // `relation` is on the reply as well as on the status topic because a
     // client told PENDING should learn why in the same answer: the notification
@@ -445,11 +458,13 @@ module sqe_msgs {
     @appendable struct SISRelationStreamStatusNotification {
         SISReplyHeader header;
         string handle;
-        uint64 _sequence;               // per status topic: from 1, gapless per handle
+        uint64 sequence_number;         // per status topic: from 1, gapless per handle
         // Bumped whenever this stream's compiled route changes. Per stream,
         // monotonically increasing, starting at 0 on the first successful
-        // compile; resets with the engine (order by header.engine_epoch first).
-        uint64 route_epoch;
+        // compile; absent while the stream has never compiled (a PENDING
+        // stream that never had a route). Resets with the engine (order by
+        // header.engine_epoch first), as SISTranslationPlan.route_epoch.
+        @optional uint64 route_epoch;
         SISRelationStatus relation;
     };
 
@@ -458,7 +473,7 @@ module sqe_msgs {
     @appendable struct SISPlanNotification {
         SISReplyHeader header;
         string handle;
-        uint64 _sequence;               // per plan topic: from 1, gapless per handle
+        uint64 sequence_number;         // per plan topic: from 1, gapless per handle
         SISTranslationPlan plan;
     };
 
@@ -469,7 +484,7 @@ module sqe_msgs {
     @appendable struct SISRelationOutput {
         uint64 engine_epoch;            // the engine's alive key {epoch}
         uint64 route_epoch;             // as SISRelationStreamStatusNotification's
-        uint64 _sequence;               // per data topic: from 1, gapless per handle
+        uint64 sequence_number;         // per data topic: from 1, gapless per handle
         tcn_types::msg::ClockDomain clock_domain;   // the route's; the targets' stamps are in it
         // Covariance completeness of the route, once per message (#35 E6):
         // `covariance_hops` of `total_hops` hops stated a covariance. Below

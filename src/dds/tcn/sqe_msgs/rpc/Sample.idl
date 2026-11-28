@@ -75,14 +75,15 @@ module sqe_msgs {
     };
 
     // `header.status`:
-    //   OK            `outcome` says whether there is a value; `relation` is ACTIVE
+    //   OK            `outcome` says whether there is a value; `relation.state` is ACTIVE
     //   REJECTED      MALFORMED (undecodable, bias outside [0, 1], AT without a
-    //                 stamp), NO_PATH (no route now: `relation` still says why, as a
-    //                 start's reply would) or CLOCK_DOMAIN_MISMATCH
+    //                 stamp), NO_PATH (no route now) or CLOCK_DOMAIN_MISMATCH
     //   NOT_IN_SCOPE  a frame outside the client scope
     //   UNAVAILABLE   the rate limit or the sampler table (LIMIT_EXCEEDED), or the
     //                 graph read failed or timed out
-    // `outcome` is UNKNOWN unless the status is OK.
+    // On any status but OK, `relation` follows the rule in SISRelationStatus
+    // (state UNKNOWN; `relation.detail` says why for NO_PATH and
+    // CLOCK_DOMAIN_MISMATCH, as a start's reply would), and `outcome` is UNKNOWN.
     @appendable struct SISRelationSampleReply {
         SISReplyHeader header;
         SISRelationStatus relation;
