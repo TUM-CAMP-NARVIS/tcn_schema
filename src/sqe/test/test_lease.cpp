@@ -10,7 +10,7 @@
 // Nothing here does I/O. The start and stop are recording functions, which is
 // what makes the arithmetic testable with no daemon and no network — the
 // `FakeTransport` below is in-memory too, and exists only so that the
-// `{handle}/status` subscriber a `StartFn` now returns is a real `Declaration`
+// status subscriber a `StartFn` now returns is a real `Declaration`
 // over a real `Registration`, whose declare and undeclare can be observed.
 #include <cstdio>
 #include <functional>
@@ -33,7 +33,7 @@ namespace {
 
 FrameRef frame(const char* client, const char* node)
 {
-    return FrameRef::parse(client, node).value();
+    return FrameRef::local(client, node).value();
 }
 
 StreamTrigger hz(double v) { return StreamTrigger::fixed_rate(v).value(); }
@@ -61,7 +61,8 @@ public:
     /// for it. Anything not listed gets a handle derived from the target node.
     std::string handle_override;
 
-    /// When set, every start declares the `{handle}/status` subscriber through
+    /// When set, every start declares the status subscriber (on the reply's
+    /// `status_topic`, which the stub engine spells `{handle}/st`) through
     /// this transport and hands the `Declaration` to the table -- the shape a
     /// real integrator writes. Left null, every start returns a
     /// default-constructed `Declaration`, which is the documented way to say
@@ -75,13 +76,16 @@ public:
     /// the ordering rule ("the subscriber outlives the stop") is observable.
     std::function<void(const Handle&)> during_stop;
 
+    /// What every stop is answered with.
+    ReplyStatus stop_answer = ReplyStatus::Ok;
+
     RelationLeaseTable::StartFn start_fn()
     {
         return [this](const RelationStreamRequest& r) -> Result<StreamClaim> {
             starts.push_back(describe(r));
             if (start_error != Error::Ok) { return Result<StreamClaim>::fail(start_error); }
             const std::string topic = handle_override.empty()
-                                          ? ("sqe/eng/rel/" + r.observer().node() + "-" + r.target().node())
+                                          ? ("sqe/eng/rel/" + r.observer().name() + "-" + r.target().name())
                                           : handle_override;
             Handle h = handle_for(topic.c_str());
 
@@ -106,12 +110,17 @@ public:
 
     RelationLeaseTable::StopFn stop_fn()
     {
-        return [this](const Handle& h) -> Result<Status> {
-            stops.push_back(h.data_topic());
+        return [this](const Handle& h) -> Result<ReplyHeader> {
+            stops.push_back(h.str());
             if (during_stop) { during_stop(h); }
-            // A stop always answers Inactive, and that means only "you are no
-            // longer attached" -- never "the stream stopped".
-            return Result<Status>::ok(Status::Inactive);
+            // A stop answers OK (relation INACTIVE), and that means only "you
+            // are no longer attached" -- never "the stream stopped". NOT_FOUND
+            // means the engine no longer knows the handle (it restarted).
+            ReplyHeader answer;
+            answer.status = stop_answer;
+            answer.reason = Reason::Unknown;
+            answer.engine_epoch = 1;
+            return Result<ReplyHeader>::ok(answer);
         };
     }
 
@@ -120,7 +129,7 @@ private:
     {
         char buf[64];
         std::snprintf(buf, sizeof(buf), "@%g/%g", r.trigger().hz(), r.freshness_bias());
-        return r.observer().node() + "->" + r.target().node() + buf;
+        return r.observer().name() + "->" + r.target().name() + buf;
     }
 };
 
@@ -185,7 +194,7 @@ TCN_SQE_TEST(the_last_release_stops_the_stream_exactly_once)
         Result<RelationLease> c = table.acquire(req("head", "marker"));
         CHECK_OK(a); CHECK_OK(b); CHECK_OK(c);
         if (!a || !b || !c) { return; }
-        topic = a.value().handle().data_topic();
+        topic = a.value().handle().str();
         CHECK_INT_EQ(table.local_count(a.value().handle()), 3);
 
         a = Result<RelationLease>::fail(Error::Empty);
@@ -276,7 +285,7 @@ TCN_SQE_TEST(move_assignment_releases_the_claim_it_overwrites)
     first.value() = std::move(second.value());
 
     CHECK_INT_EQ(e.stops.size(), 1);
-    if (e.stops.size() == 1) { CHECK_STR_EQ(e.stops.front(), h1.data_topic()); }
+    if (e.stops.size() == 1) { CHECK_STR_EQ(e.stops.front(), h1.str()); }
     CHECK_INT_EQ(table.local_count(h1), 0);
     CHECK_INT_EQ(table.local_count(h2), 1);
     CHECK(first.value().handle() == h2);
@@ -463,7 +472,34 @@ TCN_SQE_TEST(a_lease_names_its_own_status_topic)
     CHECK_OK(a);
     if (!a) { return; }
     CHECK_STR_EQ(a.value().handle().data_topic(), "sqe/eng/rel/head-marker");
-    CHECK_STR_EQ(a.value().status_topic(), "sqe/eng/rel/head-marker/status");
+    // The reply's status topic, verbatim: the stub engine does not use
+    // `{data_topic}/status`, so a composed one would not match.
+    CHECK_STR_EQ(a.value().status_topic(), "sqe/eng/rel/head-marker/st");
+}
+
+// R4: a stop of a handle the engine does not know (it restarted, or another
+// path already stopped it) answers NOT_FOUND. The record is released all the
+// same -- there is nothing left to detach from -- and the next acquire starts
+// afresh instead of being served a dead handle from the table.
+TCN_SQE_TEST(a_stop_answering_not_found_releases_the_record)
+{
+    Engine e;
+    e.stop_answer = ReplyStatus::NotFound;
+    RelationLeaseTable table(e.start_fn(), e.stop_fn());
+    {
+        Result<RelationLease> a = table.acquire(req("head", "marker"));
+        CHECK_OK(a);
+        if (!a) { return; }
+        CHECK_INT_EQ(table.size(), 1);
+    }
+    CHECK_INT_EQ(e.stops.size(), 1);
+    CHECK_INT_EQ(table.size(), 0);
+    CHECK_INT_EQ(table.distinct_relations(), 0);
+
+    Result<RelationLease> again = table.acquire(req("head", "marker"));
+    CHECK_OK(again);
+    CHECK_INT_EQ(e.starts.size(), 2);
+    CHECK_INT_EQ(table.size(), 1);
 }
 
 
@@ -471,8 +507,8 @@ TCN_SQE_TEST(a_lease_names_its_own_status_topic)
 // The status subscriber's lifetime is the lease's
 // ---------------------------------------------------------------------------
 //
-// `{handle}/status` is the only channel on which a client learns that a stream
-// it holds went `NoPath` or that the engine stopped answering, and it is the
+// The status topic is the only channel on which a client learns that a stream
+// it holds lost its route or that the engine stopped answering, and it is the
 // only teardown event guaranteed to arrive at all. Before `StartFn` returned
 // one, an integrator who forgot to declare it got no error, ever. These tests
 // are what the type obligation buys.
@@ -493,17 +529,17 @@ TCN_SQE_TEST(the_status_subscriber_is_declared_by_the_start_and_released_when_th
         if (!a) { return; }
 
         CHECK_INT_EQ(t.live_count(DeclaredThing::Subscriber), 1);
-        const DeclaredThing* d = t.find_declared("sqe/eng/rel/head-marker/status");
+        const DeclaredThing* d = t.find_declared("sqe/eng/rel/head-marker/st");
         CHECK(d != nullptr);
         if (d) { CHECK(d->kind == DeclaredThing::Subscriber); }
 
-        CHECK(t.deliver("sqe/eng/rel/head-marker/status", "application/cdr;x", "nopath"));
+        CHECK(t.deliver("sqe/eng/rel/head-marker/st", "application/cdr;x", "nopath"));
         CHECK_INT_EQ(e.status_samples.size(), 1);
     }
 
     CHECK_MSG(t.live_count(DeclaredThing::Subscriber) == 0,
               "the retired lease left its status subscriber declared");
-    CHECK_MSG(!t.deliver("sqe/eng/rel/head-marker/status", "application/cdr;x", "late"),
+    CHECK_MSG(!t.deliver("sqe/eng/rel/head-marker/st", "application/cdr;x", "late"),
               "a sample reached a subscriber that should have been undeclared");
     CHECK_INT_EQ(e.status_samples.size(), 1);
     CHECK_INT_EQ(t.declared.size(), 1);   // undeclared, never re-declared
@@ -534,7 +570,7 @@ TCN_SQE_TEST(a_non_final_release_leaves_the_status_subscriber_held)
     CHECK_INT_EQ(e.stops.size(), 0);
     CHECK_MSG(t.live_count(DeclaredThing::Subscriber) == 1,
               "a non-final release undeclared the status subscriber");
-    CHECK(t.deliver("sqe/eng/rel/head-marker/status", "application/cdr;x", "still-listening"));
+    CHECK(t.deliver("sqe/eng/rel/head-marker/st", "application/cdr;x", "still-listening"));
     CHECK_INT_EQ(e.status_samples.size(), 1);
 
     b = Result<RelationLease>::fail(Error::Empty);
@@ -543,7 +579,7 @@ TCN_SQE_TEST(a_non_final_release_leaves_the_status_subscriber_held)
 }
 
 // The ordering, directly: the subscriber is still live *while* `StopFn` runs,
-// so the engine's final status publish -- "retired", or a `NoPath` in the same
+// so the engine's final status publish -- "retired", or a withdrawn route in the same
 // breath -- still reaches it. Undeclared first, that last message goes nowhere,
 // and it is the only teardown event a consumer is guaranteed to get.
 TCN_SQE_TEST(the_status_subscriber_is_still_held_while_the_stop_runs)
@@ -574,7 +610,7 @@ TCN_SQE_TEST(the_status_subscriber_is_still_held_while_the_stop_runs)
     CHECK_INT_EQ(e.status_samples.size(), 1);
     if (e.status_samples.size() == 1)
     {
-        CHECK_STR_EQ(e.status_samples.front(), "sqe/eng/rel/head-marker/status|retired");
+        CHECK_STR_EQ(e.status_samples.front(), "sqe/eng/rel/head-marker/st|retired");
     }
     CHECK_INT_EQ(t.live_count(DeclaredThing::Subscriber), 0);
 }
@@ -653,7 +689,7 @@ TCN_SQE_TEST(a_redundant_start_drops_the_subscriber_it_declared)
               "the redundant start left a second subscriber on one stream");
 
     // One subscriber, so one delivery -- not two.
-    CHECK(t.deliver("sqe/eng/rel/one-and-the-same/status", "application/cdr;x", "s"));
+    CHECK(t.deliver("sqe/eng/rel/one-and-the-same/st", "application/cdr;x", "s"));
     CHECK_INT_EQ(e.status_samples.size(), 1);
 
     a = Result<RelationLease>::fail(Error::Empty);
@@ -686,7 +722,7 @@ TCN_SQE_TEST(a_conflicting_redundant_start_drops_its_subscriber_and_leaves_the_h
     CHECK_INT_EQ(e.stops.size(), 0);
 
     // The surviving subscriber is the held lease's, not the refused one's.
-    CHECK(t.deliver("sqe/eng/rel/one-and-the-same/status", "application/cdr;x", "s"));
+    CHECK(t.deliver("sqe/eng/rel/one-and-the-same/st", "application/cdr;x", "s"));
     CHECK_INT_EQ(e.status_samples.size(), 1);
 }
 

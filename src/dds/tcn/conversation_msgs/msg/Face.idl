@@ -1,0 +1,28 @@
+#ifndef CONVERSATION_MSGS_MSG_FACE_IDL
+#define CONVERSATION_MSGS_MSG_FACE_IDL
+
+// Blend-shape face animation (#36 F3, D5): the layout is advertised once in discovery
+// (rpc::AppServerInfo.face_layouts), so animation chunks (FaceAnimationChunk, 0.11.x) need not repeat the names.
+
+module conversation_msgs {
+  module msg {
+
+  // ARKit 52 is the default rig; CUSTOM for any other set (tcnart confirms the rig with its avatar asset).
+  @appendable enum FaceRig {
+    FACE_RIG_UNKNOWN,
+    FACE_RIG_ARKIT_52,
+    FACE_RIG_CUSTOM
+  };
+
+  @appendable struct FaceAnimationLayout {
+    string layout_id;
+    FaceRig rig;
+    sequence<string> channel_names;  // always filled; for ARKIT_52, ARKit's 52 names in their canonical order
+    sequence<string> emotion_names;
+    float frame_rate_hz;
+  };
+
+  };
+};
+
+#endif

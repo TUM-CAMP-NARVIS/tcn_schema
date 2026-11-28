@@ -12,7 +12,11 @@ add_executable(${TCN_SQE_TEST_TARGET}
         test_validate.cpp
         test_client_id.cpp
         test_names.cpp
+        test_frame_ref.cpp
+        test_scope.cpp
+        test_capabilities.cpp
         test_status.cpp
+        test_reply.cpp
         test_topics.cpp
         test_wire_type.cpp
         test_handle.cpp
@@ -22,6 +26,11 @@ add_executable(${TCN_SQE_TEST_TARGET}
 
 target_link_libraries(${TCN_SQE_TEST_TARGET} PRIVATE tcn_schema_sqe_session)
 target_include_directories(${TCN_SQE_TEST_TARGET} PRIVATE ${CMAKE_CURRENT_SOURCE_DIR})
+# The shared N2a vector file (src/sqe/vectors/frame_ref.tsv), read from the
+# source tree: the test runs the very file that is installed and that the
+# engine's tests run, not a copy of it.
+target_compile_definitions(${TCN_SQE_TEST_TARGET} PRIVATE
+        TCN_SQE_VECTORS_DIR="${CMAKE_CURRENT_SOURCE_DIR}/../vectors")
 
 if(MSVC)
   target_compile_options(${TCN_SQE_TEST_TARGET} PRIVATE /W4 /permissive-)
@@ -62,7 +71,10 @@ set(TCN_SQE_MUST_NOT_COMPILE
         session_wrong_request_mode
         session_unregistered_request
         session_publish_join
-        session_wrong_reply_type)
+        session_wrong_reply_type
+        session_join_mutation_reply
+        frame_ref_from_string
+        client_scope_from_literal)
 
 foreach(case ${TCN_SQE_MUST_NOT_COMPILE})
   add_library(sqe_must_not_compile_${case} OBJECT EXCLUDE_FROM_ALL negative/${case}.cpp)

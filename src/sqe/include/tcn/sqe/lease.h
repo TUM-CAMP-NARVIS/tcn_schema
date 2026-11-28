@@ -18,9 +18,10 @@
 //
 // It does no I/O. The start and stop are functions the owner supplies, which is
 // what lets every rule below be tested with no daemon, no session, and no
-// network. The table does hold one thing the transport made — the
-// `{handle}/status` subscriber's `Declaration`, produced by the owner's start
-// function — but it only stores it, and never calls a `Transport` itself.
+// network. The table does hold one thing the transport made — the status
+// subscriber's `Declaration` (on the reply's `status_topic`), produced by the
+// owner's start function — but it only stores it, and never calls a
+// `Transport` itself.
 #ifndef TCN_SQE_LEASE_H
 #define TCN_SQE_LEASE_H
 
@@ -34,8 +35,8 @@
 #include "tcn/sqe/error.h"
 #include "tcn/sqe/handle.h"
 #include "tcn/sqe/relation.h"
+#include "tcn/sqe/reply.h"
 #include "tcn/sqe/result.h"
-#include "tcn/sqe/status.h"
 #include "tcn/sqe/transport.h"
 
 namespace tcn {
@@ -43,13 +44,14 @@ namespace sqe {
 
 class RelationLeaseTable;
 
-/// What a start produced: the handle the engine issued, and the
-/// `{handle}/status` subscriber declared for it.
+/// What a start produced: the handle the engine issued, and the status
+/// subscriber declared for it on `handle.status_topic()` -- the reply's topic,
+/// never a composed `{handle}/status`.
 ///
-/// **Why the subscriber is in the return type.** `{handle}/status` is the only
-/// channel on which a client learns that a stream it holds went `NoPath`, or
-/// that the engine stopped answering, and those two are not distinguishable any
-/// other way. It is also the only teardown event guaranteed to arrive: the
+/// **Why the subscriber is in the return type.** The status topic is the only
+/// channel on which a client learns that a stream it holds lost its route
+/// (`Pending` + `Withdrawn`), or that the engine stopped answering, and those
+/// two are not distinguishable any other way. It is also the only teardown event guaranteed to arrive: the
 /// pipeline stop, the descriptor withdrawal and the derived-edge retraction are
 /// each gated on the stream currently holding that thing, so a consumer waiting
 /// on a withdrawal instead simply hangs. Documenting "declare it in your start
@@ -104,8 +106,8 @@ public:
     /// The engine-issued handle. Precondition: `valid()`.
     const Handle& handle() const noexcept { return handle_; }
 
-    /// `{data_topic}/status` — where this stream's status notifications arrive.
-    std::string status_topic() const { return handle_.status_topic(); }
+    /// Where this stream's status notifications arrive: the reply's topic.
+    const std::string& status_topic() const noexcept { return handle_.status_topic(); }
 
 private:
     friend class RelationLeaseTable;
@@ -169,8 +171,7 @@ class RelationLeaseTable
 {
 public:
     /// Sends the start, and returns both of the things a stream begins with:
-    /// the handle the engine issued, and the `{handle}/status` subscriber
-    /// declared for it.
+    /// the handle the engine issued, and the status subscriber declared for it.
     ///
     /// It returns a `StreamClaim` and not the generated reply, so that this
     /// header includes no generated type and its tests need no fastddsgen
@@ -196,11 +197,23 @@ public:
     /// table holds that `Declaration` and drops it itself, *after* this
     /// function returns. See `retire`.
     ///
-    /// The engine answers `Inactive`, and that means only *"you are no longer
-    /// attached"*. It does **not** mean the stream stopped: another process may
-    /// still hold the same handle. This table therefore never reports
-    /// "stopped", and the status returned here is passed through unread.
-    using StopFn = std::function<Result<Status>(const Handle&)>;
+    /// It names the handle with `Handle::str()` and returns the reply's header
+    /// (`reply_header(reply)`), which this table passes through unread: the
+    /// record is released whatever the answer.
+    ///
+    ///   * `Ok` (relation `Inactive`) means only *"you are no longer
+    ///     attached"*. It does **not** mean the stream stopped: another process
+    ///     may still hold the same handle. This table therefore never reports
+    ///     "stopped".
+    ///   * `NotFound` (R4) means the engine does not know the handle -- it
+    ///     restarted, or the stream is already gone. Nothing is left to detach
+    ///     from, so it releases exactly like `Ok`.
+    ///   * Anything else (a timeout, `Unavailable`) leaves the engine-side
+    ///     attachment unknown. The record is released all the same: a retained
+    ///     record would hand the next acquire a handle nobody can vouch for,
+    ///     and the attachment ends with the client's leave or its liveliness
+    ///     token at the latest.
+    using StopFn = std::function<Result<ReplyHeader>(const Handle&)>;
 
     RelationLeaseTable(StartFn start, StopFn stop)
         : start_(std::move(start)), stop_(std::move(stop)) {}
@@ -236,14 +249,14 @@ public:
     /// The rules, each with the failure it prevents:
     ///
     ///   * a start goes out only on 0 -> 1 — a redundant start is answered
-    ///     `Rejected` if its terms differ, and a `Rejected` a caller cannot
-    ///     attribute to either request is worse than no request;
+    ///     `Conflict` + `TermsConflict` if its terms differ, and a refusal a
+    ///     caller cannot attribute to either request is worse than no request;
     ///   * the record is keyed by the **handle from the reply**, never by the
     ///     request, so two callers spelling the same relation differently
     ///     converge on one record instead of diverging into two;
     ///   * a second acquire of the same relation on different terms fails here,
     ///     locally, with `Error::ConflictingLease` — before the wire, where the
-    ///     same mistake becomes an uninterpretable `Rejected`.
+    ///     same mistake becomes an unattributable `Conflict`.
     Result<RelationLease> acquire(const RelationStreamRequest& req)
     {
         if (!start_) { return Result<RelationLease>::fail(Error::NoTransport); }
@@ -275,7 +288,7 @@ public:
         StreamClaim claim = std::move(started.value());
         const Handle& h = claim.handle;
 
-        const auto existing = records_.find(h.data_topic());
+        const auto existing = records_.find(h.str());
         if (existing != records_.end())
         {
             // Two spellings of one relation. The engine resolved them to the
@@ -285,7 +298,7 @@ public:
             // subscriber for that key, and a second one on one stream is the
             // duplicate the design exists to prevent. It is dropped — and so
             // undeclared — when `claim` goes out of scope below.
-            memo_.emplace(rel, h.data_topic());
+            memo_.emplace(rel, h.str());
             if (!existing->second.terms.same_terms_as(req))
             {
                 // The start already went out, and it changed nothing: this
@@ -299,9 +312,9 @@ public:
             return Result<RelationLease>::ok(RelationLease(this, existing->second.handle));
         }
 
-        const std::string topic = h.data_topic();
-        records_.emplace(topic, Record{claim.handle, req, 1, std::move(claim.status)});
-        memo_.emplace(rel, topic);
+        const std::string key = h.str();
+        records_.emplace(key, Record{claim.handle, req, 1, std::move(claim.status)});
+        memo_.emplace(rel, key);
         return Result<RelationLease>::ok(RelationLease(this, claim.handle));
     }
 
@@ -309,7 +322,7 @@ public:
     /// not hold. For diagnostics and for tests.
     std::size_t local_count(const Handle& h) const noexcept
     {
-        const auto it = records_.find(h.data_topic());
+        const auto it = records_.find(h.str());
         return it == records_.end() ? 0u : it->second.count;
     }
 
@@ -328,7 +341,7 @@ public:
     /// log line after an `Error::ConflictingLease`.
     const RelationStreamRequest* terms_of(const Handle& h) const noexcept
     {
-        const auto it = records_.find(h.data_topic());
+        const auto it = records_.find(h.str());
         return it == records_.end() ? nullptr : &it->second.terms;
     }
 
@@ -344,7 +357,7 @@ public:
     /// valid objects and their release afterwards is a no-op.
     bool force_detach_process_from(const Handle& h)
     {
-        const auto it = records_.find(h.data_topic());
+        const auto it = records_.find(h.str());
         if (it == records_.end()) { return false; }
         retire(it);
         return true;
@@ -359,8 +372,8 @@ private:
         RelationStreamRequest terms;
         std::size_t count;
 
-        /// The `{handle}/status` subscriber, owned for exactly as long as this
-        /// record exists. The table never touches the transport itself — this
+        /// The status subscriber, owned for exactly as long as this record
+        /// exists. The table never touches the transport itself — this
         /// `Declaration` was produced by the integrator's `StartFn` and is only
         /// stored here — which is what keeps the lease table's own logic free
         /// of any transport dependency.
@@ -394,10 +407,10 @@ private:
     /// It is reachable — `force_detach_process_from` retires a record while
     /// leases on it are still alive — and a second stop for a stream this
     /// process is no longer attached to would, at best, be answered `Inactive`
-    /// and, at worst, detach a claim some other component took in between.
+    /// or `NotFound` and, at worst, detach a claim some other component took in between.
     void release_one(const Handle& h)
     {
-        const auto it = records_.find(h.data_topic());
+        const auto it = records_.find(h.str());
         if (it == records_.end()) { return; }
         if (it->second.count > 1) { --it->second.count; return; }
         retire(it);
@@ -409,8 +422,8 @@ private:
     /// **That order is the point, and it is easy to get backwards.** The
     /// subscriber is moved out of the record and held in a local across the
     /// stop, so it is still live while `StopFn` runs and for the reply that
-    /// ends it. A final publish on `{handle}/status` — the engine reporting the
-    /// stream retired, or reporting `NoPath` in the same breath — therefore
+    /// ends it. A final publish on the status topic — the engine reporting the
+    /// stream retired, or its route withdrawn in the same breath — therefore
     /// still reaches it. Undeclare first and that last message goes nowhere,
     /// which is precisely the event a consumer waiting on a teardown is waiting
     /// for: the status publish is the only teardown event guaranteed to arrive,
@@ -427,7 +440,7 @@ private:
         records_.erase(it);
         for (auto m = memo_.begin(); m != memo_.end();)
         {
-            if (m->second == h.data_topic()) { m = memo_.erase(m); } else { ++m; }
+            if (m->second == h.str()) { m = memo_.erase(m); } else { ++m; }
         }
         if (stop_) { (void)stop_(h); }
         // `status` is undeclared here, by leaving scope: after the stop, never

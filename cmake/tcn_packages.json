@@ -325,16 +325,6 @@
    "deps": []
   },
   {
-   "name": "sqe_msgs",
-   "dir": "src/dds/tcn/sqe_msgs",
-   "family": "tcn",
-   "tier": "tcn",
-   "deps": [
-    "builtin_interfaces",
-    "tcn_types"
-   ]
-  },
-  {
    "name": "tcnart_msgs",
    "dir": "src/dds/tcn/tcnart_msgs",
    "family": "tcn",
@@ -345,14 +335,24 @@
    ]
   },
   {
+   "name": "sqe_msgs",
+   "dir": "src/dds/tcn/sqe_msgs",
+   "family": "tcn",
+   "tier": "tcn",
+   "deps": [
+    "builtin_interfaces",
+    "tcn_types",
+    "tcnart_msgs"
+   ]
+  },
+  {
    "name": "pcpd_msgs",
    "dir": "src/dds/tcn/pcpd_msgs",
    "family": "tcn",
    "tier": "tcn",
    "deps": [
-    "std_msgs",
-    "tcn_types",
-    "tcnart_msgs"
+    "builtin_interfaces",
+    "tcn_types"
    ]
   },
   {

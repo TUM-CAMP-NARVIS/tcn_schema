@@ -6,6 +6,7 @@ consumer has to do.
 | Release | Note | Wire |
 |---|---|---|
 | **0.11.0** (in preparation) | [MIGRATION-0.11.0.md](docs/migration/MIGRATION-0.11.0.md): the running log of the 0.11 work, per consumer. Decisions: [docs/proposals/0.11-decisions.md](docs/proposals/0.11-decisions.md). | **break** (lockstep) |
+| **0.11.0-rc1** | The release candidate; consumers regenerate and run their checklist ([MIGRATION-0.11.0.md](docs/migration/MIGRATION-0.11.0.md) §2). | **break** (lockstep) |
 | 0.10.7 | [MIGRATION-0.10.7.md](docs/migration/MIGRATION-0.10.7.md) | additive |
 | 0.10.6 | [MIGRATION-0.10.6.md](docs/migration/MIGRATION-0.10.6.md) | additive |
 | 0.10.5 | [MIGRATION-0.10.5.md](docs/migration/MIGRATION-0.10.5.md) | see note |

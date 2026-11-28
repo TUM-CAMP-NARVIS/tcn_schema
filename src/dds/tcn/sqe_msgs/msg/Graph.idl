@@ -3,6 +3,7 @@
 
 #include "builtin_interfaces/msg/Time.idl"
 #include "sqe_msgs/msg/Transforms.idl"
+#include "tcn_types/msg/Frames.idl"
 #include "tcn_types/msg/Geometry.idl"
 #include "tcn_types/msg/Ids.idl"
 #include "tcn_types/msg/Tracking.idl"
@@ -13,65 +14,59 @@ module sqe_msgs {
         // --- nodes -------------------------------------------------------------
 
         @appendable enum SRNodeType {
-          SRG_NODE_GENERIC,
-          SRG_NODE_SENSOR,
-          SRG_NODE_DISPLAY,
-          SRG_NODE_TRACKABLE,
-          SRG_NODE_CONTENT
+          SR_NODE_TYPE_UNKNOWN,
+          SR_NODE_TYPE_GENERIC,
+          SR_NODE_TYPE_SENSOR,
+          SR_NODE_TYPE_DISPLAY,
+          SR_NODE_TYPE_TRACKABLE,
+          SR_NODE_TYPE_CONTENT
         };
 
-        // Local nodes are private to their graph and are namespaced with the
-        // owner's prefix when two graphs are fused. Global nodes keep their bare
-        // name and join every graph of the engine that names them.
-        //
-        // Domain nodes (0.10.7, engine B94) join exactly the graphs that name
-        // them in the same domain: one physical thing several processes declare
-        // -- a rig's camera seen by the rig and an IR tracker -- without claiming
-        // its name engine-wide. A domain is a key-prefix-shaped string with the
-        // client-id alphabet and no "::" ("tcn/ksv1/rig01"). The node's `name`
-        // is its whole id, "@{domain}::{name}" (the contract library's
-        // domain_node_id), which is also how edges and a SISFrameRef (with an
-        // empty client) name it. Exact match: "tcn/ksv1/rig01" is not
-        // "tcn/ksv1". The engine refuses a domain outside its client scope.
-        //
-        // Ordinals are the wire encoding; append only. A reader that predates a
-        // value should treat an unknown scope as shared, not as local.
-        @appendable enum SRNodeScope {
-          SRG_SCOPE_LOCAL,
-          SRG_SCOPE_GLOBAL,
-          SRG_SCOPE_DOMAIN
-        };
+        // --- materialization ---------------------------------------------------
 
-        // --- templates ---------------------------------------------------------
-
-        // A blueprint for entities that are not known when the graph is announced.
+        // Why a node exists although nobody declared it: an observer saw a
+        // marker the graph had no node for, and the engine made one.
         //
         // A client usually cannot know which ArUco ids are in the room, or which
-        // instruments will be brought in. A template node stands for "an entity of
-        // this kind, not yet identified". It is never traversed itself. When an
-        // observation matches its rule, the template node and every edge attached
-        // to it are materialized into concrete copies carrying the observed id.
-        @appendable struct SRNodeTemplate {
+        // instruments will be brought in. Such an entity is declared as a
+        // device-side template (a frame ref whose selector is INSTANCES); when an
+        // observation matches, the engine materializes a concrete node, and the
+        // edges that attach to the template, carrying this record. Retiring the
+        // template retires everything it materialized.
+        @appendable struct SRMaterialization {
 
-            // What kind of observation materializes this template.
+            // The template this node came from.
+            tcn_types::msg::SRFrameRef template_device;
+
+            // What kind of observation materialized it, and in which marker
+            // system ("aruco_4x4_50", ...).
             tcn_types::msg::MarkerType marker_type;
+            string marker_system;
 
-            // Ids that match. Empty means any id an observer reports.
-            sequence<uint32> match_ids;
+            // The observed id that matched.
+            uint32 marker_id;
 
-            // Name given to a materialized node. "{id}" is substituted with the
-            // observed id, so "aruco_{id}" produces "aruco_7".
-            string instance_name_pattern;
+            // The domain the marker id is unique in. "" means engine-wide.
+            string marker_domain;
 
         };
 
+        // A frame of reference. Its identity is (scope, owner, name), where the
+        // owner is the declaring fragment for LOCAL, `domain` for DOMAIN and
+        // empty for GLOBAL: see tcn_types::msg::SRFrameRef. `name` is the bare
+        // identifier, never a composed string.
         @appendable struct SRNode {
 
-            // Identity within the graph. Edges reference nodes by this.
+            // Identity within its scope and owner. Edges reference nodes through
+            // an SRFrameRef built from this.
             string name;
 
+            tcn_types::msg::SRNodeScope scope;
+
+            // Non-empty exactly when scope is DOMAIN: the domain the node joins.
+            string domain;
+
             SRNodeType node_type;
-            SRNodeScope scope;
 
             // The convention this node's data is expressed in.
             tcn_types::msg::CoordinateSystem coord;
@@ -79,46 +74,24 @@ module sqe_msgs {
             // Inactive nodes are not traversed when resolving a path.
             boolean active;
 
-            // Stable identity across sessions; all-zero when unused.
-            tcn_types::msg::UUID uuid;
-
-            // Non-empty: this node's device announces its streams on this topic.
-            string stream_descriptor_topic;
-
             // Survives fragment retraction. Set by whatever created the node
             // outside a fragment's lifecycle -- a surveyed fiducial, a
             // calibrated rig. The engine never sets this; it only honours it,
             // so no tool needs the engine's permission to keep its own data.
             boolean pinned;
 
-            // 0 or 1 entries. Non-empty makes this node a blueprint rather than a
-            // frame of reference: it is never traversed, and observations matching
-            // its rule materialize concrete copies of it.
-            sequence<SRNodeTemplate> node_template;
+            // Present: this node's device announces its streams on this topic.
+            @optional string stream_descriptor_topic;
 
-            // Non-empty on a materialized node: the template node it came from.
-            // Removing a template retires everything it materialized.
-            string materialized_from;
+            // Stable identity across sessions; absent when unused.
+            @optional tcn_types::msg::UUID uuid;
 
-            // The observed id that matched. Meaningful only when
-            // materialized_from is non-empty.
-            uint32 materialized_id;
+            // Present on a materialized node: where it came from.
+            @optional SRMaterialization materialization;
 
-            // Opaque, application-defined.
-            string custom_data;
-
-            // --- B65: for people, not for the engine ------------------------
-            //
-            // `name` is an identifier and is constrained to be one. These two
-            // are free text, both optional, and nothing behaves differently
-            // when they are empty -- a reader falls back to `name`.
-            //
-            // They exist because the graph is read by people now: a
-            // calibration tool listing candidates, or any visualisation, has
-            // to show something better than tcn/loc/ch/room::art_body_3.
-            // Stuffing a label into `custom_data` would make it a convention
-            // rather than a field -- unsearchable, unvalidated, and different
-            // in every writer.
+            // For people, not for the engine: free text, both optional in
+            // effect, and nothing behaves differently when they are empty -- a
+            // reader falls back to `name`.
             string display_name;              // "Left wall marker 3"
             string description;               // how it was surveyed, by whom, when
 
@@ -126,93 +99,111 @@ module sqe_msgs {
 
         // --- edges -------------------------------------------------------------
 
-        // Two different unknowns are expressible here. A template node covers
-        // "which entity is this?"; SRG_EDGE_STATIC_UNCALIBRATED covers "both ends
-        // are known, but their relation has not been measured yet" -- which is the
-        // work queue an external calibration tool reads.
-        @appendable enum SREdgeTemporalType {
-          SRG_EDGE_STATIC,              // fixed by construction or declaration
-          SRG_EDGE_STATIC_UNCALIBRATED, // declared; value not yet measured, not traversable
-          SRG_EDGE_STATIC_CALIBRATED,   // fixed, and measured; carries provenance
-          SRG_EDGE_DYNAMIC,             // supplied live by a tracker
-          SRG_EDGE_DYNAMIC_INFERRED,    // derived from other edges, not measured directly
+        // When an edge's value is known. Two different unknowns are expressible:
+        // a template covers "which entity is this?"; STATIC_UNCALIBRATED covers
+        // "both ends are known, but their relation has not been measured yet"
+        // -- which is the work queue an external calibration tool reads.
+        @appendable enum SREdgeTiming {
+          SR_EDGE_TIMING_UNKNOWN,
+          SR_EDGE_TIMING_STATIC,              // fixed by construction or declaration
+          SR_EDGE_TIMING_STATIC_UNCALIBRATED, // declared; value not yet measured, not traversable
+          SR_EDGE_TIMING_STATIC_CALIBRATED,   // fixed, and measured; carries provenance
+          SR_EDGE_TIMING_DYNAMIC              // supplied live by a tracker
+        };
 
-          // A projection into an image plane: camera -> image_plane, where the
-          // image plane is its own node. Appended, since 0..4 are taken.
-          //
-          // Its own temporal value rather than a flag because it changes what a
-          // path *is*: a projection may only be a path's LAST hop, and after it
-          // the composed value is a 2D image point, not a transform. There is
-          // no inverse -- inverting one would invent the depth it discarded --
-          // so a path never walks it backwards either.
-          //
-          // A projection whose intrinsics change (a zoom lens) is this too. The
-          // camera *moving* is the ordinary pose edge before it, not this.
-          SRG_EDGE_PROJECTION
+        // What an edge relates, independent of when its value is known.
+        //
+        // A projection into an image plane (camera -> image_plane, the plane
+        // being its own node) is `PROJECTION` whatever its timing: a zoom lens
+        // is a dynamic projection. It changes what a path *is* -- a projection
+        // may only be a path's LAST hop, the composed value is then a 2D image
+        // point, and there is no inverse, so a path never walks it backwards.
+        @appendable enum SREdgeKind {
+          SR_EDGE_KIND_UNKNOWN,
+          SR_EDGE_KIND_POSE,
+          SR_EDGE_KIND_PROJECTION
+        };
+
+        // One edge, named by its endpoints and name. Used by `derived_from`.
+        @appendable struct SRRelationRef {
+            tcn_types::msg::SRFrameRef source;
+            tcn_types::msg::SRFrameRef target;
+            string name;
         };
 
         @appendable struct SRCalibration {
             string method;                    // free-form: "hand-eye", "aruco-board", ...
-            double residual;                  // RMS error in metres; negative if not reported
+
+            // RMS error in metres; absent if not reported.
+            @optional double residual;
+
             builtin_interfaces::msg::Time computed_at;
 
             // The full uncertainty of the calibrated edge, of which `residual`
-            // is one scalar summary: 0 or 21 doubles, upper triangle of the
-            // 6x6, row-major, (tx, ty, tz, rx, ry, rz), m^2/rad^2.
-            //
-            // Both are kept. `residual` is what a human reads first and is what
-            // this schema has always promised; the covariance is what a
-            // consumer propagating uncertainty through a chain actually needs.
-            // Appended, because CDR is positional.
-            sequence<double, 21> covariance;
+            // is one scalar summary. Both are kept: `residual` is what a human
+            // reads first, the covariance is what a consumer propagating
+            // uncertainty through a chain needs. Absent when not stated.
+            @optional tcn_types::msg::SRCovariance6 covariance;
 
-            // --- B65 -------------------------------------------------------
             // Free text about *this* calibration run: which landmarks, whose
             // survey, what the operator noticed. `method` names an algorithm
-            // and is matched on; this is never matched on and is for whoever
-            // reads the edge in six months.
+            // and is matched on; this is never matched on.
             string description;
         };
 
         @appendable struct SREdge {
 
-            // Identity within the graph. Parallel edges between the same pair of
-            // nodes are legal and are distinguished by this.
+            // Identity within the declaring fragment. Parallel edges between the
+            // same pair of nodes are legal and are distinguished by this.
             string name;
 
-            string source;                    // SRNode.name
-            string target;                    // SRNode.name
+            tcn_types::msg::SRFrameRef source;
+            tcn_types::msg::SRFrameRef target;
 
-            SREdgeTemporalType temporal_type;
+            SREdgeKind kind;
+            SREdgeTiming timing;
 
-            // The static value, or a dynamic edge's seed.
-            SRTransform transform;
+            // The static value, or a dynamic edge's seed. Absent when no value
+            // is known (for instance STATIC_UNCALIBRATED): absent is never
+            // read as the identity.
+            @optional SRTransform transform;
 
             // Traversal cost. Lower is preferred; a path minimises the sum.
             double weight;
 
             // Whether a path may walk this relation backwards by composing its
             // inverse. True for a rigid transform, which is what makes the graph
-            // effectively bidirectional: one declaration of source -> target is
-            // enough to resolve an optimal path in either direction. False for a
-            // relation that discards information -- a projection into an image
-            // plane has no inverse to compose, and pathfinding routes around it
-            // rather than through it backwards.
+            // effectively bidirectional. False for a relation that discards
+            // information -- a projection has no inverse to compose, and
+            // pathfinding routes around it rather than through it backwards.
             boolean is_invertible;
 
             // Dynamic edges: where this edge's live value comes from.
-            string stream_descriptor_topic;
+            @optional string stream_descriptor_topic;
 
-            // 0 or 1 entries; populated for SRG_EDGE_STATIC_CALIBRATED.
-            sequence<SRCalibration> calibration;
+            // Which entry of a multi-pose tracker payload feeds this edge; see
+            // the XR_POSE_* constants in tcnart_msgs/msg/PoseTracking.idl for
+            // the ones this project defines. Present means "this entry, 0
+            // included"; absent means "take any entry", which is what a
+            // single-entry tracker sends.
+            @optional uint32 entry_id;
 
-            // Non-empty on a materialized edge: the template node whose
-            // materialization created it.
-            string materialized_from;
+            // Present for STATIC_CALIBRATED.
+            @optional SRCalibration calibration;
 
-            // Non-empty on a *derived* edge -- one published by a relation
-            // stream rather than declared by a client. Names every edge the
-            // stream's path walked.
+            // Survives fragment retraction, exactly as SRNode::pinned does for
+            // a node. Without it a calibrated edge is destroyed when the tool
+            // that wrote it leaves, because a fragment's retraction deletes
+            // every relation wholly within its nodes. The engine never sets
+            // this; it only honours it.
+            boolean pinned;
+
+            // True on an edge created by materializing a template.
+            boolean materialized;
+
+            // True on a *derived* edge -- one published by a relation stream
+            // rather than declared by a client; `derived_from` then names every
+            // edge the stream's path walked.
             //
             // This is not bookkeeping. A derived edge is weighted below the
             // path it replaces so that pathfinding prefers it, which means
@@ -222,115 +213,28 @@ module sqe_msgs {
             // transitively depends on the edge being compiled, and this list is
             // what makes that computable -- including after a restart, or by a
             // second engine reading the same graph.
-            sequence<string> derived_from;
+            boolean derived;
+            sequence<SRRelationRef> derived_from;
 
-            // Which entry of a multi-pose tracker payload feeds this relation.
-            //
-            // A Pose6DMapMessage carries `item_id -> pose`, and a device that
-            // reports many things at once -- a headset's two controllers, a
-            // hand's joints -- sends them in one message. Without this the
-            // engine cannot tell which entry belongs to which relation: every
-            // entry is written into every claim on the topic, so N relations
-            // and N entries is N*N writes and each buffer keeps whichever
-            // arrived last. Silently.
-            //
-            // Optional by convention: a peer that names no entry leaves this
-            // 0 and `stream_item_bound` false, which is what a single-entry
-            // tracker sends and what every peer written before either field
-            // sends. Those keep today's behaviour exactly.
-            //
-            // This is NOT the last field. It once was; `display_name`,
-            // `description`, `pinned` and `stream_item_bound` were appended
-            // after it. Nothing here may be inserted above them.
-            //
-            // Read this WITH `stream_item_bound` below. On its own it cannot
-            // say whether an entry was named, because 0 is a real entry -- see
-            // that field's note (B72).
-            //
-            // The values are a contract between a publisher and the engine and
-            // belong to neither, so they are named: see the XR_POSE_* constants
-            // in PoseTracking.idl for the ones this project defines.
-            uint32 stream_item_id;
-
-            // --- B65 -------------------------------------------------------
-            // See SRNode's own note. `name` here is a relation's identity
-            // within its fragment; these are what an operator reads when the
-            // tool offers "absolute orientation between the room and the
-            // ceiling tracker".
+            // For people, not for the engine; see SRNode.
             string display_name;              // "Room to ceiling tracker"
             string description;               // free text: method, date, who
-
-            // --- B66 -------------------------------------------------------
-            // Survives fragment retraction, exactly as SRNode::pinned does for
-            // a node.
-            //
-            // Without this a relation is destroyed at the moment nobody wants
-            // it destroyed. A fragment's retraction deletes every relation
-            // whose two endpoints it links, once no other fragment still
-            // declares it -- so a tool that writes a calibrated edge and then
-            // leaves takes the calibration with it. Pinning the *endpoints*
-            // does not help and in fact guarantees the deletion: linking both
-            // nodes is precisely what brings the relation into the "wholly
-            // within this fragment's nodes" test that removes it.
-            //
-            // The case this exists for is external measurement. A surveyed
-            // landmark is two things -- a frame, and a position -- and only
-            // the frame could be made durable before this field. A survey
-            // pushed by a tool that then exits left behind pinned nodes with
-            // nothing saying where any of them were: a graph that looks like
-            // it holds landmarks and has lost every position. Same for a
-            // calibration, a hand-measured mount, a value from a CAD model.
-            //
-            // The engine never sets this; it only honours it, so no tool needs
-            // the engine's permission to keep its own data. That is SRNode's
-            // rule and it is repeated here deliberately -- the two flags mean
-            // the same thing and are read by the same sweep.
-            //
-            // Appended last, and false by convention: every peer written
-            // before this field sends false, which is exactly today's
-            // behaviour.
-            boolean pinned;
-
-            // --- B72 -------------------------------------------------------
-            // Whether `stream_item_id` above binds this relation to one entry.
-            //
-            // The id alone cannot say. 0 was doing double duty -- "entry 0"
-            // and "no entry named, take any" -- and those are different
-            // things. Entry ids here are marker ids, and 0 is the first id
-            // every ArUco dictionary hands out, so the one marker most likely
-            // to exist was the one that could not say it existed: the engine
-            // read `stream_item_id != 0`, found 0, and fed that relation every
-            // entry on its topic. On a single-marker stream nothing went
-            // wrong, which is why it survived.
-            //
-            // The engine now skips an entry only when this is true and the id
-            // differs. A relation naming a concrete entry MUST set this --
-            // entry 0 or not.
-            //
-            // Appended last, and false by convention: a peer written before
-            // this field sends a short message that defaults it to false,
-            // which is the old "unset" meaning, so a peer that never named an
-            // entry sees no change. The one combination whose meaning changed
-            // is a non-zero id with this left false: that used to mean "bound
-            // to that entry" and now means "unbound, take any entry". Nothing
-            // rejects it, so a peer that names entries must be rebuilt.
-            boolean stream_item_bound;
 
         };
 
         // --- graph -------------------------------------------------------------
 
+        // A fragment: what one client declares about its own part of the graph.
+        // The client's identifier is the key it is written under, not a field.
         @appendable struct SRGraph {
 
-            string name;                      // the owning client's identifier
-            string origin;                    // SRNode.name; the root of this graph
+            // The root of this graph: the name of one of `nodes`.
+            string origin;
 
             sequence<SRNode> nodes;
             sequence<SREdge> edges;
 
-            // --- B65 -------------------------------------------------------
-            // A fragment's own label. `name` is the client identifier and is
-            // routed on; this is what a person calls the thing.
+            // The fragment's own label, for people.
             string display_name;              // "Ceiling ART system"
             string description;
         };
@@ -339,70 +243,48 @@ module sqe_msgs {
 
         // Everything above is a *declaration*: what a client asserts about its
         // own fragment. The two types below are the other direction -- what a
-        // read of the engine's graph answers with -- and they exist because a
-        // declaration is not addressable outside the fragment that made it.
+        // read of the engine's graph answers with. A read is not confined to
+        // one fragment: a node's neighbours may sit in another client's
+        // fragment, so a view carries the declaring fragment alongside the
+        // declaration.
         //
-        // SRNode.name and SREdge.source/target are names *within one graph*.
-        // That is sufficient while a message describes one client's own
-        // fragment, which is all any of the types above ever do. A read is not
-        // so confined: a node's neighbours may sit in another client's
-        // fragment, and two clients may each declare a local node called
-        // "camera". A view therefore carries the owning fragment alongside the
-        // declaration, and the pair (client, name) is what identifies a frame
-        // across the fused graph.
+        // Endpoints are always SRFrameRefs, and a read always returns them
+        // qualified (a LOCAL ref never has an empty owner), so a reader needs no
+        // separate source/target client and never builds or splits a composed
+        // string.
         //
-        // The engine's own fusion key -- a bare name for a global node,
-        // "{client}::{name}" for a local one -- is deliberately NOT what is
-        // sent. It is an internal encoding, and a wire contract that obliged a
-        // client to build or split such a string would break the moment the
-        // encoding changed. Two fields cannot be mis-parsed.
+        // The embedded SRNode / SREdge is the declaration as stored, so a
+        // client may resubmit it unchanged (the write is an idempotent upsert).
+        // Two things are still not round-trips, both properties of the store:
         //
-        // # What a view does and does not promise
-        //
-        // The embedded SRNode / SREdge is the declaration as stored, field for
-        // field: every one of them persists, so a client reads back what it
-        // wrote and may resubmit it unchanged (the write is an idempotent
-        // upsert). Two things are still not round-trips, and both are
-        // properties of the store rather than of this type:
-        //
-        //   * a relation carries one transform in one representation. Pushing
-        //     a translation over a pose replaces it, rotation included, and a
+        //   * an edge carries one transform in one representation. Pushing a
+        //     translation over a pose replaces it, rotation included, and a
         //     view reports what is stored, not what was last sent.
-        //   * a relation whose stored representation is ambiguous -- both a
-        //     6D and a 3D row, neither strictly newer -- reads back as
-        //     SRG_EDGE_STATIC_UNCALIBRATED with no transform, which is what
-        //     the engine itself sees. That is a truthful report of an
-        //     ambiguous row, not a report that the client declared it so.
+        //   * an edge whose stored representation is ambiguous -- both a 6D and
+        //     a 3D row, neither strictly newer -- reads back as
+        //     STATIC_UNCALIBRATED with no transform.
         //
-        // A view is never a template for a mutation the engine promises to
-        // reproduce; it is an observation, and `client` is what makes it one.
+        // A view is an observation, not a template for a mutation.
 
         @appendable struct SRNodeView {
 
-            // The fragment that declared this node. With `node.name`, the
-            // frame's identity across the fused graph.
-            string client;
+            // The fragment that declared this node.
+            string fragment;
 
-            // As stored. `name` is the declared name, not the fusion key.
+            // As stored.
             SRNode node;
 
         };
 
         @appendable struct SREdgeView {
 
-            // The fragment that declared this relation. Not necessarily the
-            // owner of either endpoint: a client may relate its own node to
-            // another fragment's global node.
-            string client;
+            // The fragment that declared this edge. Not necessarily the owner
+            // of either endpoint: a client may relate its own node to another
+            // fragment's global node.
+            string fragment;
 
-            // The fragments owning `edge.source` and `edge.target`. Each pairs
-            // with the corresponding name in `edge` to identify a frame, and
-            // either may differ from `client` and from the other.
-            string source_client;
-            string target_client;
-
-            // As stored. `derived_from` names *declared* edge names, so it
-            // means the same thing whichever read produced this view.
+            // As stored. `derived_from` names *declared* edges, so it means the
+            // same thing whichever read produced this view.
             SREdge edge;
 
         };

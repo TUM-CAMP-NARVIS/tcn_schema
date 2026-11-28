@@ -45,11 +45,12 @@ inline std::string engine_key(std::string_view engine_id, std::string_view tail)
 
 }  // namespace detail
 
-/// `{output_topic}/status` — the key a relation stream's
-/// `SISRelationStreamStatusNotification`s arrive on.
+/// `{output_topic}/status` — how the *engine* derives a stream's status topic
+/// today.
 ///
-/// This one derivation *is* blessed: the IDL states it, and the engine
-/// derives it the same way from the same value.
+/// **Engine-side only.** Since 0.11 (#35 H2) the start reply carries
+/// `status_topic`, and a client reads it from `Handle::status_topic()`; one
+/// that composes it here subscribes to a key the engine is free to move.
 inline std::string status_topic_for(std::string_view output_topic)
 {
     std::string out;
@@ -199,6 +200,31 @@ inline std::optional<std::uint64_t> parse_engine_alive_key(std::string_view key,
 inline std::string engine_targets_changed_topic(std::string_view engine_id)
 {
     return detail::engine_key(engine_id, kTargetsChangedSuffix);
+}
+
+// ---------------------------------------------------------------------------
+// The engine summary (#35 R5, D4)
+// ---------------------------------------------------------------------------
+
+/// The tail of the unscoped engine summary key.
+inline constexpr std::string_view kEngineInfoSuffix = "info";
+
+/// `sqe/{engine_id}/info` -- the unscoped engine summary: a
+/// `SISEngineInfoRequest` answered with `SISEngineSummaryReply`, whose
+/// `SISEngineCapabilities` says what the engine offers and which client ids it
+/// serves. Any client may ask before it joins; unlike `op/info` it is not
+/// behind the operator ACL.
+inline std::string engine_info_key(std::string_view engine_id)
+{
+    return detail::engine_key(engine_id, kEngineInfoSuffix);
+}
+
+/// `sqe/*/info` -- every engine's summary key. A client that queries it and
+/// finds no engine whose `client_scope` contains its id reports "no engine
+/// serves <id>" instead of timing out.
+inline std::string engine_info_pattern()
+{
+    return engine_info_key("*");
 }
 
 // ---------------------------------------------------------------------------

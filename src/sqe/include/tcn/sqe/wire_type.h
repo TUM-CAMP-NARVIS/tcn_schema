@@ -26,7 +26,18 @@
 // present. If a consumer includes the real headers, these declarations are
 // redundant and harmless; if a generated type ever changes its class-key or an
 // enum its underlying type, this fails to compile, loudly, which is the right
-// outcome.
+// outcome. fastddsgen emits every IDL enum as an unscoped `enum X : uint32_t`,
+// so that is how each one is declared here.
+
+namespace tcn_types {
+namespace msg {
+
+class SRFrameRef;
+
+enum SISTargetKind : std::uint32_t;
+
+}  // namespace msg
+}  // namespace tcn_types
 
 namespace tcnart_msgs {
 namespace msg {
@@ -59,10 +70,16 @@ class SISEdgeUpdateRequest;
 class SISEdgeRemoveRequest;
 class SISRelationStreamStartRequest;
 class SISRelationStreamStopRequest;
-class SISRelationStreamHandle;
+class SISStreamHandle;
 class SISBlockingRelation;
 class SISRelationStreamReply;
 class SISRelationStreamStatusNotification;
+class SISRelationOutput;
+class SISPlanNotification;
+class SISReplyHeader;
+class SISJoinReply;
+class SISEngineCapabilities;
+class SISEngineSummaryReply;
 class SISMutationReply;
 class SISGraphQueryRequest;
 class SISGraphQueryReply;
@@ -101,15 +118,11 @@ class SISRelationSampleRequest;
 class SISSampleInput;
 class SISRelationSampleReply;
 
-enum SISRelationStreamStatus : std::uint32_t;
+enum SISStatus : std::uint32_t;
 enum SISReoptimisePolicy : std::uint32_t;
-enum SISMutationStatus : std::uint32_t;
 enum SISGraphQueryKind : std::uint32_t;
-enum SISGraphQueryStatus : std::uint32_t;
 enum SRPatternExpansion : std::uint32_t;
-enum SISTargetKind : std::uint32_t;
 enum SISTargetQueryKind : std::uint32_t;
-enum SISTargetQueryStatus : std::uint32_t;
 enum SISTargetMutationKind : std::uint32_t;
 enum SISStoreHealth : std::uint32_t;
 enum SISGraphChangeKind : std::uint32_t;
@@ -117,7 +130,6 @@ enum SISOperatorMutationKind : std::uint32_t;
 enum SISEvaluationMode : std::uint32_t;
 enum SISTransactionLogAction : std::uint32_t;
 enum SISRelationSampleInstant : std::uint32_t;
-enum SISRelationSampleStatus : std::uint32_t;
 enum SISPlanOpKind : std::uint32_t;
 enum SISPlanInputSource : std::uint32_t;
 enum SISExplainKind : std::uint32_t;
@@ -154,7 +166,8 @@ inline constexpr char kEncodingSeparator = ';';
 /// SISMutationReply and one to StreamDescriptorMessage, under unchanged names.
 /// CDR decodes a short payload into a long struct, or a long one into a short
 /// struct, without an error on either side -- the name matched and the
-/// meaning did not.
+/// meaning did not. Mandatory since 0.11 (V1, §6): `check_declared_type`
+/// refuses an annotation without it.
 inline constexpr std::string_view kWireSchemaVersion = "0.11";
 
 /// The parameter that carries it. Matched exactly (after trimming): the
@@ -189,6 +202,12 @@ TCN_SQE_REGISTER_WIRE_TYPE(::tcnart_msgs::msg::TargetTrackingMessage,  "tcnart_m
 // tcnart_msgs/msg/StreamDescriptor.idl
 TCN_SQE_REGISTER_WIRE_TYPE(::tcnart_msgs::msg::StreamDescriptorMessage, "tcnart_msgs::msg::StreamDescriptorMessage");
 
+// tcn_types/msg/*.idl: the frame reference every request names frames with
+// (#35 N2a), and the target kind, moved here from sqe_msgs::rpc in 0.11. The
+// namespace is part of the wire name, so the move is a rename on the wire.
+TCN_SQE_REGISTER_WIRE_TYPE(::tcn_types::msg::SRFrameRef,    "tcn_types::msg::SRFrameRef");
+TCN_SQE_REGISTER_WIRE_TYPE(::tcn_types::msg::SISTargetKind, "tcn_types::msg::SISTargetKind");
+
 // sqe_msgs/msg/Graph.idl
 TCN_SQE_REGISTER_WIRE_TYPE(::sqe_msgs::msg::SRGraph, "sqe_msgs::msg::SRGraph");
 TCN_SQE_REGISTER_WIRE_TYPE(::sqe_msgs::msg::SRNode,  "sqe_msgs::msg::SRNode");
@@ -199,8 +218,23 @@ TCN_SQE_REGISTER_WIRE_TYPE(::sqe_msgs::msg::SREdge,  "sqe_msgs::msg::SREdge");
 TCN_SQE_REGISTER_WIRE_TYPE(::sqe_msgs::msg::SRNodeView, "sqe_msgs::msg::SRNodeView");
 TCN_SQE_REGISTER_WIRE_TYPE(::sqe_msgs::msg::SREdgeView, "sqe_msgs::msg::SREdgeView");
 
-// sqe_msgs/rpc/*.idl
+// sqe_msgs/rpc/Reply.idl (#35 R1-R3): the header every reply and notification
+// opens with, and its status. Nested, never published alone, and registered
+// for the reason SISBlockingRelation is: a tool that logs or forwards a header
+// passes it around by itself. Every reply opens with the same header, so the
+// annotation is the only thing that tells two replies apart.
+TCN_SQE_REGISTER_WIRE_TYPE(::sqe_msgs::rpc::SISReplyHeader, "sqe_msgs::rpc::SISReplyHeader");
+TCN_SQE_REGISTER_WIRE_TYPE(::sqe_msgs::rpc::SISStatus,      "sqe_msgs::rpc::SISStatus");
+
+// sqe_msgs/rpc/Session.idl. The join is answered with its own reply since 0.11
+// (#35 R5), and the unscoped `sqe/{engine}/info` (topics.h) with the engine
+// summary; both carry SISEngineCapabilities (capabilities.h).
 TCN_SQE_REGISTER_WIRE_TYPE(::sqe_msgs::rpc::SISJoinRequest,                "sqe_msgs::rpc::SISJoinRequest");
+TCN_SQE_REGISTER_WIRE_TYPE(::sqe_msgs::rpc::SISJoinReply,                  "sqe_msgs::rpc::SISJoinReply");
+TCN_SQE_REGISTER_WIRE_TYPE(::sqe_msgs::rpc::SISEngineCapabilities,         "sqe_msgs::rpc::SISEngineCapabilities");
+TCN_SQE_REGISTER_WIRE_TYPE(::sqe_msgs::rpc::SISEngineSummaryReply,         "sqe_msgs::rpc::SISEngineSummaryReply");
+
+// sqe_msgs/rpc/Mutations.idl and Streams.idl
 TCN_SQE_REGISTER_WIRE_TYPE(::sqe_msgs::rpc::SISLeaveRequest,               "sqe_msgs::rpc::SISLeaveRequest");
 TCN_SQE_REGISTER_WIRE_TYPE(::sqe_msgs::rpc::SISNodeUpdateRequest,          "sqe_msgs::rpc::SISNodeUpdateRequest");
 TCN_SQE_REGISTER_WIRE_TYPE(::sqe_msgs::rpc::SISNodeRemoveRequest,          "sqe_msgs::rpc::SISNodeRemoveRequest");
@@ -208,13 +242,14 @@ TCN_SQE_REGISTER_WIRE_TYPE(::sqe_msgs::rpc::SISEdgeUpdateRequest,          "sqe_
 TCN_SQE_REGISTER_WIRE_TYPE(::sqe_msgs::rpc::SISEdgeRemoveRequest,          "sqe_msgs::rpc::SISEdgeRemoveRequest");
 TCN_SQE_REGISTER_WIRE_TYPE(::sqe_msgs::rpc::SISRelationStreamStartRequest, "sqe_msgs::rpc::SISRelationStreamStartRequest");
 TCN_SQE_REGISTER_WIRE_TYPE(::sqe_msgs::rpc::SISRelationStreamStopRequest,  "sqe_msgs::rpc::SISRelationStreamStopRequest");
-TCN_SQE_REGISTER_WIRE_TYPE(::sqe_msgs::rpc::SISRelationStreamStatus,       "sqe_msgs::rpc::SISRelationStreamStatus");
-TCN_SQE_REGISTER_WIRE_TYPE(::sqe_msgs::rpc::SISRelationStreamHandle,       "sqe_msgs::rpc::SISRelationStreamHandle");
+// The four topics a start reply assigns (#35 H1, H2). Nested in the reply,
+// registered because a client hands it around on its own.
+TCN_SQE_REGISTER_WIRE_TYPE(::sqe_msgs::rpc::SISStreamHandle,               "sqe_msgs::rpc::SISStreamHandle");
 // The re-optimisation policy a start request carries (B51). Nested inside that
-// request rather than published alone, and registered for the same reason
-// SISRelationStreamStatus is: it is the one field of the request that is *not*
-// stream identity, a caller reasons about it on its own, and a name spelled by
-// hand is a name that can be spelled wrong.
+// request rather than published alone, and registered anyway: it is the one
+// term of the request that is *not* stream identity on the engine, a caller
+// reasons about it on its own, and a name spelled by hand is a name that can
+// be spelled wrong.
 TCN_SQE_REGISTER_WIRE_TYPE(::sqe_msgs::rpc::SISReoptimisePolicy,           "sqe_msgs::rpc::SISReoptimisePolicy");
 // The relation a pending stream is waiting on. Nested inside the reply and the
 // notification below rather than published alone, and registered anyway for the
@@ -225,19 +260,23 @@ TCN_SQE_REGISTER_WIRE_TYPE(::sqe_msgs::rpc::SISBlockingRelation,           "sqe_
 TCN_SQE_REGISTER_WIRE_TYPE(::sqe_msgs::rpc::SISRelationStreamReply,        "sqe_msgs::rpc::SISRelationStreamReply");
 TCN_SQE_REGISTER_WIRE_TYPE(::sqe_msgs::rpc::SISRelationStreamStatusNotification,
                            "sqe_msgs::rpc::SISRelationStreamStatusNotification");
-TCN_SQE_REGISTER_WIRE_TYPE(::sqe_msgs::rpc::SISMutationStatus,   "sqe_msgs::rpc::SISMutationStatus");
+// What a stream publishes on its `data_topic` since 0.11 (#35 H3): one per
+// evaluation, with no attachment. A subscriber still decoding the data topic
+// as TargetTrackingMessage is refused by this name rather than misreading it.
+TCN_SQE_REGISTER_WIRE_TYPE(::sqe_msgs::rpc::SISRelationOutput,   "sqe_msgs::rpc::SISRelationOutput");
+// What a LOCAL or BOTH stream publishes on its `plan_topic` (#35 R6).
+TCN_SQE_REGISTER_WIRE_TYPE(::sqe_msgs::rpc::SISPlanNotification, "sqe_msgs::rpc::SISPlanNotification");
 TCN_SQE_REGISTER_WIRE_TYPE(::sqe_msgs::rpc::SISMutationReply,    "sqe_msgs::rpc::SISMutationReply");
 TCN_SQE_REGISTER_WIRE_TYPE(::sqe_msgs::rpc::SISGraphQueryKind,   "sqe_msgs::rpc::SISGraphQueryKind");
-TCN_SQE_REGISTER_WIRE_TYPE(::sqe_msgs::rpc::SISGraphQueryStatus, "sqe_msgs::rpc::SISGraphQueryStatus");
 TCN_SQE_REGISTER_WIRE_TYPE(::sqe_msgs::rpc::SISGraphQueryRequest,
                            "sqe_msgs::rpc::SISGraphQueryRequest");
 TCN_SQE_REGISTER_WIRE_TYPE(::sqe_msgs::rpc::SISGraphQueryReply,
                            "sqe_msgs::rpc::SISGraphQueryReply");
 // The pattern query (B63), on `/sis/pattern/query`. The engine answered it
 // since B63 and this table could not name either half until 0.9.0 -- the same
-// gap the graph read sat in before B46 was registered. The reply reuses
-// SISGraphQueryStatus, so the annotation is the only thing that separates a
-// pattern reply from a graph reply: both open with that enum.
+// gap the graph read sat in before B46 was registered. The annotation is the
+// only thing that separates a pattern reply from a graph reply: both open with
+// SISReplyHeader.
 TCN_SQE_REGISTER_WIRE_TYPE(::sqe_msgs::rpc::SRPatternExpansion,     "sqe_msgs::rpc::SRPatternExpansion");
 TCN_SQE_REGISTER_WIRE_TYPE(::sqe_msgs::rpc::SISPatternQueryRequest, "sqe_msgs::rpc::SISPatternQueryRequest");
 TCN_SQE_REGISTER_WIRE_TYPE(::sqe_msgs::rpc::SISPatternQueryReply,   "sqe_msgs::rpc::SISPatternQueryReply");
@@ -246,13 +285,12 @@ TCN_SQE_REGISTER_WIRE_TYPE(::sqe_msgs::rpc::SISPatternQueryReply,   "sqe_msgs::r
 // SISBlockingRelation is: a tool that seeds or exports the registry passes
 // them around by themselves. `SISTargetChange` is published by the engine on
 // `sqe/{engine_id}/targets/changed` (topics.h); the mutation is answered with
-// the ordinary SISMutationReply, not a registry-specific reply.
-TCN_SQE_REGISTER_WIRE_TYPE(::sqe_msgs::rpc::SISTargetKind,            "sqe_msgs::rpc::SISTargetKind");
+// the ordinary SISMutationReply, not a registry-specific reply. The target
+// kind lives in tcn_types since 0.11 (registered above).
 TCN_SQE_REGISTER_WIRE_TYPE(::sqe_msgs::rpc::SISTargetAlias,           "sqe_msgs::rpc::SISTargetAlias");
 TCN_SQE_REGISTER_WIRE_TYPE(::sqe_msgs::rpc::SISGlobalTarget,          "sqe_msgs::rpc::SISGlobalTarget");
 TCN_SQE_REGISTER_WIRE_TYPE(::sqe_msgs::rpc::SISTargetQueryKind,       "sqe_msgs::rpc::SISTargetQueryKind");
 TCN_SQE_REGISTER_WIRE_TYPE(::sqe_msgs::rpc::SISTargetQueryRequest,    "sqe_msgs::rpc::SISTargetQueryRequest");
-TCN_SQE_REGISTER_WIRE_TYPE(::sqe_msgs::rpc::SISTargetQueryStatus,     "sqe_msgs::rpc::SISTargetQueryStatus");
 TCN_SQE_REGISTER_WIRE_TYPE(::sqe_msgs::rpc::SISTargetQueryReply,      "sqe_msgs::rpc::SISTargetQueryReply");
 TCN_SQE_REGISTER_WIRE_TYPE(::sqe_msgs::rpc::SISTargetMutationKind,    "sqe_msgs::rpc::SISTargetMutationKind");
 TCN_SQE_REGISTER_WIRE_TYPE(::sqe_msgs::rpc::SISTargetMutationRequest, "sqe_msgs::rpc::SISTargetMutationRequest");
@@ -293,10 +331,9 @@ TCN_SQE_REGISTER_WIRE_TYPE(::sqe_msgs::rpc::SISExplainReply,              "sqe_m
 TCN_SQE_REGISTER_WIRE_TYPE(::sqe_msgs::rpc::SISTransactionLogAction,      "sqe_msgs::rpc::SISTransactionLogAction");
 TCN_SQE_REGISTER_WIRE_TYPE(::sqe_msgs::rpc::SISTransactionLogRequest,     "sqe_msgs::rpc::SISTransactionLogRequest");
 TCN_SQE_REGISTER_WIRE_TYPE(::sqe_msgs::rpc::SISTransactionLogReply,       "sqe_msgs::rpc::SISTransactionLogReply");
-// Relation sample (B93, 0.10.6): {client}/sis/relation/sample (client_id.h, session.h).
+// Relation sample (B93, 0.10.6): {client}/sis/stream/sample since 0.11 (client_id.h, session.h).
 TCN_SQE_REGISTER_WIRE_TYPE(::sqe_msgs::rpc::SISRelationSampleInstant,     "sqe_msgs::rpc::SISRelationSampleInstant");
 TCN_SQE_REGISTER_WIRE_TYPE(::sqe_msgs::rpc::SISRelationSampleRequest,     "sqe_msgs::rpc::SISRelationSampleRequest");
-TCN_SQE_REGISTER_WIRE_TYPE(::sqe_msgs::rpc::SISRelationSampleStatus,      "sqe_msgs::rpc::SISRelationSampleStatus");
 TCN_SQE_REGISTER_WIRE_TYPE(::sqe_msgs::rpc::SISSampleInput,               "sqe_msgs::rpc::SISSampleInput");
 TCN_SQE_REGISTER_WIRE_TYPE(::sqe_msgs::rpc::SISRelationSampleReply,       "sqe_msgs::rpc::SISRelationSampleReply");
 
@@ -315,31 +352,6 @@ inline std::string join_encoding(std::string_view media, std::string_view type_n
     out += '=';
     out.append(kWireSchemaVersion.data(), kWireSchemaVersion.size());
     return out;
-}
-
-/// ASCII-only lowering. Not `std::tolower`: that one consults the global
-/// locale and is undefined for a negative `char`.
-constexpr char ascii_lower(char c) noexcept
-{
-    const unsigned char u = static_cast<unsigned char>(c);
-    return (u >= 'A' && u <= 'Z') ? static_cast<char>(u - 'A' + 'a') : c;
-}
-
-/// True when `haystack`, lowered, contains `needle` (which must already be
-/// lower case).
-inline bool contains_ascii_ci(std::string_view haystack, std::string_view needle) noexcept
-{
-    if (needle.size() > haystack.size()) { return false; }
-    for (std::size_t i = 0; i + needle.size() <= haystack.size(); ++i)
-    {
-        std::size_t j = 0;
-        for (; j < needle.size(); ++j)
-        {
-            if (ascii_lower(haystack[i + j]) != needle[j]) { break; }
-        }
-        if (j == needle.size()) { return true; }
-    }
-    return false;
 }
 
 /// Strips leading and trailing ASCII whitespace, matching the engine's
@@ -418,9 +430,8 @@ struct WireEncoding
     /// Whether a non-empty type name was declared.
     bool has_type_name;
     /// The value of the `tcn_schema=` parameter, trimmed. **Empty when the
-    /// parameter is absent**, which a pre-0.9 peer's annotation always is.
-    /// `check_declared_type` accepts that; a caller that wants to warn about
-    /// an old peer tests `has_schema_version`.
+    /// parameter is absent**, which a pre-0.9 peer's annotation always is;
+    /// `check_declared_type` refuses that as `MissingSchemaVersion`.
     std::string_view schema_version;
     /// Whether a `tcn_schema=` parameter was present at all (even with an
     /// empty value -- which `check_declared_type` refuses).
@@ -432,7 +443,10 @@ struct WireEncoding
 ///
 /// The rules are the engine's, so a peer is refused here exactly when it would
 /// be refused there:
-///   * every segment is trimmed of ASCII whitespace, key and value separately;
+///   * the type name, and a parameter's key and value (separately), are
+///     trimmed of ASCII whitespace. The media type is **not** trimmed: it is
+///     returned verbatim and `check_declared_type` compares it byte for byte,
+///     so `" application/cdr"` is not CDR;
 ///   * a parameter whose key is not `tcn_schema` is ignored, as is one with no
 ///     `=` -- a later release may add parameters, and a reader that refused
 ///     them would turn every addition into a break;
@@ -464,36 +478,39 @@ inline WireEncoding parse_encoding(std::string_view encoding) noexcept
     return out;
 }
 
-/// The C++ counterpart of the engine's `decode_typed` type check.
+/// The C++ counterpart of the engine's `decode_typed` type check: the whole
+/// annotation, `application/cdr;{TYPE};tcn_schema=0.11`, is mandatory (V1,
+/// §6). In order, first failure wins:
 ///
-/// The declaration is mandatory. CDR is not self-describing, so a payload that
-/// does not name its type may parse as `T` and mean something else entirely —
-/// refusing is the only sound option, and refusing here is local and loud.
+///   1. the media type is exactly `kCdrMediaType` or `kJsonMediaType` --
+///      byte for byte, not a substring and not case-folded, so neither
+///      `application/x-cdr` nor `APPLICATION/CDR` is read as CDR ->
+///      `UnknownEncoding`;
+///   2. a type name is declared -> `MissingDeclaredType`. CDR is not
+///      self-describing, so a payload that does not name its type may parse as
+///      `T` and mean something else entirely;
+///   3. it is `T`'s -> `WrongDeclaredType`;
+///   4. a `tcn_schema=` parameter is present -> `MissingSchemaVersion`. Every
+///      pre-0.9 peer omits it; 0.9 and 0.10 accepted that so as not to make a
+///      flag day, and 0.11 is a break anyway (XCDR2), so an unversioned
+///      payload is no longer decoded;
+///   5. its major.minor is `kWireSchemaVersion` -> `SchemaVersionMismatch`,
+///      as is a value that is not a version at all.
 ///
-/// The schema version (B76) is checked after the type: a declared
-/// `tcn_schema=` whose major.minor is not `kWireSchemaVersion` is refused with
-/// `SchemaVersionMismatch`, and so is one that is not a version at all. An
-/// **absent** one is accepted, because every pre-0.9 peer omits it and
-/// refusing them would make 0.9.0 a flag day; that is the engine's rule too.
-/// Use `parse_encoding(...).has_schema_version` to warn about such a peer.
-///
-/// A reader built before 0.9.0 compared everything after the first `;` with
-/// the type name, so it refuses every 0.9.0 annotation as
-/// `WrongDeclaredType`. That is not fixable from this side; see
-/// MIGRATION-0.9.0.md.
+/// The type is checked before the version because it is the more fundamental
+/// refusal: a wrong type with a wrong version is a wrong type.
 template <class T>
 inline Result<void> check_declared_type(std::string_view encoding) noexcept
 {
     const WireEncoding parsed = parse_encoding(encoding);
-    if (!detail::contains_ascii_ci(parsed.media, "cdr")
-        && !detail::contains_ascii_ci(parsed.media, "json"))
+    if (parsed.media != kCdrMediaType && parsed.media != kJsonMediaType)
     {
         return Result<void>::fail(Error::UnknownEncoding);
     }
     if (!parsed.has_type_name) { return Result<void>::fail(Error::MissingDeclaredType); }
     if (parsed.type_name != WireType<T>::name) { return Result<void>::fail(Error::WrongDeclaredType); }
-    if (parsed.has_schema_version
-        && !detail::schema_version_matches(parsed.schema_version, kWireSchemaVersion))
+    if (!parsed.has_schema_version) { return Result<void>::fail(Error::MissingSchemaVersion); }
+    if (!detail::schema_version_matches(parsed.schema_version, kWireSchemaVersion))
     {
         return Result<void>::fail(Error::SchemaVersionMismatch);
     }

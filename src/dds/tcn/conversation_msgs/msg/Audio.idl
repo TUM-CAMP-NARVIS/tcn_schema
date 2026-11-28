@@ -15,7 +15,8 @@ module conversation_msgs {
     boolean end_of_stream;
 
     unsigned long long capture_ts_mono_ns;
-    unsigned long long first_sample_index;
+    unsigned long long first_sample_index;  // session-continuous, for loss detection
+    unsigned long long turn_sample_index;   // on the turn timeline (#36 F2; egress rescales the TTS position)
 
     sequence<octet> packet;
   };
@@ -35,16 +36,15 @@ module conversation_msgs {
     sequence<float> samples_f32;
   };
 
+  // #36 A1: an onset (speech_active) or an offset, at its position in the utterance stream.
+  // `stream_position_ms`: ms since the first sample of the session's input audio stream (the audio the VAD
+  // consumes), so every onset and offset of one session is on one timeline.
   @appendable struct VadEvent {
     MessageHeader header;
 
     boolean speech_active;
-    float speech_probability;
-
-    unsigned long start_ms;
-    unsigned long end_ms;
-
-    EventState state;
+    unsigned long long stream_position_ms;
+    @optional float speech_probability;  // only from a VAD that has one
     string backend;
   };
 

@@ -1,0 +1,68 @@
+// The Spatial Information Service: the header every reply and notification opens with (0.11, #35 R1-R3).
+//
+// One status space for the whole protocol, replacing the per-RPC status enums of 0.10 (SISMutationStatus,
+// SISGraphQueryStatus, SISRelationStreamStatus, SISRelationSampleStatus, SISTargetQueryStatus). What a reply says
+// about its subject (a relation's state, a sample's outcome) is a domain field of that reply, never a status.
+
+#ifndef SQE_MSGS_RPC_REPLY_IDL
+#define SQE_MSGS_RPC_REPLY_IDL
+
+module sqe_msgs {
+  module rpc {
+
+    // Whether the request was carried out. UNKNOWN at 0 is never sent, so a zeroed or truncated header is never
+    // read as success. Ordinals are the wire encoding; append only.
+    @appendable enum SISStatus {
+        SIS_STATUS_UNKNOWN,
+        SIS_STATUS_OK,                  // carried out; the reply's domain fields say what came of it
+        SIS_STATUS_REJECTED,            // refused as asked; `reason` says why. Retrying unchanged is refused again
+        SIS_STATUS_UNAVAILABLE,         // not carried out inside its bound (rate limit, store down or slow). For a
+                                        //   write this means *unknown*, not "did not land": a timed-out write may
+                                        //   still be applied, and retrying is safe because every write is an upsert
+        SIS_STATUS_UNKNOWN_CLIENT,      // no such fragment; join before mutating it
+        SIS_STATUS_UNKNOWN_FRAME,       // a named frame does not exist; which one is in `detail`
+        SIS_STATUS_NOT_FOUND,           // the named handle, target or other non-frame object does not exist
+        SIS_STATUS_TRUNCATED,           // carried out, but the answer was cut at a limit; the reply says where
+        SIS_STATUS_CONFLICT,            // contradicts state the engine holds, e.g. a stream already served with
+                                        //   other terms (`reason` TERMS_CONFLICT)
+        SIS_STATUS_NOT_IN_SCOPE         // outside the answering engine's client scope
+    };
+
+    // Why, in a form a client branches on. UNKNOWN (none stated) is what an OK reply carries. Ordinals are the wire
+    // encoding; append only.
+    @appendable enum SISReason {
+        SIS_REASON_UNKNOWN,             // none stated
+        SIS_REASON_MALFORMED,           // undecodable, or a value outside its range (an UNKNOWN enumerator included)
+        SIS_REASON_SCHEMA_MISMATCH,     // the encoding annotation is missing or names another schema release
+        SIS_REASON_UNSUPPORTED,         // well-formed but not implemented by this engine (e.g. fusion FUSED)
+        SIS_REASON_TERMS_CONFLICT,      // the relation is already served with other stream terms
+        SIS_REASON_NOT_PERMITTED,       // refused by policy: an engine-derived edge, an origin node, a permission
+        SIS_REASON_NO_PATH,             // the graph does not connect the two frames
+        SIS_REASON_CLOCK_DOMAIN_MISMATCH,   // the route crosses unsynchronized clock domains
+        SIS_REASON_LIMIT_EXCEEDED,      // a rate, size or table limit
+        SIS_REASON_STORE_UNAVAILABLE    // the engine's store failed or timed out
+    };
+
+    // The first member of every reply and every notification, filled at every refusal site, ingest included.
+    //
+    // `engine_id` is the second chunk of every key that engine issues; `engine_epoch` is its process start in Unix
+    // milliseconds. The engine holds a Zenoh liveliness token on `sqe/{engine_id}/alive/{engine_epoch}` for as long
+    // as it runs, so a client watches every epoch under `sqe/{engine_id}/alive/` from its join reply on: the token
+    // disappearing means the engine is gone; a token with a different epoch means it restarted, and every relation
+    // stream must be re-started (joined fragments survive a restart; streams do not).
+    @appendable struct SISReplyHeader {
+        SISStatus status;
+        SISReason reason;
+        string detail;                  // human-readable; empty when there is nothing to add. Not for parsing
+        string engine_id;
+        uint64 engine_epoch;
+    };
+
+    // Carries nothing: a union case or a request with no content (#35 S5; replaces the filler `boolean unused`).
+    @appendable struct SISEmpty {
+    };
+
+  };
+};
+
+#endif

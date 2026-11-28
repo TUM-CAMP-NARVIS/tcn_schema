@@ -1,8 +1,8 @@
 #ifndef TCNART_MSGS_MSG_POSETRACKING_IDL
 #define TCNART_MSGS_MSG_POSETRACKING_IDL
 
-#include "std_msgs/msg/Header.idl"
 #include "tcn_types/msg/Geometry.idl"
+#include "tcn_types/msg/Stream.idl"
 #include "tcn_types/msg/Tracking.idl"
 
 module tcnart_msgs {
@@ -10,27 +10,24 @@ module tcnart_msgs {
 
     @appendable struct Pose6DMessage {
 
-      std_msgs::msg::Header header;
+      tcn_types::msg::StreamHeader header;
 
       tcn_types::msg::RigidTransform value;
 
-      // How well `value` is known: 0 or 21 doubles, upper triangle of the 6x6,
-      // row-major, (tx, ty, tz, rx, ry, rz), m^2/rad^2. Empty means "not
-      // stated".
-      sequence<double, 21> pose_covariance;
+      // How well `value` is known. Absent means "not stated".
+      @optional tcn_types::msg::SRCovariance6 pose_covariance;
 
     };
 
-    // Which pose an entry of a Pose6DMapMessage carries.
+    // Which pose an entry of a multi-entry pose payload carries.
     //
     // A device sends every pose it measures in one message at frame rate, and
     // `item_id` says which is which. That mapping is a contract between a
     // publisher and the engine and belongs to neither, so it is named here --
     // beside the message it indexes, as TRACKER_STATUS_* is named beside the
-    // one it annotates. It is also what a relation's SREdge.stream_item_id
-    // names, which is how the engine knows which entry feeds which relation --
-    // together with SREdge.stream_item_bound, which is what says the id was
-    // named at all (B72). One of these keys is not required: any key space the
+    // one it annotates. It is also what an edge's SREdge.entry_id names, which is how the engine knows which
+    // entry feeds which relation; it is @optional, and present means the entry
+    // was named, 0 included. One of these keys is not required: any key space the
     // publisher and its relations agree on works, and a marker tracker uses
     // the dictionary's own ids.
     //
@@ -54,7 +51,7 @@ module tcnart_msgs {
     // dictionary's, and 0 is the first id it hands out -- so a reader
     // generalising this constant would conclude that the most common marker in
     // a scene cannot be named. Whether an entry was named at all is carried by
-    // SREdge.stream_item_bound (B72), never inferred from the id.
+    // the presence of SREdge.entry_id, never inferred from the id.
     const uint32 XR_POSE_UNSET = 0;            // unassigned in the XR key space
 
     const uint32 XR_POSE_HMD = 1;              // the headset's own viewpoint
@@ -83,7 +80,7 @@ module tcnart_msgs {
 
     @appendable struct TargetTrackingMessage {
 
-      std_msgs::msg::Header header;
+      tcn_types::msg::StreamHeader header;
 
       sequence<tcn_types::msg::Target> targets;
       uint32 status_flags;              // TRACKER_STATUS_* bits

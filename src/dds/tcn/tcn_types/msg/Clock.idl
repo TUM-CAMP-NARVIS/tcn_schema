@@ -1,0 +1,26 @@
+#ifndef TCN_TYPES_MSG_CLOCK_IDL
+#define TCN_TYPES_MSG_CLOCK_IDL
+
+module tcn_types {
+  module msg {
+
+        // What keeps a clock: the host's, a device's own, or a PTP-disciplined one.
+        @appendable enum ClockKind {
+          CLOCK_KIND_UNKNOWN,
+          CLOCK_KIND_HOST,
+          CLOCK_KIND_DEVICE,
+          CLOCK_KIND_PTP
+        };
+
+        // The clock a timestamp was read from. Two stamps are comparable only
+        // in one clock domain. `id` is in the fragment alphabet, or "" for the
+        // deployment clock. Equality is on `id` only; `kind` is informational.
+        @appendable struct ClockDomain {
+          string id;
+          ClockKind kind;
+        };
+
+  };
+};
+
+#endif

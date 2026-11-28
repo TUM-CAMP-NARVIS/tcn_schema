@@ -20,16 +20,19 @@ class RepoSchemaTest(unittest.TestCase):
         cls.decls = _decls(cls.schema)
 
     def test_all_repo_files_parse(self):
-        # 0.11 plan 2: the ROS 2 tree is generated from Jazzy (all tiers committed); plan 3: the tcn layout.
-        self.assertEqual(len(self.schema.files), 469)
+        # 0.11 plan 2: the ROS 2 tree is generated from Jazzy (all tiers committed); plan 3: the tcn layout;
+        # plan 5 task 4: sqe_msgs/rpc/Reply.idl; plan 6 task 1: tcn_types/msg/Stream.idl; task 2: tcnart_msgs/msg/JointSet.idl (generated).
+        # task 5 deleted tcnart_msgs/msg/CameraModel.idl; task 6 added conversation_msgs/msg/Face.idl.
+        self.assertEqual(len(self.schema.files), 475)
         n = sum(1 for f in self.schema.files for d in f.decls if isinstance(d, (Struct, Enum, Union)))
-        self.assertEqual(n, 1145)  # 0.11 plan 4 deleted six types (tools/idl/fields_0_11.json)
+        self.assertEqual(n, 1202)  # 0.11 plan 4 deleted six types (tools/idl/fields_0_11.json); plan 5 task 2 added 11, task 3 added 6 and deleted 5, task 4 added 16 and deleted 5, task 5 added 12 and deleted 3; plan 6 task 1 added 2, task 2 added 1, task 3 added 10, task 4 added 12 and deleted 3, task 5 added 2 and deleted 2, task 6 added 6 and deleted 3 (tools/idl/streams_0_11.json)
 
-    def test_sensor_type(self):
-        e = self.decls["tcnart_msgs::msg::SensorType"]
+    def test_stream_kind(self):
+        # 0.11 plan 6 task 4: StreamKind replaces SensorType.
+        e = self.decls["tcnart_msgs::msg::StreamKind"]
         self.assertIsInstance(e, Enum)
-        self.assertEqual(e.enumerators[0], ("SENSOR_TYPE_NONE", 0))
-        self.assertEqual(e.enumerators[1], ("SENSOR_TYPE_VIDEO_COLOR", 1))
+        self.assertEqual(e.enumerators[0], ("STREAM_KIND_UNKNOWN", 0))
+        self.assertEqual(e.enumerators[1], ("STREAM_KIND_VIDEO", 1))
 
     def test_header(self):
         h = self.decls["std_msgs::msg::Header"]
@@ -42,14 +45,12 @@ class RepoSchemaTest(unittest.TestCase):
         self.assertIsInstance(u, Union)
         self.assertEqual(u.discriminator, "sqe_msgs::rpc::SRStreamTriggerKind")
 
-    def test_forward_decl_dropped(self):
+    def test_no_forward_decls(self):
+        # 0.11 plan 6 task 5 (T13): Parameters.idl declares EnumEntry, ParameterValue, Parameter, ParameterList in
+        # order and forward-declares nothing; no repo file does (the mechanism is pinned by fixtures/forward.idl).
+        self.assertEqual([(f.path, f.forward_decls) for f in self.schema.files if f.forward_decls], [])
         names = [d.name for f in self.schema.files for d in f.decls]
         self.assertEqual(names.count("pcpd_msgs::rpc::ParameterValue"), 1)
-
-    def test_forward_decls_recorded(self):
-        f = next(f for f in self.schema.files if f.path == "pcpd_msgs/rpc/Parameters.idl")
-        self.assertEqual(set(f.forward_decls), {"pcpd_msgs::rpc::Parameter", "pcpd_msgs::rpc::ParameterValue",
-                                                "pcpd_msgs::rpc::ParameterList"})
 
     def test_ros_fixed_array_member(self):
         m = self.decls["unique_identifier_msgs::msg::UUID"].members[0]
@@ -84,6 +85,13 @@ class FixtureTest(unittest.TestCase):
         # IDL 4.2 7.2.3: a leading underscore escapes a keyword; the identifier is the name without it.
         f = parse_file(FIX / "escaped.idl", "fx/msg/escaped.idl")
         self.assertEqual([m.name for m in f.decls[0].members], ["map", "value"])
+
+    def test_forward_decl_dropped_and_recorded(self):
+        f = parse_file(FIX / "forward.idl", "fx/msg/forward.idl")
+        self.assertEqual([d.name for d in f.decls],
+                         ["fx::msg::K", "fx::msg::P", "fx::msg::L", "fx::msg::V", "fx::msg::Holder", "fx::msg::Plain"])
+        self.assertEqual(set(f.forward_decls), {"fx::msg::L", "fx::msg::V"})
+        self.assertEqual(f.decls[1].members[1].type, "fx::msg::V")
 
     def test_map(self):
         f = parse_file(FIX / "map.idl", "fx/msg/map.idl")

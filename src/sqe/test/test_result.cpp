@@ -11,8 +11,13 @@
 
 using namespace tcn::sqe;
 
-static_assert(kContractBLevel >= 35, "");
-static_assert(TCN_SQE_CONTRACT_B_LEVEL == kContractBLevel, "");
+// One protocol floor (#35 R5, §6). The B-level constants and macros are gone;
+// a consumer still testing for them must fail loudly, not compile against a
+// stale number.
+static_assert(kProtocolBreak == TCN_SQE_PROTOCOL_BREAK, "");
+#if defined(TCN_SQE_CONTRACT_B_LEVEL) || defined(TCN_SQE_PROTOCOL_B_LEVEL)
+#error "the B-level macros were removed in 0.11; the floor is TCN_SQE_PROTOCOL_BREAK"
+#endif
 
 namespace {
 
@@ -96,6 +101,12 @@ TCN_SQE_TEST(every_error_has_a_distinct_non_empty_description)
         Error::OriginNotDeclared, Error::HandleAbsent, Error::HandleInvariantViolated,
         Error::ConflictingLease, Error::WrongDeclaredType, Error::MoreThanOneItem,
         Error::MissingDeclaredType, Error::UnknownEncoding, Error::EmptyHandleTopic,
+        Error::NoTransport, Error::TransportFailed, Error::Timeout, Error::EncodeFailed,
+        Error::DecodeFailed, Error::FreshnessBiasOutOfRange, Error::InvalidTriggerRate,
+        Error::EmptyTriggerTopic, Error::PresenceUnavailable, Error::SchemaVersionMismatch,
+        Error::MissingScheme, Error::UnknownScheme, Error::MissingOwner, Error::UnexpectedOwner,
+        Error::MalformedSelector, Error::UnknownScope, Error::UnknownSelector,
+        Error::MalformedCapability, Error::ReplyRefused, Error::MissingSchemaVersion,
     };
     const std::size_t n = sizeof(all) / sizeof(all[0]);
     for (std::size_t i = 0; i < n; ++i)

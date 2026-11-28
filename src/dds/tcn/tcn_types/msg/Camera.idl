@@ -1,0 +1,62 @@
+#ifndef TCN_TYPES_MSG_CAMERA_IDL
+#define TCN_TYPES_MSG_CAMERA_IDL
+
+#include "tcn_types/msg/Geometry.idl"
+
+module tcn_types {
+  module msg {
+
+        @appendable enum SRDistortionModel {
+          SR_DISTORTION_MODEL_UNKNOWN,
+          SR_DISTORTION_MODEL_NONE,
+          SR_DISTORTION_MODEL_OPENCV_RADTAN,
+          SR_DISTORTION_MODEL_OPENCV_RATIONAL
+        };
+
+        // Append only; FOV_ANGLES follows in 0.11.x.
+        @appendable enum CameraIntrinsicsKind {
+          CAMERA_INTRINSICS_KIND_UNKNOWN,
+          CAMERA_INTRINSICS_KIND_PINHOLE
+        };
+
+        // A pinhole camera in pixels. `distortion` holds the coefficients of
+        // `distortion_model` in OpenCV order. `metric_radius`, when present, is
+        // the normalized image-plane radius (sqrt(x^2+y^2) at z = 1) within
+        // which the model is valid. An absent image size is unknown.
+        @appendable struct PinholeIntrinsics {
+          double fx;
+          double fy;
+          double cx;
+          double cy;
+          SRDistortionModel distortion_model;
+          sequence<double, 16> distortion;
+          @optional double metric_radius;
+          @optional uint32 image_width;
+          @optional uint32 image_height;
+        };
+
+        @appendable union CameraIntrinsics switch (CameraIntrinsicsKind) {
+          case CAMERA_INTRINSICS_KIND_PINHOLE: PinholeIntrinsics pinhole;
+        };
+
+        // Where a calibration came from (#37 T1, with an ns time). `tool` is a
+        // stable id ("sqe-calibrate", "hta.rig_calibration"); `method` names the
+        // tool's procedure. `residual` is the tool's fit residual: for a camera
+        // calibration the RMS reprojection error in pixels, otherwise in the
+        // unit `method` names; absent when not stated. `covariance` is the
+        // calibrated pose's, absent when not stated.
+        // `computed_at_ns`: when it was computed, ns since the Unix epoch.
+        // `samples`: how many observations went into it; absent when not stated.
+        @appendable struct CalibrationProvenance {
+          string tool;
+          string method;
+          @optional double residual;
+          @optional SRCovariance6 covariance;
+          @optional int64 computed_at_ns;
+          @optional uint32 samples;
+        };
+
+  };
+};
+
+#endif

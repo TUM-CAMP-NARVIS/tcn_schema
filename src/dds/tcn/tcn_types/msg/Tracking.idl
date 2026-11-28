@@ -6,12 +6,9 @@
 module tcn_types {
   module msg {
 
-    // What a tracker reports, and therefore what the engine calls the nodes it
-    // discovers: the spatial-query-engine derives a node-name prefix from this
-    // value, so every marker of a tracker of this kind becomes
-    // '{prefix}__sis_marker__{id}'. It is not cosmetic and it is not free to
-    // renumber -- an ordinal that changes meaning renames every node a tracker
-    // of that kind ever created.
+    // What a tracker reports. It is not cosmetic and it is not free to
+    // renumber -- an ordinal that changes meaning changes what every existing
+    // tracker of that kind reports.
     //
     // **Append only.** New kinds go at the end.
     @appendable enum MarkerType {
@@ -24,19 +21,38 @@ module tcn_types {
       MARKER_TYPE_APRILTAG
     };
 
+    // Informational: what kind of physical thing a registered target is.
+    // Ordinal 0 is UNKNOWN (was SIS_TK_UNSPECIFIED in 0.9).
+    @appendable enum SISTargetKind {
+        SIS_TARGET_KIND_UNKNOWN,
+        SIS_TARGET_KIND_RIGID_BODY,
+        SIS_TARGET_KIND_FIDUCIAL,
+        SIS_TARGET_KIND_BOARD,
+        SIS_TARGET_KIND_DEVICE
+    };
+
+    // A tracked target as the target registry lists it.
+    @appendable struct SISTargetInfo {
+      uint32 id;
+      string name;
+      SISTargetKind kind;
+    };
+
+    // One target of a TargetTrackingMessage.
     @appendable struct Target {
       uint32 target_id;
-      RigidTransform pose;
+      // Absent: no pose at all (not tracked, or never seen) -- never identity
+      // (#37 T19).
+      @optional RigidTransform pose;
       boolean is_tracked; // if enough markers on the tool are visible to track it
-      // How well `pose` is known: 0 or 21 doubles, upper triangle of the 6x6,
-      // row-major, (tx, ty, tz, rx, ry, rz), m^2/rad^2. Empty means "not
-      // stated", which is different from a zero covariance meaning "known
-      // exactly". Per target rather than per message, because a message
-      // routinely mixes targets that state a covariance with targets that do
-      // not; a covariance-aware variant of the whole message would force a
-      // producer to fabricate one for the bare targets or discard it for the
-      // stated ones.
-      sequence<double, 21> pose_covariance;
+      // How well `pose` is known. Absent means "not stated", which is
+      // different from a zero covariance meaning "known exactly". Per target
+      // rather than per message, because a message routinely mixes targets
+      // that state a covariance with targets that do not.
+      @optional SRCovariance6 pose_covariance;
+      // When this target's pose was captured, in the message's clock. Absent:
+      // the message's header.capture_time_ns (#38 A5).
+      @optional int64 capture_time_ns;
     };
 
   };

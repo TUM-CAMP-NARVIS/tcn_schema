@@ -2,6 +2,7 @@
 #   roundtrip  every struct and union of every package survives encode -> decode (generated from types.json)
 #   golden     fixed values encode to exactly the bytes in test/golden/*.hex
 #   msg/*      hand-written round trips of PersonTracking, HumanPose and TimeRef
+#   joint_sets the generated joint-set arrays agree with the generated JointSet enum
 
 # One generated source per package of the package table.
 set(roundtrip_sources)
@@ -54,7 +55,7 @@ set_target_properties(tcn_test_evo PROPERTIES CXX_STANDARD 17 POSITION_INDEPENDE
 add_executable(tcn_schema_golden_tests golden/golden_test.cpp)
 target_include_directories(tcn_schema_golden_tests PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}")
 target_compile_definitions(tcn_schema_golden_tests PRIVATE TCN_GOLDEN_DIR="${CMAKE_CURRENT_SOURCE_DIR}/golden")
-target_link_libraries(tcn_schema_golden_tests PRIVATE tcn_test_evo tcn_schema_sqe_msgs tcn_schema_tcnart_msgs tcn_schema_std_msgs ${DDS_LIBRARIES})
+target_link_libraries(tcn_schema_golden_tests PRIVATE tcn_test_evo tcn_schema_conversation_msgs tcn_schema_pcpd_msgs tcn_schema_sqe_msgs tcn_schema_tcnart_msgs tcn_schema_std_msgs ${DDS_LIBRARIES})
 set_target_properties(tcn_schema_golden_tests PROPERTIES CXX_STANDARD 17)
 add_test(NAME golden COMMAND tcn_schema_golden_tests)
 
@@ -64,3 +65,11 @@ foreach(t person_tracking human_pose)
   set_target_properties(tcnart_msgs_${t}_test PROPERTIES CXX_STANDARD 17)
   add_test(NAME tcnart_msgs_${t} COMMAND tcnart_msgs_${t}_test)
 endforeach()
+
+# The generated joint-set arrays (src/joint_sets/include/tcn/joint_sets.h) against the generated JointSet enum.
+add_executable(tcn_schema_joint_sets_test joint_sets/test_joint_sets.cpp)
+target_include_directories(tcn_schema_joint_sets_test PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}"
+                           "${PROJECT_SOURCE_DIR}/src/joint_sets/include")
+target_link_libraries(tcn_schema_joint_sets_test PRIVATE tcn_schema_tcnart_msgs ${DDS_LIBRARIES})
+set_target_properties(tcn_schema_joint_sets_test PROPERTIES CXX_STANDARD 17)
+add_test(NAME joint_sets COMMAND tcn_schema_joint_sets_test)

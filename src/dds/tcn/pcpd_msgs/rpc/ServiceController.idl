@@ -1,6 +1,7 @@
 #ifndef PCPD_MSGS_RPC_SERVICECONTROLLER_IDL
 #define PCPD_MSGS_RPC_SERVICECONTROLLER_IDL
 
+#include "builtin_interfaces/msg/Time.idl"
 #include "pcpd_msgs/msg/CameraSensor.idl"
 #include "pcpd_msgs/rpc/Parameters.idl"
 
@@ -10,7 +11,7 @@ module pcpd_msgs {
     @appendable struct DeviceContextReply {
         string name;
         float depth_units_per_meter;
-        int32 frame_rate;
+        double frame_rate;   // frames per second (0.11, S1: a double everywhere)
         string sensor_type;
         string serial_number;
 
@@ -35,8 +36,9 @@ module pcpd_msgs {
     // ------------------------------------------------------------------
 
     // A5. Dataflow graph, verb `<P>/rpc/graph`. The graph is a versioned
-    // JSON document (e.g. schema "tcn.plan_graph.v1") inside a CDR reply,
-    // because a pipeline graph is nested and app-specific.
+    // JSON document inside a CDR reply, because a pipeline graph is nested and
+    // app-specific. `schema` (e.g. "tcn.plan_graph.v1") is the authority for
+    // `graph_json`: it names the JSON schema the document follows (#37 T14).
     @appendable struct GraphReply {
         string graph_json;
         string schema;
@@ -52,7 +54,7 @@ module pcpd_msgs {
         string node;
         string host;
         uint32 pid;
-        string started_at;   // ISO 8601 UTC
+        builtin_interfaces::msg::Time started_at;   // UTC (0.11, #37 T14: was an ISO 8601 string)
         string version;      // e.g. git describe
         string plan_hash;
         uint64 generation;   // parameter change counter (as in ParameterDescriptor)
@@ -67,13 +69,29 @@ module pcpd_msgs {
     // A7. Stream announcements, verb `<P>/rpc/streams`: the streams a process
     // publishes, announced by each sender when it starts, so a client can
     // find a preview without knowing the pipeline's parameter values.
+
+    // What a stream carries (0.11, #37 T14: was the string "data" | "descriptor" | "state").
+    @appendable enum StreamRole {
+      STREAM_ROLE_UNKNOWN,
+      STREAM_ROLE_DATA,
+      STREAM_ROLE_DESCRIPTOR,
+      STREAM_ROLE_STATE
+    };
+
+    // How a stream is published (0.11, #37 T14: was the string "stream" | "latched").
+    @appendable enum StreamMode {
+      STREAM_MODE_UNKNOWN,
+      STREAM_MODE_STREAM,
+      STREAM_MODE_LATCHED
+    };
+
     @appendable struct StreamAnnouncement {
         string op;         // operator (or component) that publishes it
         string topic;      // full Zenoh key expression
         string payload;    // payload type name
-        string role;       // "data" | "descriptor" | "state"
+        StreamRole role;
         string encoding;   // e.g. "cdr", "json", a codec name
-        string mode;       // "stream" | "latched"
+        StreamMode mode;
     };
 
     @appendable struct StreamAnnouncementReply {

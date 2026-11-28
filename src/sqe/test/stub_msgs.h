@@ -23,10 +23,194 @@
 
 #include "tcn/sqe/handle.h"
 #include "tcn/sqe/result.h"
+#include "tcn/sqe/status.h"
 #include "tcn/sqe/transport.h"
+
+namespace tcn {
+namespace sqe {
+namespace test {
+
+/// Shaped like fast-cdr's `eprosima::fastcdr::optional<T>`, as far as this
+/// library touches it: `has_value()` and `value()`. The real `value()` throws
+/// on an absent member, so the library must ask `has_value()` first; this one
+/// records it when it is not asked (`touched_while_absent`).
+template <class T>
+class StubOptional
+{
+public:
+    bool has_value() const { return has_; }
+    const T& value() const
+    {
+        if (!has_) { touched_while_absent() = true; }
+        return v_;
+    }
+    void set(T v) { v_ = std::move(v); has_ = true; }
+    void reset() { v_ = T(); has_ = false; }
+
+    static bool& touched_while_absent()
+    {
+        static bool touched = false;
+        return touched;
+    }
+
+private:
+    bool has_ = false;
+    T v_{};
+};
+
+}  // namespace test
+}  // namespace sqe
+}  // namespace tcn
+
+namespace tcn_types {
+namespace msg {
+
+/// Shaped like the generated enums: unscoped, `uint32_t`-based, UNKNOWN at 0.
+enum SRNodeScope : std::uint32_t
+{
+    SR_NODE_SCOPE_UNKNOWN,
+    SR_NODE_SCOPE_LOCAL,
+    SR_NODE_SCOPE_GLOBAL,
+    SR_NODE_SCOPE_DOMAIN
+};
+
+enum SRFrameSelector : std::uint32_t
+{
+    SR_FRAME_SELECTOR_UNKNOWN,
+    SR_FRAME_SELECTOR_FRAME,
+    SR_FRAME_SELECTOR_INSTANCES
+};
+
+/// Shaped like the generated `SRFrameRef`: a getter and a setter overload per
+/// member, which is what `FrameRef::from_wire` / `to_wire` touch.
+class SRFrameRef
+{
+public:
+    SRNodeScope scope() const { return scope_; }
+    void scope(SRNodeScope v) { scope_ = v; }
+    const std::string& owner() const { return owner_; }
+    void owner(const std::string& v) { owner_ = v; }
+    const std::string& name() const { return name_; }
+    void name(const std::string& v) { name_ = v; }
+    SRFrameSelector selector() const { return selector_; }
+    void selector(SRFrameSelector v) { selector_ = v; }
+
+private:
+    SRNodeScope scope_ = SR_NODE_SCOPE_UNKNOWN;
+    std::string owner_;
+    std::string name_;
+    SRFrameSelector selector_ = SR_FRAME_SELECTOR_UNKNOWN;
+};
+
+}  // namespace msg
+}  // namespace tcn_types
 
 namespace sqe_msgs {
 namespace rpc {
+
+/// Shaped like the generated enums: unscoped, `uint32_t`-based, UNKNOWN at 0.
+enum SISStatus : std::uint32_t
+{
+    SIS_STATUS_UNKNOWN,
+    SIS_STATUS_OK,
+    SIS_STATUS_REJECTED,
+    SIS_STATUS_UNAVAILABLE,
+    SIS_STATUS_UNKNOWN_CLIENT,
+    SIS_STATUS_UNKNOWN_FRAME,
+    SIS_STATUS_NOT_FOUND,
+    SIS_STATUS_TRUNCATED,
+    SIS_STATUS_CONFLICT,
+    SIS_STATUS_NOT_IN_SCOPE
+};
+
+enum SISReason : std::uint32_t
+{
+    SIS_REASON_UNKNOWN,
+    SIS_REASON_MALFORMED,
+    SIS_REASON_SCHEMA_MISMATCH,
+    SIS_REASON_UNSUPPORTED,
+    SIS_REASON_TERMS_CONFLICT,
+    SIS_REASON_NOT_PERMITTED,
+    SIS_REASON_NO_PATH,
+    SIS_REASON_CLOCK_DOMAIN_MISMATCH,
+    SIS_REASON_LIMIT_EXCEEDED,
+    SIS_REASON_STORE_UNAVAILABLE
+};
+
+enum SISRelationState : std::uint32_t
+{
+    SIS_RELATION_STATE_UNKNOWN,
+    SIS_RELATION_STATE_ACTIVE,
+    SIS_RELATION_STATE_PENDING,
+    SIS_RELATION_STATE_INACTIVE
+};
+
+enum SISParkReason : std::uint32_t
+{
+    SIS_PARK_REASON_UNKNOWN,
+    SIS_PARK_REASON_UNCALIBRATED,
+    SIS_PARK_REASON_AWAITING_DESCRIPTOR,
+    SIS_PARK_REASON_INPUT_STARVED,
+    SIS_PARK_REASON_RESOLVING,
+    SIS_PARK_REASON_WITHDRAWN,
+    SIS_PARK_REASON_CLOCK_DOMAIN_MISMATCH
+};
+
+/// Shaped like the generated `SISReplyHeader`: a getter per member. Zeroed by
+/// default, as a truncated or zero-filled payload decodes.
+class SISReplyHeader
+{
+public:
+    SISStatus status_ = SIS_STATUS_UNKNOWN;
+    SISReason reason_ = SIS_REASON_UNKNOWN;
+    std::string detail_;
+    std::string engine_id_;
+    std::uint64_t engine_epoch_ = 0;
+
+    SISStatus status() const { return status_; }
+    SISReason reason() const { return reason_; }
+    const std::string& detail() const { return detail_; }
+    const std::string& engine_id() const { return engine_id_; }
+    std::uint64_t engine_epoch() const { return engine_epoch_; }
+
+    /// Stub wire form: one status byte, eight little-endian epoch bytes, then
+    /// the engine id. Nothing like CDR, and it does not need to be.
+    static std::vector<std::uint8_t> stub_encode(std::uint8_t status, std::uint64_t epoch,
+                                                 const std::string& engine_id)
+    {
+        std::vector<std::uint8_t> out;
+        out.push_back(status);
+        for (int i = 0; i < 8; ++i) { out.push_back(static_cast<std::uint8_t>(epoch >> (8 * i))); }
+        out.insert(out.end(), engine_id.begin(), engine_id.end());
+        return out;
+    }
+
+    bool stub_decode(::tcn::sqe::BytesView b)
+    {
+        if (b.size < 9) { return false; }
+        status_ = static_cast<SISStatus>(b.data[0]);
+        engine_epoch_ = 0;
+        for (int i = 0; i < 8; ++i)
+        {
+            engine_epoch_ |= static_cast<std::uint64_t>(b.data[1 + i]) << (8 * i);
+        }
+        engine_id_.assign(reinterpret_cast<const char*>(b.data + 9), b.size - 9);
+        return true;
+    }
+};
+
+/// What `Capabilities::from_wire` reads.
+class SISEngineCapabilities
+{
+public:
+    std::uint32_t protocol_break_ = 0;
+    std::vector<std::string> capabilities_;
+    std::string client_scope_;
+
+    std::uint32_t protocol_break() const { return protocol_break_; }
+    const std::vector<std::string>& capabilities() const { return capabilities_; }
+    const std::string& client_scope() const { return client_scope_; }
+};
 
 class SISJoinRequest
 {
@@ -58,47 +242,43 @@ public:
     std::string name;
 };
 
-/// The reply every mutation is answered with since B73, with B74's two
-/// trailing fields. Decodable by `StubCodec` (see `stub_decode`), so a test can
-/// assert that the reply a session hands back is the one the engine sent, not
-/// merely that the call succeeded.
+/// The reply every mutation is answered with: a header and nothing else.
+/// Decodable by `StubCodec` (see `stub_decode`), so a test can assert that the
+/// reply a session hands back is the one the engine sent, not merely that the
+/// call succeeded.
 class SISMutationReply
 {
 public:
-    std::int32_t status_ = -1;
-    std::string detail_;
-    std::string engine_id_;
-    std::uint64_t engine_epoch_ = 0;
+    SISReplyHeader header_;
 
-    std::int32_t status() const { return status_; }
-    const std::string& detail() const { return detail_; }
-    const std::string& engine_id() const { return engine_id_; }
-    std::uint64_t engine_epoch() const { return engine_epoch_; }
+    const SISReplyHeader& header() const { return header_; }
 
-    /// Stub wire form: one status byte, eight little-endian epoch bytes, then
-    /// the engine id. Nothing like CDR, and it does not need to be.
     static std::vector<std::uint8_t> stub_encode(std::uint8_t status, std::uint64_t epoch,
                                                  const std::string& engine_id)
     {
-        std::vector<std::uint8_t> out;
-        out.push_back(status);
-        for (int i = 0; i < 8; ++i) { out.push_back(static_cast<std::uint8_t>(epoch >> (8 * i))); }
-        out.insert(out.end(), engine_id.begin(), engine_id.end());
-        return out;
+        return SISReplyHeader::stub_encode(status, epoch, engine_id);
     }
+    bool stub_decode(::tcn::sqe::BytesView b) { return header_.stub_decode(b); }
+};
 
-    bool stub_decode(::tcn::sqe::BytesView b)
+/// The join's own reply (#35 R5): the header and the engine's capabilities.
+/// Same stub wire form as `SISMutationReply`, so only the declared type tells
+/// the two apart -- which is the point.
+class SISJoinReply
+{
+public:
+    SISReplyHeader header_;
+    SISEngineCapabilities engine_;
+
+    const SISReplyHeader& header() const { return header_; }
+    const SISEngineCapabilities& engine() const { return engine_; }
+
+    static std::vector<std::uint8_t> stub_encode(std::uint8_t status, std::uint64_t epoch,
+                                                 const std::string& engine_id)
     {
-        if (b.size < 9) { return false; }
-        status_ = b.data[0];
-        engine_epoch_ = 0;
-        for (int i = 0; i < 8; ++i)
-        {
-            engine_epoch_ |= static_cast<std::uint64_t>(b.data[1 + i]) << (8 * i);
-        }
-        engine_id_.assign(reinterpret_cast<const char*>(b.data + 9), b.size - 9);
-        return true;
+        return SISReplyHeader::stub_encode(status, epoch, engine_id);
     }
+    bool stub_decode(::tcn::sqe::BytesView b) { return header_.stub_decode(b); }
 };
 
 class SISEdgeUpdateRequest
@@ -120,26 +300,44 @@ public:
     std::string handle;
 };
 
-/// Shaped like the generated union: the case accessor is only correct to touch
-/// once the discriminator has been read.
-class SISRelationStreamHandleUnion
+/// Shaped like the generated `SISStreamHandle`: the four strings the engine
+/// chose, none of them composed by a client.
+class SISStreamHandle
 {
 public:
-    std::int32_t d = 0;
-    std::string topic_;
+    std::string handle_;
+    std::string data_topic_;
+    std::string status_topic_;
+    std::string plan_topic_;
 
-    std::int32_t _d() const { return d; }
-    const std::string& topic() const { return topic_; }
+    const std::string& handle() const { return handle_; }
+    const std::string& data_topic() const { return data_topic_; }
+    const std::string& status_topic() const { return status_topic_; }
+    const std::string& plan_topic() const { return plan_topic_; }
+};
+
+class SISRelationStatus
+{
+public:
+    SISRelationState state_ = SIS_RELATION_STATE_UNKNOWN;
+    ::tcn::sqe::test::StubOptional<SISParkReason> park_reason_;
+    std::string detail_;
+
+    SISRelationState state() const { return state_; }
+    const ::tcn::sqe::test::StubOptional<SISParkReason>& park_reason() const { return park_reason_; }
+    const std::string& detail() const { return detail_; }
 };
 
 class SISRelationStreamReply
 {
 public:
-    std::int32_t status_ = 0;
-    SISRelationStreamHandleUnion handle_;
+    SISReplyHeader header_;
+    ::tcn::sqe::test::StubOptional<SISStreamHandle> handle_;
+    SISRelationStatus relation_;
 
-    std::int32_t status() const { return status_; }
-    const SISRelationStreamHandleUnion& handle() const { return handle_; }
+    const SISReplyHeader& header() const { return header_; }
+    const ::tcn::sqe::test::StubOptional<SISStreamHandle>& handle() const { return handle_; }
+    const SISRelationStatus& relation() const { return relation_; }
 };
 
 /// The read (B46). Only the fields this library touches: the key it goes to and
@@ -272,27 +470,32 @@ inline bool StubCodec::encode_fails = false;
 inline bool StubCodec::decode_fails = false;
 inline std::string StubCodec::last_decoded_marker;
 
-/// Builds a reply the way the engine would.
-inline ::sqe_msgs::rpc::SISRelationStreamReply make_reply(Status s, const char* topic)
+/// Builds an OK reply the way the engine would: a handle exactly when the
+/// state carries one, its topics the engine's choice. They are deliberately
+/// *not* `{handle}/status`: nothing in this library may compose them.
+inline ::sqe_msgs::rpc::SISRelationStreamReply make_reply(RelationState state, const char* handle)
 {
     ::sqe_msgs::rpc::SISRelationStreamReply r;
-    r.status_ = static_cast<std::int32_t>(s);
-    if (carries_handle(s))
+    r.header_.status_ = ::sqe_msgs::rpc::SIS_STATUS_OK;
+    r.header_.engine_id_ = "eng";
+    r.header_.engine_epoch_ = 1;
+    r.relation_.state_ = static_cast<::sqe_msgs::rpc::SISRelationState>(state);
+    if (carries_handle(state))
     {
-        r.handle_.d = kHandleKindAssigned;
-        r.handle_.topic_ = topic;
-    }
-    else
-    {
-        r.handle_.d = kHandleKindNone;
+        ::sqe_msgs::rpc::SISStreamHandle h;
+        h.handle_ = handle;
+        h.data_topic_ = handle;
+        h.status_topic_ = std::string(handle) + "/st";
+        h.plan_topic_ = std::string(handle) + "/pl";
+        r.handle_.set(h);
     }
     return r;
 }
 
-/// A `Handle` for a topic, obtained the only way there is: from a reply.
-inline Handle handle_for(const char* topic)
+/// A `Handle`, obtained the only way there is: from a reply.
+inline Handle handle_for(const char* handle)
 {
-    return Handle::from_reply(make_reply(Status::Active, topic)).value();
+    return Handle::from_reply(make_reply(RelationState::Active, handle)).value();
 }
 
 }  // namespace test

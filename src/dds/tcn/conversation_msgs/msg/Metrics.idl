@@ -27,7 +27,7 @@ module conversation_msgs {
 
   @appendable struct HealthStatus {
     MessageHeader header;
-    string _component;  // IDL keyword: the leading underscore escapes it; the member is `component`
+    string component_name;  // was `_component` (an escaped IDL keyword; #36 M1)
     boolean ready;
     Status status;
   };

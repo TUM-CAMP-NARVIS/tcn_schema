@@ -3,7 +3,7 @@
 // The tracker key family: descriptor, data stream, and marker announcement.
 //
 // Three keys about one device, and the engine resolves each from the others:
-// a marker announcement on `{client}/cfg/marker/{device}/{marker}` sends it
+// a marker announcement on `{client}/cfg/marker/{device}/{marker_id}` sends it
 // looking for the descriptor at `{client}/cfg/desc/{device}`, and the
 // descriptor names the data topic. Composed apart, they drift apart, and the
 // failure is silent at every step -- an unmatched key is not an error to
@@ -14,6 +14,7 @@
 #include <cstdint>
 #include <string>
 #include <string_view>
+#include <utility>
 
 #include "tcn/sqe/client_id.h"
 #include "tcn/sqe/error.h"
@@ -25,7 +26,10 @@ namespace sqe {
 
 namespace keys {
 
-/// Where a sensor announces its `StreamDescriptorMessage`.
+/// Where a sensor announces its `StreamDescriptorMessage`. For a tracker the
+/// descriptor's `info` is the tracker case (`TrackerStreamInfo`): the marker
+/// type, `marker_system` (`family[:variant]`), `marker_domain` (0.11, #35 N6;
+/// no longer `{system}@{domain}`) and the targets with their ids.
 inline constexpr std::string_view kDescriptorFamily = "/cfg/desc";
 /// Where it publishes the poses that descriptor describes.
 inline constexpr std::string_view kTrackerStreamFamily = "/str/trk";
@@ -71,39 +75,37 @@ inline Result<std::string> tracker_stream_key(const ClientId& client, std::strin
     return detail::device_key(client, keys::kTrackerStreamFamily, device);
 }
 
-/// `{client}/cfg/marker/{device}/{marker}` — the liveliness key that tells the
-/// engine `device` has seen `marker`.
+/// `{client}/cfg/marker/{device}/{marker_id}` — the liveliness key that tells
+/// the engine `device` has seen the marker `marker_id`.
 ///
-/// `marker` is the marker's **node name**, not its numeric id: the engine uses
-/// the announced string verbatim as the node it creates, and deduplicates it
-/// against the name the pose path derives for the same marker. Two spellings
-/// of one marker are two nodes. Use `marker_node_name` to compose it.
+/// The marker is its numeric id in decimal (0.11, #35 H5), the same
+/// `uint32` a materialized node records in `SRMaterialization.marker_id`.
+/// Before 0.11 it was a composed node name (`_mtarucom___sis_marker__7`),
+/// which the engine had to agree on character for character; an id has no
+/// spelling to disagree about.
 inline Result<std::string> marker_announce_key(const ClientId& client, std::string_view device,
-                                               std::string_view marker)
+                                               std::uint32_t marker_id)
 {
-    const Result<std::string> head =
-        detail::device_key(client, keys::kMarkerAnnounceFamily, device);
+    Result<std::string> head = detail::device_key(client, keys::kMarkerAnnounceFamily, device);
     if (!head) { return head; }
 
-    const Result<void> checked = check_identifier(marker);
-    if (!checked) { return Result<std::string>::fail(checked.error()); }
-
-    std::string out = head.value();
+    std::string out = std::move(head.value());
     out += '/';
-    out.append(marker.data(), marker.size());
+    out += std::to_string(marker_id);
     return Result<std::string>::ok(std::move(out));
 }
 
 // ---------------------------------------------------------------------------
-// Marker node names
+// Marker kinds
 // ---------------------------------------------------------------------------
 
 /// What a tracker reports, mirroring `tcn_types::msg::MarkerType`.
 ///
 /// A mirror rather than the IDL enum, because this library includes no
 /// generated header and builds where fastddsgen does not exist. The ordinals
-/// are the IDL's own and are pinned against it in `tcnart`, which has both.
-enum class MarkerKind : std::uint32_t {
+/// are the IDL's own and are pinned against it by
+/// tools/idl/tests/test_contract_enums.py.
+enum class MarkerKind : std::int32_t {
     None = 0,
     ArucoMarker = 1,
     ArucoBoard = 2,
@@ -112,77 +114,6 @@ enum class MarkerKind : std::uint32_t {
     HmdPose = 5,
     AprilTag = 6,
 };
-
-/// Joins a tracker's prefix to a marker id.
-///
-/// Spelled with leading and trailing underscores on both halves, so the joined
-/// name has three underscores in the middle (`_mtarucom___sis_marker__7`). That
-/// is not a typo and must not be tidied: the engine composes the same two
-/// halves the same way, and a name that differs by one character is a different
-/// node.
-inline constexpr std::string_view kMarkerNodeInfix = "__sis_marker__";
-
-/// The node-name prefix the engine derives from a descriptor's `marker_type`.
-///
-/// Every marker a tracker of that kind reports becomes a node named
-/// `{prefix}__sis_marker__{id}`. The values are the engine's
-/// (`marker_prefix_from_type`), not a convention this library is free to
-/// choose: a different prefix names a node nothing else refers to.
-inline constexpr std::string_view marker_prefix(MarkerKind kind)
-{
-    switch (kind) {
-        case MarkerKind::ArucoMarker:  return "_mtarucom_";
-        case MarkerKind::ArucoBoard:   return "_mtarucob_";
-        case MarkerKind::ArucoFractal: return "_mtarucof_";
-        case MarkerKind::IrTarget:     return "_mtirt_";
-        case MarkerKind::HmdPose:      return "_hmdvp_";
-        case MarkerKind::AprilTag:     return "_mtapril_";
-        case MarkerKind::None:         break;
-    }
-    return "_mtnone_";
-}
-
-/// `{prefix}__sis_marker__{id}` — the node a marker becomes.
-///
-/// The one string a marker announcement and a pose on the same tracker must
-/// agree on. They are derived here and in the engine from the same two inputs;
-/// composing it any other way is how one marker becomes two nodes, one of them
-/// fed by nothing.
-///
-/// **Unless the target registry names it** (B78). A descriptor whose
-/// `StreamDescriptorMessage.marker_system` is non-empty (`"art"`,
-/// `"aruco:DICT_4X4_50"`) asks the engine to look each marker id up as the
-/// alias `(marker_system, "{id}")`; a registered one is materialized as the
-/// target's own Global node, name and uuid, and this name is not used at all.
-/// So this function gives the fallback name, not the only one: it is the
-/// node exactly when `marker_system` is empty or the id is not registered. A
-/// consumer that needs the materialized name asks the registry
-/// (`/sis/target/query`, RESOLVE) rather than guessing.
-///
-/// **0.10.7 (engine B94): qualified by the marker system.** With a non-empty
-/// `marker_system` the name is `{prefix}{system}___sis_marker__{id}`, where
-/// `{system}` is `marker_system` with every `:` and every byte outside the
-/// identifier alphabet replaced by `.`, then a `_` -- so id 7 of two
-/// dictionaries of one marker type are two nodes (`aruco:DICT_4X4_50` gives
-/// `_mtarucom_aruco.DICT_4X4_50___sis_marker__7`). Empty: the name of before.
-/// A B94 engine composes the same; an engine before it ignores the system.
-inline std::string marker_node_name(MarkerKind kind, std::uint32_t marker_id, std::string_view marker_system = {})
-{
-    const std::string_view prefix = marker_prefix(kind);
-    std::string out;
-    out.reserve(prefix.size() + marker_system.size() + 1 + kMarkerNodeInfix.size() + 10);
-    out.append(prefix.data(), prefix.size());
-    if (!marker_system.empty()) {
-        for (const char ch : marker_system) {
-            const unsigned char c = static_cast<unsigned char>(ch);
-            out += (c == ':' || !is_identifier_char(c)) ? '.' : ch;
-        }
-        out += '_';
-    }
-    out.append(kMarkerNodeInfix.data(), kMarkerNodeInfix.size());
-    out += std::to_string(marker_id);
-    return out;
-}
 
 }  // namespace sqe
 }  // namespace tcn

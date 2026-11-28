@@ -7,13 +7,6 @@
 module conversation_msgs {
   module msg {
 
-  @appendable struct SttRequest {
-    MessageHeader header;
-    string backend;
-    string language_hint;
-    boolean finalize_now;
-  };
-
   @appendable struct SttPartial {
     MessageHeader header;
     string text;
@@ -21,19 +14,16 @@ module conversation_msgs {
     unsigned long end_ms;
     string detected_language;
     string backend;
-    EventState state;
   };
 
   @appendable struct SttFinal {
     MessageHeader header;
     string text;
-    float confidence;
-    boolean has_confidence;
+    @optional float confidence;
     unsigned long start_ms;
     unsigned long end_ms;
     string detected_language;
     string backend;
-    EventState state;
     RetrievalOptions retrieval;
   };
 
