@@ -131,6 +131,8 @@ err	local:a/b/	empty
 err	domain:d/	empty
 err	local:a/b c	contains_whitespace
 err	local:a/ b	contains_whitespace
+# the next row's name ends in DEL (0x7F), a control character: whitespace by the rule above
+err	local:a/b	contains_whitespace
 err	local:a/b*	contains_wildcard
 err	local:a/é	non_ascii
 err	local:a/b]	illegal_character

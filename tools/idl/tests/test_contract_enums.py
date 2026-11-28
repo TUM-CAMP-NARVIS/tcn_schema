@@ -4,7 +4,7 @@ import re
 import unittest
 from pathlib import Path
 
-from tools.idl.model import Enum
+from tools.idl.model import Enum, Struct
 from tools.idl.parser import load_schema
 
 ROOT = Path(__file__).resolve().parents[3]
@@ -93,6 +93,26 @@ class ContractEnumsTest(unittest.TestCase):
                     self.assertEqual(mode, "Query")
                     self.assertTrue(reply.lstrip(":") in self.decls, f"{reply}: reply type not in the schema")
                     self.assertIn(reply.lstrip(":"), wire, "reply type has no wire registration")
+
+    def test_every_reply_and_notification_opens_with_the_reply_header(self):
+        # #35 R1: `reply_header(reply)` reads the first member, so every reply and notification of sqe_msgs, plus
+        # SISTargetChange (published on targets/changed), must start with SISReplyHeader.
+        header = "sqe_msgs::rpc::SISReplyHeader"
+        carriers = sorted(
+            fq
+            for fq, d in self.decls.items()
+            if fq.startswith("sqe_msgs::")
+            and isinstance(d, Struct)
+            and (fq.endswith("Reply") or fq.endswith("Notification") or fq == "sqe_msgs::rpc::SISTargetChange")
+        )
+        self.assertIn("sqe_msgs::rpc::SISTargetChange", carriers)
+        self.assertGreater(len(carriers), 15)
+        for fq in carriers:
+            with self.subTest(fq):
+                members = self.decls[fq].members
+                self.assertTrue(members, f"{fq}: no members")
+                self.assertEqual((members[0].name, members[0].type, members[0].optional), ("header", header, False),
+                                 f"{fq}: the first member is not `SISReplyHeader header`")
 
 
 if __name__ == "__main__":
