@@ -49,7 +49,7 @@ module sqe_msgs {
     @appendable struct SISFragmentListRequest {
         SISOperatorRef who;
         string prefix;             // keep ids under this prefix, by whole chunks;
-                                   //   "" = the whole scope; outside it = REJECTED + NOT_PERMITTED
+                                   //   "" = the whole scope; outside it = NOT_IN_SCOPE
         string cursor;             // opaque; "" on the first page
     };
 
@@ -191,7 +191,8 @@ module sqe_msgs {
     // `header.status` says whether the question was answered:
     //   OK            answered; `relation` says what the relation is
     //   NOT_FOUND     SIS_EXPLAIN_KIND_STREAM: no stream has that handle
-    //   REJECTED      MALFORMED (undecodable), or NOT_PERMITTED (a frame outside the client scope)
+    //   REJECTED      MALFORMED (undecodable)
+    //   NOT_IN_SCOPE  a frame outside the client scope
     //   UNAVAILABLE   the operator rate limit, or the graph read failed
     // `relation` is what a start would be answered (dry run) or what the
     // stream is (stream): ACTIVE with a plan, or PENDING with its park reason

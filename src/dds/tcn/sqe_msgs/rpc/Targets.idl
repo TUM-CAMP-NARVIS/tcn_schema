@@ -102,7 +102,7 @@ module sqe_msgs {
                           // taken (the detail names the holder)
         SIS_TARGET_MUTATION_KIND_UPDATE,    // replace kind, aliases and
                           // description of an existing name; the uuid is kept
-                          // (a non-zero uuid that differs is refused)
+                          // (a present uuid that differs is refused)
         SIS_TARGET_MUTATION_KIND_REMOVE     // by `target.name`; markers materialized under it
                           // fall back to their template names, fragments keep
                           // their (now unregistered) nodes

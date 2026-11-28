@@ -170,7 +170,7 @@ module sqe_msgs {
     // `header.status`: OK (a search matching nothing is OK with empty sequences: "no uncalibrated edges" is the
     // SUCCESS of a calibration sweep), UNKNOWN_CLIENT (the named fragment does not exist), UNKNOWN_FRAME (an
     // anchored node does not exist), TRUNCATED (a page came back and `next_cursor` is present), REJECTED
-    // (MALFORMED, an unanchored SEARCH, or NOT_PERMITTED for a fragment outside the client scope) or UNAVAILABLE
+    // (MALFORMED, an unanchored SEARCH), NOT_IN_SCOPE (a fragment outside the client scope; reason UNKNOWN) or UNAVAILABLE
     // (LIMIT_EXCEEDED for the per-client rate limit, STORE_UNAVAILABLE for a failed read).
     //
     // Nodes and edges rather than an SRGraph: an SRGraph names one owning client and one origin, and a reply may
@@ -265,12 +265,12 @@ module sqe_msgs {
         // descriptor is published ONCE, and a consumer that joins later never sees one.
         //
         // sensor_latency_ns: nanoseconds between the measurement and the header stamp. A sample stamped T was
-        // measured at T - latency, and the engine subtracts it on ingest. 0 means unstated.
+        // measured at T - latency, and the engine subtracts it on ingest. Absent means unstated.
         //
-        // frame_rate: this hop's declared rate in Hz, 0 when unstated. Rolled up per input into
+        // frame_rate: this hop's declared rate in Hz; absent when unstated. Rolled up per input into
         // SISPatternInput::frame_rate, which is what a session picks its reference input by.
-        int64 sensor_latency_ns;
-        double frame_rate;
+        @optional int64 sensor_latency_ns;
+        @optional double frame_rate;
     };
 
     // One input of the pattern, bound to a concrete realisation.
@@ -284,7 +284,7 @@ module sqe_msgs {
         tcn_types::msg::SRFrameRef observer;
         tcn_types::msg::SRFrameRef target;
 
-        // Slowest declared rate along this input's path, in Hz; 0 when no hop
+        // Slowest declared rate along this input's path, in Hz; absent when no hop
         // declares one.
         //
         // What a session picks its REFERENCE INPUT by. A correspondence spans
@@ -293,7 +293,7 @@ module sqe_msgs {
         // interpolating a 200 Hz stream to 30 Hz instants spans at most 5 ms,
         // while the reverse spans up to 33 ms, and interpolating toward the
         // sparser signal is always the larger invention.
-        double frame_rate;
+        @optional double frame_rate;
     };
 
     // --- B67 ---------------------------------------------------------------
