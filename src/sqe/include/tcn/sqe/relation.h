@@ -33,27 +33,32 @@ namespace sqe {
 
 /// `SRStreamTriggerKind`, with the ordinals pinned to the IDL's declaration
 /// order for the same reason `Status`'s are.
+///
+/// `Unknown` is the IDL's `..._UNKNOWN` at 0 (E6): what a zeroed or newer
+/// value reads as. No named constructor makes one, and the engine refuses it.
 enum class TriggerKind : std::int32_t
 {
-    FixedRate = 0,   ///< a timer; sample at "now" less the system latency
-    OnStream = 1,    ///< a named stream; sample at its stamp
-    OnAny = 2,       ///< any input on the path; sample at the arriving stamp
-    OnReference = 3, ///< one hop of the path; sample at its stamp
+    Unknown = 0,
+    FixedRate = 1,   ///< a timer; sample at "now" less the system latency
+    OnStream = 2,    ///< a named stream; sample at its stamp
+    OnAny = 3,       ///< any input on the path; sample at the arriving stamp
+    OnReference = 4, ///< one hop of the path; sample at its stamp
 };
 
 /// `SRReferencePolicy`: which dynamic hop of a compiled path drives an
 /// `OnReference` stream. Ordinals pinned to the IDL's declaration order.
 enum class ReferencePolicy : std::int32_t
 {
+    Unknown = 0,
     /// The hop closest to the **observer** — first in path order, the request
     /// naming its path as "target located in observer".
-    First = 0,
+    First = 1,
     /// The hop with the highest declared `frame_rate`. A hop declaring none
     /// is never chosen while any declared one exists.
-    Fastest = 1,
+    Fastest = 2,
     /// The hop with the lowest declared non-zero `frame_rate`, so the
     /// composed relation is never published faster than its slowest input.
-    Slowest = 2,
+    Slowest = 3,
 };
 
 /// When a relation stream is evaluated.
@@ -129,6 +134,7 @@ public:
         if (a.kind_ != b.kind_) { return false; }
         switch (a.kind_)
         {
+            case TriggerKind::Unknown:     return true;
             case TriggerKind::FixedRate:   return a.hz_ == b.hz_;
             case TriggerKind::OnStream:    return a.topic_ == b.topic_;
             case TriggerKind::OnAny:       return true;
@@ -143,12 +149,13 @@ public:
     {
         switch (kind_)
         {
-            case TriggerKind::FixedRate:   return "SRG_TRIGGER_FIXED_RATE";
-            case TriggerKind::OnStream:    return "SRG_TRIGGER_ON_STREAM";
-            case TriggerKind::OnAny:       return "SRG_TRIGGER_ON_ANY";
-            case TriggerKind::OnReference: return "SRG_TRIGGER_ON_REFERENCE";
+            case TriggerKind::Unknown:     break;
+            case TriggerKind::FixedRate:   return "SR_STREAM_TRIGGER_KIND_FIXED_RATE";
+            case TriggerKind::OnStream:    return "SR_STREAM_TRIGGER_KIND_ON_STREAM";
+            case TriggerKind::OnAny:       return "SR_STREAM_TRIGGER_KIND_ON_ANY";
+            case TriggerKind::OnReference: return "SR_STREAM_TRIGGER_KIND_ON_REFERENCE";
         }
-        return "SRG_TRIGGER_UNKNOWN";
+        return "SR_STREAM_TRIGGER_KIND_UNKNOWN";
     }
 
     /// The wire spelling of the reference policy, for a log line. Never null,
@@ -157,11 +164,12 @@ public:
     {
         switch (policy_)
         {
-            case ReferencePolicy::First:   return "SRG_REF_FIRST";
-            case ReferencePolicy::Fastest: return "SRG_REF_FASTEST";
-            case ReferencePolicy::Slowest: return "SRG_REF_SLOWEST";
+            case ReferencePolicy::Unknown: break;
+            case ReferencePolicy::First:   return "SR_REFERENCE_POLICY_FIRST";
+            case ReferencePolicy::Fastest: return "SR_REFERENCE_POLICY_FASTEST";
+            case ReferencePolicy::Slowest: return "SR_REFERENCE_POLICY_SLOWEST";
         }
-        return "SRG_REF_UNKNOWN";
+        return "SR_REFERENCE_POLICY_UNKNOWN";
     }
 
 private:
@@ -252,11 +260,12 @@ inline constexpr double kDefaultFreshnessBias = 0.0;
 ///
 /// Part of a stream's terms, like the trigger and the bias: two acquires of one
 /// relation in different modes conflict.
-enum class EvaluationMode : std::uint32_t
+enum class EvaluationMode : std::int32_t
 {
-    Engine = 0,
-    Local = 1,
-    Both = 2,
+    Unknown = 0,
+    Engine = 1,
+    Local = 2,
+    Both = 3,
 };
 
 /// `SISRelationStreamStartRequest`, validated.

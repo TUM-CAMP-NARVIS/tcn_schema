@@ -1,0 +1,9 @@
+{
+ "_comment": "0.11 plan 5 (#35): the expected differences between the plan 4 tree and the plan 5 tree, for `idl_cli.py moves --old <plan 4 src/dds> --new src/dds --spec tools/idl/sqe_0_11.json`. Each task appends what it changes.",
+ "files": [],
+ "deleted": [],
+ "new_types": [],
+ "expect": {
+  "enums_from": "tools/idl/enum_renames_0_11_sqe.json"
+ }
+}

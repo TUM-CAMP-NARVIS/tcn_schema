@@ -169,7 +169,7 @@ inline Result<void> check_domain(std::string_view domain) noexcept
     return Result<void>::ok();
 }
 
-/// `@{domain}::{name}`: the id of an SRG_SCOPE_DOMAIN node, and what a
+/// `@{domain}::{name}`: the id of an SR_NODE_SCOPE_DOMAIN node, and what a
 /// SISFrameRef names it by (with an empty client). Two declarations are one
 /// node exactly when domain and name are equal.
 inline Result<std::string> domain_node_id(std::string_view domain, std::string_view name)

@@ -6,6 +6,7 @@ Used for 0.11 plan 3: the restructure must not change any field (only names, pac
 import json
 import re
 from dataclasses import dataclass, field
+from pathlib import Path
 from typing import Dict, Iterable, List, Set, Tuple
 
 from .model import Const, Enum, Schema, Struct, Typedef, Union
@@ -77,12 +78,28 @@ def _expected(d, name: str, expect: dict, label_map: Dict[str, str]):
     return d
 
 
+def load_expect(expect: dict = None) -> dict:
+    """`expect` with `enums_from` resolved: the "enums" of that JSON file (path as given, relative to the working
+    directory, which is the repo root for the CLI) are merged into `expect["enums"]`. An enum named both inline and
+    in the file is an error."""
+    expect = dict(expect or {})
+    path = expect.pop("enums_from", None)
+    if path:
+        table = json.loads(Path(path).read_text(encoding="utf-8"))["enums"]
+        inline = expect.get("enums", {})
+        both = sorted(set(table) & set(inline))
+        if both:
+            raise ValueError(f"enums named both inline and in {path}: {both}")
+        expect["enums"] = {**inline, **table}
+    return expect
+
+
 def compare(old: Schema, new: Schema, renames: Dict[str, str], deleted: Set[str],
             new_types: Iterable[str] = (), expect: dict = None) -> Report:
     r = Report()
     m = _mapper(renames)
     od, nd = old.decls(), new.decls()
-    expect = expect or {}
+    expect = load_expect(expect)
     label_map = {o: n for t in expect.get("enums", {}).values() for o, n in t if o is not None}
     reached = set()
     for name in sorted(od):

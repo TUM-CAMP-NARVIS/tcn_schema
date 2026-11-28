@@ -48,9 +48,10 @@ module sqe_msgs {
     };
 
     @appendable enum SISStoreHealth {
-        SIS_SH_OK,              // a probe read came back in time
-        SIS_SH_DEGRADED,        // it came back slowly; store_detail says how
-        SIS_SH_UNAVAILABLE      // it failed or timed out; reads and writes will too
+        SIS_STORE_HEALTH_UNKNOWN,
+        SIS_STORE_HEALTH_OK,              // a probe read came back in time
+        SIS_STORE_HEALTH_DEGRADED,        // it came back slowly; store_detail says how
+        SIS_STORE_HEALTH_UNAVAILABLE      // it failed or timed out; reads and writes will too
     };
 
     // The bounds one class of reader is held to.

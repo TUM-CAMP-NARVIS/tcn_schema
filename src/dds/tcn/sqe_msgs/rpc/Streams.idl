@@ -25,18 +25,20 @@ module sqe_msgs {
     // Which dynamic hop of a compiled path drives an SRG_TRIGGER_ON_REFERENCE
     // stream. Ordinals are the wire encoding; append only.
     @appendable enum SRReferencePolicy {
-        SRG_REF_FIRST,                  // the hop closest to the observer -- first in
+        SR_REFERENCE_POLICY_UNKNOWN,
+        SR_REFERENCE_POLICY_FIRST,                  // the hop closest to the observer -- first in
                                         // path order, the request naming its path as
                                         // "target located in observer"
-        SRG_REF_FASTEST,                // the hop with the highest declared frame_rate
-        SRG_REF_SLOWEST                 // the hop with the lowest declared non-zero rate
+        SR_REFERENCE_POLICY_FASTEST,                // the hop with the highest declared frame_rate
+        SR_REFERENCE_POLICY_SLOWEST                 // the hop with the lowest declared non-zero rate
     };
 
     @appendable enum SRStreamTriggerKind {
-        SRG_TRIGGER_FIXED_RATE,         // a timer; sample at "now" less the system latency
-        SRG_TRIGGER_ON_STREAM,          // a named stream; sample at its stamp
-        SRG_TRIGGER_ON_ANY,             // any input on the path; sample at the arriving stamp
-        SRG_TRIGGER_ON_REFERENCE        // one hop of the path; sample at its stamp
+        SR_STREAM_TRIGGER_KIND_UNKNOWN,
+        SR_STREAM_TRIGGER_KIND_FIXED_RATE,         // a timer; sample at "now" less the system latency
+        SR_STREAM_TRIGGER_KIND_ON_STREAM,          // a named stream; sample at its stamp
+        SR_STREAM_TRIGGER_KIND_ON_ANY,             // any input on the path; sample at the arriving stamp
+        SR_STREAM_TRIGGER_KIND_ON_REFERENCE        // one hop of the path; sample at its stamp
     };
 
     // When a relation stream is evaluated, and therefore at which instant every
@@ -55,13 +57,13 @@ module sqe_msgs {
     // asking for the same relation with different triggers is refused. Pick
     // one and use it across the deployment.
     @appendable union SRStreamTrigger switch(SRStreamTriggerKind) {
-    case SRG_TRIGGER_FIXED_RATE:
+    case SR_STREAM_TRIGGER_KIND_FIXED_RATE:
         double hz;
-    case SRG_TRIGGER_ON_STREAM:
+    case SR_STREAM_TRIGGER_KIND_ON_STREAM:
         string topic;
-    case SRG_TRIGGER_ON_ANY:
+    case SR_STREAM_TRIGGER_KIND_ON_ANY:
         boolean unused;
-    case SRG_TRIGGER_ON_REFERENCE:
+    case SR_STREAM_TRIGGER_KIND_ON_REFERENCE:
         SRReferencePolicy policy;
     };
 
@@ -76,12 +78,13 @@ module sqe_msgs {
     // calibration later arrives, the shorter route becomes available and
     // nothing looks at it again.
     @appendable enum SISReoptimisePolicy {
-        SIS_RO_BEST_AVAILABLE_NOW,  // ordinal 0. Today's behaviour, and the
+        SIS_REOPTIMISE_POLICY_UNKNOWN,
+        SIS_REOPTIMISE_POLICY_BEST_AVAILABLE_NOW,  // ordinal 0. Today's behaviour, and the
                                     //   default: serve the best route
                                     //   available at the moment of
                                     //   compilation, and re-evaluate only
                                     //   when something on that route changes.
-        SIS_RO_BEST_POSSIBLE        // ordinal 1. Serve me now over whatever is
+        SIS_REOPTIMISE_POLICY_BEST_POSSIBLE        // ordinal 1. Serve me now over whatever is
                                     //   available, and move me when a better
                                     //   route appears -- typically when a
                                     //   calibration makes a shorter path
@@ -91,13 +94,14 @@ module sqe_msgs {
     // Where a relation stream is evaluated (0.10.0, engine B90). Ordinals are
     // the wire encoding; append only.
     @appendable enum SISEvaluationMode {
-        SIS_EV_ENGINE,          // ordinal 0, the default: the engine composes and publishes
+        SIS_EVALUATION_MODE_UNKNOWN,
+        SIS_EVALUATION_MODE_ENGINE,          // ordinal 0, the default: the engine composes and publishes
                                 //   the relation on its handle, as every stream did before
-        SIS_EV_LOCAL,           // the engine routes and publishes the plan; the client composes
+        SIS_EVALUATION_MODE_LOCAL,           // the engine routes and publishes the plan; the client composes
                                 //   the relation from the plan's inputs itself (sqe-local). No
                                 //   pipeline, no input subscription, no derived edge, nothing
                                 //   published on the handle
-        SIS_EV_BOTH             // the relation on the handle, and the plan
+        SIS_EVALUATION_MODE_BOTH             // the relation on the handle, and the plan
     };
 
     // Publish the spatial relation between two frames as a stream.
@@ -267,10 +271,11 @@ module sqe_msgs {
 
     // Which operation a SISPlanOp is. Ordinals are the wire encoding; append only.
     @appendable enum SISPlanOpKind {
-        SIS_PO_STATIC,          // a fixed transform, already aligned to the walk
-        SIS_PO_DYNAMIC,         // a live input, sampled at the instant
-        SIS_PO_COORD_SWAP,      // a change of axis convention
-        SIS_PO_PROJECT          // terminal: into an image plane
+        SIS_PLAN_OP_KIND_UNKNOWN,
+        SIS_PLAN_OP_KIND_STATIC,          // a fixed transform, already aligned to the walk
+        SIS_PLAN_OP_KIND_DYNAMIC,         // a live input, sampled at the instant
+        SIS_PLAN_OP_KIND_COORD_SWAP,      // a change of axis convention
+        SIS_PLAN_OP_KIND_PROJECT          // terminal: into an image plane
     };
 
     @appendable struct SISPlanDynamicOp {
@@ -287,10 +292,10 @@ module sqe_msgs {
     // variants; the covariance is the edge's stated (systematic) one, already
     // conjugated when the hop was walked backwards.
     @appendable union SISPlanOp switch (SISPlanOpKind) {
-        case SIS_PO_STATIC:     sqe_msgs::msg::SRTransform static_transform;
-        case SIS_PO_DYNAMIC:    SISPlanDynamicOp dynamic;
-        case SIS_PO_COORD_SWAP: SISPlanCoordSwapOp coord_swap;
-        case SIS_PO_PROJECT:    sqe_msgs::msg::SRIntrinsics project;
+        case SIS_PLAN_OP_KIND_STATIC:     sqe_msgs::msg::SRTransform static_transform;
+        case SIS_PLAN_OP_KIND_DYNAMIC:    SISPlanDynamicOp dynamic;
+        case SIS_PLAN_OP_KIND_COORD_SWAP: SISPlanCoordSwapOp coord_swap;
+        case SIS_PLAN_OP_KIND_PROJECT:    sqe_msgs::msg::SRIntrinsics project;
     };
 
     // One target's chain. A plain relation has one, `materialized_id` 0; a
@@ -303,9 +308,10 @@ module sqe_msgs {
 
     // Where a live input's samples come from. Ordinals are the wire encoding.
     @appendable enum SISPlanInputSource {
-        SIS_PI_TRACKER,         // a sensor's pose stream
-        SIS_PI_ENGINE_STREAM,   // another relation stream's output (a derived edge)
-        SIS_PI_UNBOUND          // no adopted topic feeds this input right now
+        SIS_PLAN_INPUT_SOURCE_UNKNOWN,
+        SIS_PLAN_INPUT_SOURCE_TRACKER,         // a sensor's pose stream
+        SIS_PLAN_INPUT_SOURCE_ENGINE_STREAM,   // another relation stream's output (a derived edge)
+        SIS_PLAN_INPUT_SOURCE_UNBOUND          // no adopted topic feeds this input right now
     };
 
     // Everything the engine's ingest knows about one live input: what to

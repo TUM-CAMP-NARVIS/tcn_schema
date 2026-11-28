@@ -13,11 +13,12 @@ module sqe_msgs {
         // --- nodes -------------------------------------------------------------
 
         @appendable enum SRNodeType {
-          SRG_NODE_GENERIC,
-          SRG_NODE_SENSOR,
-          SRG_NODE_DISPLAY,
-          SRG_NODE_TRACKABLE,
-          SRG_NODE_CONTENT
+          SR_NODE_TYPE_UNKNOWN,
+          SR_NODE_TYPE_GENERIC,
+          SR_NODE_TYPE_SENSOR,
+          SR_NODE_TYPE_DISPLAY,
+          SR_NODE_TYPE_TRACKABLE,
+          SR_NODE_TYPE_CONTENT
         };
 
         // Local nodes are private to their graph and are namespaced with the
@@ -37,9 +38,10 @@ module sqe_msgs {
         // Ordinals are the wire encoding; append only. A reader that predates a
         // value should treat an unknown scope as shared, not as local.
         @appendable enum SRNodeScope {
-          SRG_SCOPE_LOCAL,
-          SRG_SCOPE_GLOBAL,
-          SRG_SCOPE_DOMAIN
+          SR_NODE_SCOPE_UNKNOWN,
+          SR_NODE_SCOPE_LOCAL,
+          SR_NODE_SCOPE_GLOBAL,
+          SR_NODE_SCOPE_DOMAIN
         };
 
         // --- templates ---------------------------------------------------------

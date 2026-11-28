@@ -119,7 +119,7 @@ The encoding belongs to the package family (decisions E1–E3):
 - All migration notes are indexed in [MIGRATION.md](MIGRATION.md), newest first. Each note says what changed on the
   wire and in the generated code, and what each consumer has to do.
 - Recent releases:
-  - **0.10.7** (engine B94, additive): `SRG_SCOPE_DOMAIN`, domain nodes `@{domain}::{name}`.
+  - **0.10.7** (engine B94, additive): `SRG_SCOPE_DOMAIN` (`SR_NODE_SCOPE_DOMAIN` from 0.11), domain nodes `@{domain}::{name}`.
   - **0.10.6** (B93, additive): the relation sample.
   - **0.10.5:** person tracking for avatars, `HumanPoseMessage`, `TimeRef`.
   - **0.10.0** (B90): a wire break; evaluation modes and plans.

@@ -103,7 +103,7 @@ inline Result<std::string> marker_announce_key(const ClientId& client, std::stri
 /// A mirror rather than the IDL enum, because this library includes no
 /// generated header and builds where fastddsgen does not exist. The ordinals
 /// are the IDL's own and are pinned against it in `tcnart`, which has both.
-enum class MarkerKind : std::uint32_t {
+enum class MarkerKind : std::int32_t {
     None = 0,
     ArucoMarker = 1,
     ArucoBoard = 2,

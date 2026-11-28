@@ -86,7 +86,7 @@ TCN_SQE_TEST(an_on_stream_trigger_needs_a_topic_and_on_any_needs_nothing)
 
     const StreamTrigger any = StreamTrigger::on_any();
     CHECK(any.kind() == TriggerKind::OnAny);
-    CHECK_STR_EQ(any.kind_name(), "SRG_TRIGGER_ON_ANY");
+    CHECK_STR_EQ(any.kind_name(), "SR_STREAM_TRIGGER_KIND_ON_ANY");
 }
 
 // The ordinals are the IDL's declaration order, spelled out so a renumbering
@@ -94,10 +94,11 @@ TCN_SQE_TEST(an_on_stream_trigger_needs_a_topic_and_on_any_needs_nothing)
 // clock.
 TCN_SQE_TEST(trigger_kind_ordinals_match_the_idl_declaration_order)
 {
-    CHECK_INT_EQ(static_cast<int>(TriggerKind::FixedRate), 0);
-    CHECK_INT_EQ(static_cast<int>(TriggerKind::OnStream), 1);
-    CHECK_INT_EQ(static_cast<int>(TriggerKind::OnAny), 2);
-    CHECK_INT_EQ(static_cast<int>(TriggerKind::OnReference), 3);
+    CHECK_INT_EQ(static_cast<int>(TriggerKind::Unknown), 0);
+    CHECK_INT_EQ(static_cast<int>(TriggerKind::FixedRate), 1);
+    CHECK_INT_EQ(static_cast<int>(TriggerKind::OnStream), 2);
+    CHECK_INT_EQ(static_cast<int>(TriggerKind::OnAny), 3);
+    CHECK_INT_EQ(static_cast<int>(TriggerKind::OnReference), 4);
 }
 
 // Same reasoning one level down: the policy is its own IDL enum, and it is
@@ -105,9 +106,18 @@ TCN_SQE_TEST(trigger_kind_ordinals_match_the_idl_declaration_order)
 // of the path rather than failing.
 TCN_SQE_TEST(reference_policy_ordinals_match_the_idl_declaration_order)
 {
-    CHECK_INT_EQ(static_cast<int>(ReferencePolicy::First), 0);
-    CHECK_INT_EQ(static_cast<int>(ReferencePolicy::Fastest), 1);
-    CHECK_INT_EQ(static_cast<int>(ReferencePolicy::Slowest), 2);
+    CHECK_INT_EQ(static_cast<int>(ReferencePolicy::Unknown), 0);
+    CHECK_INT_EQ(static_cast<int>(ReferencePolicy::First), 1);
+    CHECK_INT_EQ(static_cast<int>(ReferencePolicy::Fastest), 2);
+    CHECK_INT_EQ(static_cast<int>(ReferencePolicy::Slowest), 3);
+}
+
+TCN_SQE_TEST(evaluation_mode_ordinals_match_the_idl_declaration_order)
+{
+    CHECK_INT_EQ(static_cast<int>(EvaluationMode::Unknown), 0);
+    CHECK_INT_EQ(static_cast<int>(EvaluationMode::Engine), 1);
+    CHECK_INT_EQ(static_cast<int>(EvaluationMode::Local), 2);
+    CHECK_INT_EQ(static_cast<int>(EvaluationMode::Both), 3);
 }
 
 // The trigger a composed relation should be asking for. `on_any` fires once
@@ -118,12 +128,12 @@ TCN_SQE_TEST(a_reference_trigger_defaults_to_the_first_hop_and_carries_its_polic
     const StreamTrigger first = StreamTrigger::on_reference();
     CHECK(first.kind() == TriggerKind::OnReference);
     CHECK(first.policy() == ReferencePolicy::First);
-    CHECK_STR_EQ(first.kind_name(), "SRG_TRIGGER_ON_REFERENCE");
-    CHECK_STR_EQ(first.policy_name(), "SRG_REF_FIRST");
+    CHECK_STR_EQ(first.kind_name(), "SR_STREAM_TRIGGER_KIND_ON_REFERENCE");
+    CHECK_STR_EQ(first.policy_name(), "SR_REFERENCE_POLICY_FIRST");
 
     const StreamTrigger slowest = StreamTrigger::on_reference(ReferencePolicy::Slowest);
     CHECK(slowest.policy() == ReferencePolicy::Slowest);
-    CHECK_STR_EQ(slowest.policy_name(), "SRG_REF_SLOWEST");
+    CHECK_STR_EQ(slowest.policy_name(), "SR_REFERENCE_POLICY_SLOWEST");
 
     // Two policies are two different requests: the engine picks a different
     // hop, so the stream is composed off a different sensor's clock.

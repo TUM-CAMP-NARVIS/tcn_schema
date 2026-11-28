@@ -149,3 +149,45 @@ class ExpectTypoTest(unittest.TestCase):
             compare(_schema(s), _schema(s), {}, set(), expect={"removed_members": {"p::msg::V": ["typo"]}})
         with self.assertRaises(ValueError):
             compare(_schema(s), _schema(s), {}, set(), expect={"optional": {"p::msg::V": ["typo"]}})
+
+
+class EnumsFromTest(unittest.TestCase):
+    """`expect.enums_from` names a JSON file whose "enums" are merged into the inline ones (path as given)."""
+
+    def test_enums_from_behaves_like_inline_enums(self):
+        import json
+        import os
+        from tools.idl.moves import compare
+        table = {"p::msg::E": [[None, "E_UNKNOWN"], ["A_ONE", "E_ONE"], ["A_TWO", "E_TWO"]]}
+        new = _schema({"p/msg/V.idl": ExpectTest.NEW})
+        old = _schema(ExpectTest.OLD)
+        base = {"extensibility": {"*": "appendable"}, "removed_members": {"p::msg::V": ["y"]},
+                "optional": {"p::msg::V": ["x"]}}
+        with tempfile.TemporaryDirectory() as d:
+            t = Path(d) / "t.json"
+            t.write_text(json.dumps({"enums": table}))
+            from_file = compare(old, new, {}, set(), expect=dict(base, enums_from=str(t)))
+            inline = compare(old, new, {}, set(), expect=dict(base, enums=table))
+            self.assertEqual(from_file.problems, [])
+            self.assertEqual(from_file.problems, inline.problems)
+            # a relative path resolves against the working directory (the repo root for the CLI)
+            cwd = os.getcwd()
+            os.chdir(d)
+            try:
+                rel = compare(old, new, {}, set(), expect=dict(base, enums_from="t.json"))
+            finally:
+                os.chdir(cwd)
+            self.assertEqual(rel.problems, [])
+            # an inline entry for an enum the file also lists is an error
+            with self.assertRaises(ValueError):
+                compare(old, new, {}, set(), expect=dict(base, enums=table, enums_from=str(t)))
+
+    def test_markdown_provenance_is_a_parameter(self):
+        from tools.idl.enums import write_markdown
+        with tempfile.TemporaryDirectory() as d:
+            md = Path(d) / "m.md"
+            write_markdown({"p::E": [(None, None, "E_UNKNOWN", 0)]}, md, "plan 5", "enum_renames_0_11_sqe.json")
+            text = md.read_text()
+            self.assertIn("plan 5", text)
+            self.assertIn("enum_renames_0_11_sqe.json", text)
+            self.assertNotIn("plan 4", text)

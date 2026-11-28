@@ -25,13 +25,14 @@ module sqe_msgs {
     // which in a fused deployment is the entire fleet. A read of it is
     // unbounded however small the reply that comes back is shaped.
     @appendable enum SISGraphQueryKind {
-        SIS_GQ_FRAGMENT,        // everything one client declared. Bounded by
+        SIS_GRAPH_QUERY_KIND_UNKNOWN,
+        SIS_GRAPH_QUERY_KIND_FRAGMENT,        // everything one client declared. Bounded by
                                 //   that fragment's own size
-        SIS_GQ_NEIGHBOURS,      // one node and its incident relations. Bounded
+        SIS_GRAPH_QUERY_KIND_NEIGHBOURS,      // one node and its incident relations. Bounded
                                 //   by that node's degree
-        SIS_GQ_SEARCH,          // a filter within one of the two anchors above.
+        SIS_GRAPH_QUERY_KIND_SEARCH,          // a filter within one of the two anchors above.
                                 //   See the filter fields on the request
-        SIS_GQ_PATH             // B64: the relations connecting two frames.
+        SIS_GRAPH_QUERY_KIND_PATH             // B64: the relations connecting two frames.
                                 //   Was reserved-and-refused, on the grounds
                                 //   that a path read has to answer *which*
                                 //   predicate it walked and a plain traversal
@@ -50,12 +51,13 @@ module sqe_msgs {
     // These mirror the engine's own predicates exactly -- there is no fourth,
     // looser rule reachable from here.
     @appendable enum SISPathPredicate {
-        SIS_PP_WALKABLE,        // the default: refuses uncalibrated relations,
+        SIS_PATH_PREDICATE_UNKNOWN,
+        SIS_PATH_PREDICATE_WALKABLE,        // the default: refuses uncalibrated relations,
                                 //   which is what a running stream composes by
-        SIS_PP_CONNECTABLE,     // the relaxed shape rule a PENDING stream is
+        SIS_PATH_PREDICATE_CONNECTABLE,     // the relaxed shape rule a PENDING stream is
                                 //   probed with: is there a route at all, once
                                 //   the missing measurements arrive?
-        SIS_PP_WALKABLE_STATIC  // walkable, and refusing anything that moves.
+        SIS_PATH_PREDICATE_WALKABLE_STATIC  // walkable, and refusing anything that moves.
                                 //   What a calibration asks when it needs a
                                 //   relation to hold still
     };
@@ -281,9 +283,10 @@ module sqe_msgs {
     // How a pattern was expanded to fit the graph. A pattern is never applied
     // unexpanded, so there is no third value meaning "as declared".
     @appendable enum SRPatternExpansion {
-        SIS_PX_SPACE,           // several instances at one instant: three
+        SR_PATTERN_EXPANSION_UNKNOWN,
+        SR_PATTERN_EXPANSION_SPACE,           // several instances at one instant: three
                                 //   markers on a rigid body, seen together
-        SIS_PX_TIME             // one instance at several instants: one marker
+        SR_PATTERN_EXPANSION_TIME             // one instance at several instants: one marker
                                 //   moved through the volume. Preferred where
                                 //   both are possible -- integrating over time
                                 //   is more accurate than one snapshot

@@ -84,15 +84,16 @@ module sqe_msgs {
 
     // --- sqe/{engine_id}/op/changes (published) ---------------------------
     @appendable enum SISGraphChangeKind {
-        SIS_GC_FRAGMENT_REPLACED,  // a join or re-join: re-read the fragment
-        SIS_GC_FRAGMENT_REMOVED,   // retracted after its client left
-        SIS_GC_CLIENT_JOINED,      // liveliness token appeared; graph unchanged
-        SIS_GC_CLIENT_LEFT,        // liveliness token gone
-        SIS_GC_NODE_CHANGED,       // `name` is the node
-        SIS_GC_NODE_REMOVED,
-        SIS_GC_RELATION_CHANGED,   // `name` is the relation; includes calibrations
+        SIS_GRAPH_CHANGE_KIND_UNKNOWN,
+        SIS_GRAPH_CHANGE_KIND_FRAGMENT_REPLACED,  // a join or re-join: re-read the fragment
+        SIS_GRAPH_CHANGE_KIND_FRAGMENT_REMOVED,   // retracted after its client left
+        SIS_GRAPH_CHANGE_KIND_CLIENT_JOINED,      // liveliness token appeared; graph unchanged
+        SIS_GRAPH_CHANGE_KIND_CLIENT_LEFT,        // liveliness token gone
+        SIS_GRAPH_CHANGE_KIND_NODE_CHANGED,       // `name` is the node
+        SIS_GRAPH_CHANGE_KIND_NODE_REMOVED,
+        SIS_GRAPH_CHANGE_KIND_EDGE_CHANGED,   // `name` is the relation; includes calibrations
                                    //   and operator edits
-        SIS_GC_RELATION_REMOVED
+        SIS_GRAPH_CHANGE_KIND_EDGE_REMOVED
     };
 
     // Names what changed; does not carry it -- re-read what it names.
@@ -111,18 +112,19 @@ module sqe_msgs {
 
     // --- sqe/{engine_id}/op/update ----------------------------------------
     @appendable enum SISOperatorMutationKind {
-        SIS_OM_NODE_UPDATE,
-        SIS_OM_NODE_REMOVE,
-        SIS_OM_EDGE_UPDATE,
-        SIS_OM_EDGE_REMOVE
+        SIS_OPERATOR_MUTATION_KIND_UNKNOWN,
+        SIS_OPERATOR_MUTATION_KIND_NODE_UPDATE,
+        SIS_OPERATOR_MUTATION_KIND_NODE_REMOVE,
+        SIS_OPERATOR_MUTATION_KIND_EDGE_UPDATE,
+        SIS_OPERATOR_MUTATION_KIND_EDGE_REMOVE
     };
 
     // The per-client mutation payloads, reused unchanged.
     @appendable union SISOperatorMutation switch (SISOperatorMutationKind) {
-        case SIS_OM_NODE_UPDATE: SISNodeUpdateRequest node_update;
-        case SIS_OM_NODE_REMOVE: SISNodeRemoveRequest node_remove;
-        case SIS_OM_EDGE_UPDATE: SISEdgeUpdateRequest edge_update;
-        case SIS_OM_EDGE_REMOVE: SISEdgeRemoveRequest edge_remove;
+        case SIS_OPERATOR_MUTATION_KIND_NODE_UPDATE: SISNodeUpdateRequest node_update;
+        case SIS_OPERATOR_MUTATION_KIND_NODE_REMOVE: SISNodeRemoveRequest node_remove;
+        case SIS_OPERATOR_MUTATION_KIND_EDGE_UPDATE: SISEdgeUpdateRequest edge_update;
+        case SIS_OPERATOR_MUTATION_KIND_EDGE_REMOVE: SISEdgeRemoveRequest edge_remove;
     };
 
     // Applies `mutation` to fragment `client` as though that client had sent
@@ -155,8 +157,9 @@ module sqe_msgs {
 
     // What to explain. Ordinals are the wire encoding; append only.
     @appendable enum SISExplainKind {
-        SIS_EX_RELATION,        // dry run: compile observer/target now, start nothing
-        SIS_EX_STREAM           // the running stream `handle`: the route it is on
+        SIS_EXPLAIN_KIND_UNKNOWN,
+        SIS_EXPLAIN_KIND_RELATION,        // dry run: compile observer/target now, start nothing
+        SIS_EXPLAIN_KIND_STREAM           // the running stream `handle`: the route it is on
     };
 
     @appendable struct SISExplainRequest {
@@ -216,9 +219,10 @@ module sqe_msgs {
 
     // Ordinals are the wire encoding; append only.
     @appendable enum SISTransactionLogAction {
-        SIS_TL_STATUS,          // say what is running; change nothing
-        SIS_TL_START,           // start a log labelled `label`, stopping a running one
-        SIS_TL_STOP             // stop the running log
+        SIS_TRANSACTION_LOG_ACTION_UNKNOWN,
+        SIS_TRANSACTION_LOG_ACTION_STATUS,          // say what is running; change nothing
+        SIS_TRANSACTION_LOG_ACTION_START,           // start a log labelled `label`, stopping a running one
+        SIS_TRANSACTION_LOG_ACTION_STOP             // stop the running log
     };
 
     @appendable struct SISTransactionLogRequest {

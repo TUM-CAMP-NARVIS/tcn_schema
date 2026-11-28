@@ -29,11 +29,12 @@ module sqe_msgs {
 
     // Which instant to sample. Ordinals are the wire encoding; append only.
     @appendable enum SISRelationSampleInstant {
-        SIS_SI_AT,              // `stamp_ns`, a data stamp in the route's clock domain
-        SIS_SI_NOW,             // what a FIXED_RATE trigger samples at when the request
+        SIS_RELATION_SAMPLE_INSTANT_UNKNOWN,
+        SIS_RELATION_SAMPLE_INSTANT_AT,              // `stamp_ns`, a data stamp in the route's clock domain
+        SIS_RELATION_SAMPLE_INSTANT_NOW,             // what a FIXED_RATE trigger samples at when the request
                                 // arrives: host now - system latency - the route's
                                 // largest declared sensor latency
-        SIS_SI_LATEST           // the newest instant every input has data for: the
+        SIS_RELATION_SAMPLE_INSTANT_LATEST           // the newest instant every input has data for: the
                                 // minimum over the inputs of their newest stamp. Never
                                 // extrapolates
     };

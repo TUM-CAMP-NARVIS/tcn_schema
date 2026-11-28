@@ -70,7 +70,8 @@ def main(argv) -> int:
     if args.cmd == "enums":
         import json
         from .enums import migration_rows, write_markdown
-        table = json.loads(args.table.read_text(encoding="utf-8"))["enums"]
+        spec = json.loads(args.table.read_text(encoding="utf-8"))
+        table = spec["enums"]
         schema = load_schema(args.dds_root)
         decls = schema.decls()
         missing = sorted(set(table) - set(decls))
@@ -86,7 +87,7 @@ def main(argv) -> int:
             new = apply_enums(text, f.decls, table)
             if new != text:
                 p.write_text(new, encoding="utf-8")
-        write_markdown(rows, args.markdown)
+        write_markdown(rows, args.markdown, spec["plan"], args.table.name)
         print(f"{len(table)} enums renamed")
         return 0
     if args.cmd == "annotate":
