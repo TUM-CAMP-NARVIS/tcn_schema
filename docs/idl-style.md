@@ -58,7 +58,8 @@ fastddsgen preprocesses each file, and a type included twice without a guard is 
 
 **`enum-prefix`** (tcn, O5): Every enumerator starts with the enum's name in UPPER_SNAKE_CASE: `enum SensorType {
 SENSOR_TYPE_NONE, SENSOR_TYPE_VIDEO_COLOR, … }`. This keeps the generated C++ free of clashes, such as
-`ERROR_TIMEOUT` with Windows macros.
+`ERROR_TIMEOUT` with Windows macros (0.11: `conversation_msgs::msg::ErrorCode` is `ERROR_CODE_*`). The 0.11
+renames are listed in [migration/0.11-enum-map.md](migration/0.11-enum-map.md).
 
 **`no-enums-module`**: No `module enums { … }`. An enum lives next to the types that use it.
 

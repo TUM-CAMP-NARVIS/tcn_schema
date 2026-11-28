@@ -1,16 +1,7 @@
 # IDL lint baseline: accepted findings as rule<TAB>file<TAB>symbol. This list only shrinks.
 # Regenerate with: python3 -I tools/idl_cli.py lint --dds-root src/dds --baseline tools/idl/lint_baseline.txt --update-baseline
 enum-first-unknown	conversation_msgs/msg/Common.idl	conversation_msgs::msg::PayloadKind
-enum-first-unknown	conversation_msgs/msg/Llm.idl	conversation_msgs::msg::ExecutionPreference
-enum-first-unknown	conversation_msgs/msg/Llm.idl	conversation_msgs::msg::InteractionActivityState
-enum-first-unknown	conversation_msgs/msg/Llm.idl	conversation_msgs::msg::InteractionMode
-enum-first-unknown	conversation_msgs/msg/Llm.idl	conversation_msgs::msg::MemoryScopeKind
-enum-first-unknown	conversation_msgs/msg/Llm.idl	conversation_msgs::msg::RetrievalPolicy
 enum-first-unknown	pcpd_msgs/msg/CameraSensor.idl	pcpd_msgs::msg::CameraSensorTypesEnum
-enum-first-unknown	pcpd_msgs/rpc/Parameters.idl	pcpd_msgs::rpc::ParameterAccess
-enum-first-unknown	pcpd_msgs/rpc/Parameters.idl	pcpd_msgs::rpc::ParameterSetStatus
-enum-first-unknown	pcpd_msgs/rpc/Parameters.idl	pcpd_msgs::rpc::ParameterValueType
-enum-first-unknown	pcpd_msgs/rpc/Parameters.idl	pcpd_msgs::rpc::RPCResponseStatus
 enum-first-unknown	sqe_msgs/msg/Graph.idl	sqe_msgs::msg::SREdgeTemporalType
 enum-first-unknown	sqe_msgs/msg/Graph.idl	sqe_msgs::msg::SRNodeScope
 enum-first-unknown	sqe_msgs/msg/Graph.idl	sqe_msgs::msg::SRNodeType
@@ -38,24 +29,10 @@ enum-first-unknown	sqe_msgs/rpc/Targets.idl	sqe_msgs::rpc::SISTargetKind
 enum-first-unknown	sqe_msgs/rpc/Targets.idl	sqe_msgs::rpc::SISTargetMutationKind
 enum-first-unknown	sqe_msgs/rpc/Targets.idl	sqe_msgs::rpc::SISTargetQueryKind
 enum-first-unknown	sqe_msgs/rpc/Targets.idl	sqe_msgs::rpc::SISTargetQueryStatus
-enum-first-unknown	tcn_types/msg/Geometry.idl	tcn_types::msg::CoordinateAxis
 enum-first-unknown	tcnart_msgs/msg/HandTracking.idl	tcnart_msgs::msg::JointPoseAccuracy
 enum-first-unknown	tcnart_msgs/msg/MediaTypes.idl	tcnart_msgs::msg::AudioAACProfile
-enum-first-unknown	tcnart_msgs/msg/MediaTypes.idl	tcnart_msgs::msg::VideoH26xProfile
-enum-first-unknown	tcnart_msgs/msg/MediaTypes.idl	tcnart_msgs::msg::VideoImageCompression
-enum-first-unknown	tcnart_msgs/msg/MediaTypes.idl	tcnart_msgs::msg::VideoPixelFormat
-enum-prefix	conversation_msgs/msg/Common.idl	conversation_msgs::msg::ErrorCode
 enum-prefix	conversation_msgs/msg/Common.idl	conversation_msgs::msg::PayloadKind
-enum-prefix	conversation_msgs/msg/Llm.idl	conversation_msgs::msg::ExecutionPreference
-enum-prefix	conversation_msgs/msg/Llm.idl	conversation_msgs::msg::InteractionActivityState
-enum-prefix	conversation_msgs/msg/Llm.idl	conversation_msgs::msg::InteractionMode
-enum-prefix	conversation_msgs/msg/Llm.idl	conversation_msgs::msg::MemoryScopeKind
-enum-prefix	conversation_msgs/msg/Llm.idl	conversation_msgs::msg::RetrievalPolicy
 enum-prefix	pcpd_msgs/msg/CameraSensor.idl	pcpd_msgs::msg::CameraSensorTypesEnum
-enum-prefix	pcpd_msgs/rpc/Parameters.idl	pcpd_msgs::rpc::ParameterAccess
-enum-prefix	pcpd_msgs/rpc/Parameters.idl	pcpd_msgs::rpc::ParameterSetStatus
-enum-prefix	pcpd_msgs/rpc/Parameters.idl	pcpd_msgs::rpc::ParameterValueType
-enum-prefix	pcpd_msgs/rpc/Parameters.idl	pcpd_msgs::rpc::RPCResponseStatus
 enum-prefix	sqe_msgs/msg/Graph.idl	sqe_msgs::msg::SREdgeTemporalType
 enum-prefix	sqe_msgs/msg/Graph.idl	sqe_msgs::msg::SRNodeScope
 enum-prefix	sqe_msgs/msg/Graph.idl	sqe_msgs::msg::SRNodeType
@@ -84,11 +61,5 @@ enum-prefix	sqe_msgs/rpc/Targets.idl	sqe_msgs::rpc::SISTargetKind
 enum-prefix	sqe_msgs/rpc/Targets.idl	sqe_msgs::rpc::SISTargetMutationKind
 enum-prefix	sqe_msgs/rpc/Targets.idl	sqe_msgs::rpc::SISTargetQueryKind
 enum-prefix	sqe_msgs/rpc/Targets.idl	sqe_msgs::rpc::SISTargetQueryStatus
-enum-prefix	tcn_types/msg/Geometry.idl	tcn_types::msg::CoordinateAxis
-enum-prefix	tcnart_msgs/msg/CameraModel.idl	tcnart_msgs::msg::CameraModelType
-enum-prefix	tcnart_msgs/msg/EyeTracking.idl	tcnart_msgs::msg::XRGazeSpaceType
 enum-prefix	tcnart_msgs/msg/HandTracking.idl	tcnart_msgs::msg::JointPoseAccuracy
 enum-prefix	tcnart_msgs/msg/MediaTypes.idl	tcnart_msgs::msg::AudioAACProfile
-enum-prefix	tcnart_msgs/msg/MediaTypes.idl	tcnart_msgs::msg::VideoH26xProfile
-enum-prefix	tcnart_msgs/msg/MediaTypes.idl	tcnart_msgs::msg::VideoImageCompression
-enum-prefix	tcnart_msgs/msg/MediaTypes.idl	tcnart_msgs::msg::VideoPixelFormat

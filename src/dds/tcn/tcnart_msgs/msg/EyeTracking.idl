@@ -8,9 +8,9 @@ module tcnart_msgs {
   module msg {
 
     @appendable enum XRGazeSpaceType {
-      XR_GAZE_SPACE_UNKNOWN,
-      XR_GAZE_SPACE_VIEW,
-      XR_GAZE_SPACE_LOCAL
+      XR_GAZE_SPACE_TYPE_UNKNOWN,
+      XR_GAZE_SPACE_TYPE_VIEW,
+      XR_GAZE_SPACE_TYPE_LOCAL
     };
 
     // EyeTrackingMessage.valid: which fields carry data (0.10.3). A field whose bit is clear carries zeros.

@@ -9,8 +9,9 @@ module pcpd_msgs {
     union ParameterValue;
 
     @appendable enum RPCResponseStatus {
-      RPC_STATUS_SUCCESS,
-      RPC_STATUS_ERROR
+      RPC_RESPONSE_STATUS_UNKNOWN,
+      RPC_RESPONSE_STATUS_SUCCESS,
+      RPC_RESPONSE_STATUS_ERROR
     };
 
     // null
@@ -38,16 +39,17 @@ module pcpd_msgs {
 
     // Generic Parameter Interface
     @appendable enum ParameterValueType {
-      PVT_STRING,
-      PVT_INT32,
-      PVT_INT64,
-      PVT_FLOAT,
-      PVT_DOUBLE,
-      PVT_BOOL,
-      PVT_STRUCT,
+      PARAMETER_VALUE_TYPE_UNKNOWN,
+      PARAMETER_VALUE_TYPE_STRING,
+      PARAMETER_VALUE_TYPE_INT32,
+      PARAMETER_VALUE_TYPE_INT64,
+      PARAMETER_VALUE_TYPE_FLOAT,
+      PARAMETER_VALUE_TYPE_DOUBLE,
+      PARAMETER_VALUE_TYPE_BOOL,
+      PARAMETER_VALUE_TYPE_STRUCT,
       // 0.9.0, appended: the ordinals above are unchanged.
-      PVT_UINT32,
-      PVT_UINT64
+      PARAMETER_VALUE_TYPE_UINT32,
+      PARAMETER_VALUE_TYPE_UINT64
     };
 
     @appendable struct ParameterList {
@@ -60,24 +62,24 @@ module pcpd_msgs {
     };
 
     @appendable union ParameterValue switch(ParameterValueType) {
-    case PVT_STRING:
+    case PARAMETER_VALUE_TYPE_STRING:
         string string_value;
-    case PVT_INT32:
+    case PARAMETER_VALUE_TYPE_INT32:
         int32 int32_value;
-    case PVT_INT64:
+    case PARAMETER_VALUE_TYPE_INT64:
         int64 int64_value;
-    case PVT_FLOAT:
+    case PARAMETER_VALUE_TYPE_FLOAT:
         float float_value;
-    case PVT_DOUBLE:
+    case PARAMETER_VALUE_TYPE_DOUBLE:
         double double_value;
-    case PVT_BOOL:
+    case PARAMETER_VALUE_TYPE_BOOL:
         boolean bool_value;
-    case PVT_STRUCT:
+    case PARAMETER_VALUE_TYPE_STRUCT:
         ParameterList struct_value;
     // 0.9.0, appended.
-    case PVT_UINT32:
+    case PARAMETER_VALUE_TYPE_UINT32:
         uint32 uint32_value;
-    case PVT_UINT64:
+    case PARAMETER_VALUE_TYPE_UINT64:
         uint64 uint64_value;
     };
 
@@ -112,12 +114,13 @@ module pcpd_msgs {
 
     /// How a parameter can be changed.
     @appendable enum ParameterAccess {
-      PA_READ_WRITE_LIVE,      // set takes effect while running (next compute / next frame)
-      PA_READ_WRITE_RESTART,   // set accepted, applies after a restart / recompile
-      PA_READ_ONLY             // get only
+      PARAMETER_ACCESS_UNKNOWN,
+      PARAMETER_ACCESS_READ_WRITE_LIVE,      // set takes effect while running (next compute / next frame)
+      PARAMETER_ACCESS_READ_WRITE_RESTART,   // set accepted, applies after a restart / recompile
+      PARAMETER_ACCESS_READ_ONLY             // get only
     };
 
-    /// One allowed enum value: the label as shown and sent (PVT_STRING),
+    /// One allowed enum value: the label as shown and sent (PARAMETER_VALUE_TYPE_STRING),
     /// and the underlying integer value.
     @appendable struct EnumEntry {
         string label;
@@ -144,7 +147,7 @@ module pcpd_msgs {
         ParameterValue maximum;             // inclusive
         boolean has_step;
         ParameterValue step;                // UI hint; absent = continuous
-        sequence<EnumEntry> enum_entries;   // non-empty for enums (value_type PVT_STRING)
+        sequence<EnumEntry> enum_entries;   // non-empty for enums (value_type PARAMETER_VALUE_TYPE_STRING)
         sequence<ParameterValue> valid_entries;  // other discrete sets (0.8.0 parity)
         ParameterValue default_value;
         uint64 generation;                  // server-side change counter of the current value
@@ -163,14 +166,15 @@ module pcpd_msgs {
     // (request: GenericParameterRequest). `parameters/set` (NullReply) stays.
 
     @appendable enum ParameterSetStatus {
-      PSS_APPLIED,          // in effect
-      PSS_UNCHANGED,        // equal to the current value
-      PSS_PENDING,          // accepted, not yet in effect within the server's wait
-      PSS_OUT_OF_RANGE,
-      PSS_TYPE_MISMATCH,
-      PSS_UNKNOWN_KEY,
-      PSS_READ_ONLY,
-      PSS_REJECTED          // other; see message
+      PARAMETER_SET_STATUS_UNKNOWN,
+      PARAMETER_SET_STATUS_APPLIED,          // in effect
+      PARAMETER_SET_STATUS_UNCHANGED,        // equal to the current value
+      PARAMETER_SET_STATUS_PENDING,          // accepted, not yet in effect within the server's wait
+      PARAMETER_SET_STATUS_OUT_OF_RANGE,
+      PARAMETER_SET_STATUS_TYPE_MISMATCH,
+      PARAMETER_SET_STATUS_UNKNOWN_KEY,
+      PARAMETER_SET_STATUS_READ_ONLY,
+      PARAMETER_SET_STATUS_REJECTED          // other; see message
     };
 
     @appendable struct ParameterSetResult {

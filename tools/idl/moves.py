@@ -66,8 +66,8 @@ def _expected(d, name: str, expect: dict, label_map: Dict[str, str]):
                                             for x in d.members if x.name not in gone])
     elif isinstance(d, Enum) and name in expect.get("enums", {}):
         table = expect["enums"][name]
-        if [o for o, _ in table if o is not None] != [n for n, _ in d.enumerators]:
-            raise ValueError(f"{name}: the rename table does not list the old enumerators in order")
+        if sorted(o for o, _ in table if o is not None) != sorted(n for n, _ in d.enumerators):
+            raise ValueError(f"{name}: the rename table must list every old enumerator exactly once")
         d = dataclasses.replace(d, enumerators=[(n, i) for i, (_, n) in enumerate(table)])
     elif isinstance(d, Union):
         d = dataclasses.replace(d, cases=[([label_map.get(l, l) for l in labels], x) for labels, x in d.cases])

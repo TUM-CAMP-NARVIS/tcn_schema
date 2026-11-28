@@ -39,7 +39,34 @@ def main(argv) -> int:
     an.add_argument("--dds-root", type=Path, required=True)
     an.add_argument("--final", default="", help="comma-separated fully qualified names to declare @final")
 
+    en = sub.add_parser("enums", help="apply an enum rename table and write the enum map (0.11 plan 4)")
+    en.add_argument("--dds-root", type=Path, required=True)
+    en.add_argument("--table", type=Path, required=True)
+    en.add_argument("--markdown", type=Path, required=True)
+
     args = ap.parse_args(argv)
+    if args.cmd == "enums":
+        import json
+        from .enums import migration_rows, write_markdown
+        table = json.loads(args.table.read_text(encoding="utf-8"))["enums"]
+        schema = load_schema(args.dds_root)
+        decls = schema.decls()
+        missing = sorted(set(table) - set(decls))
+        if missing:
+            raise SystemExit(f"not in the schema: {missing}")
+        rows = {fq: migration_rows(decls[fq], t) for fq, t in table.items()}
+        from .enums import apply_enums
+        for f in schema.files:
+            if f.family != "tcn":
+                continue
+            p = args.dds_root / "tcn" / f.path
+            text = p.read_text(encoding="utf-8")
+            new = apply_enums(text, f.decls, table)
+            if new != text:
+                p.write_text(new, encoding="utf-8")
+        write_markdown(rows, args.markdown)
+        print(f"{len(table)} enums renamed")
+        return 0
     if args.cmd == "annotate":
         from .annotate import annotate
         final = {x for x in args.final.split(",") if x}

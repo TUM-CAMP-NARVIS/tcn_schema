@@ -43,12 +43,13 @@ module tcn_types {
         // Which signed axis plays each of the three roles. 6 x 4 x 2 = 48 valid
         // assignments; anything reusing an axis is degenerate.
         @appendable enum CoordinateAxis {
-            COORD_AXIS_X_POS,
-            COORD_AXIS_X_NEG,
-            COORD_AXIS_Y_POS,
-            COORD_AXIS_Y_NEG,
-            COORD_AXIS_Z_POS,
-            COORD_AXIS_Z_NEG
+            COORDINATE_AXIS_UNKNOWN,
+            COORDINATE_AXIS_X_POS,
+            COORDINATE_AXIS_X_NEG,
+            COORDINATE_AXIS_Y_POS,
+            COORDINATE_AXIS_Y_NEG,
+            COORDINATE_AXIS_Z_POS,
+            COORDINATE_AXIS_Z_NEG
         };
 
         @appendable struct CoordinateSystem {

@@ -8,11 +8,12 @@ module conversation_msgs {
   module msg {
 
   @appendable enum MemoryScopeKind {
-    disabled,
-    session,
-    client,
-    user,
-    anonymous
+    MEMORY_SCOPE_KIND_UNKNOWN,
+    MEMORY_SCOPE_KIND_DISABLED,
+    MEMORY_SCOPE_KIND_SESSION,
+    MEMORY_SCOPE_KIND_CLIENT,
+    MEMORY_SCOPE_KIND_USER,
+    MEMORY_SCOPE_KIND_ANONYMOUS
   };
 
   @appendable struct MemoryScope {
@@ -21,20 +22,23 @@ module conversation_msgs {
   };
 
   @appendable enum InteractionMode {
-    direct,
-    pipeline
+    INTERACTION_MODE_UNKNOWN,
+    INTERACTION_MODE_DIRECT,
+    INTERACTION_MODE_PIPELINE
   };
 
   @appendable enum RetrievalPolicy {
-    auto_,  // C++ keyword; the pipeline names it `auto`; same value (0)
-    always,
-    never
+    RETRIEVAL_POLICY_UNKNOWN,
+    RETRIEVAL_POLICY_AUTO,  // was `auto_` (C++ keyword; the pipeline says `auto`), value 0 in 0.10
+    RETRIEVAL_POLICY_ALWAYS,
+    RETRIEVAL_POLICY_NEVER
   };
 
   @appendable enum ExecutionPreference {
-    AUTO,
-    FAST,
-    AGENTIC
+    EXECUTION_PREFERENCE_UNKNOWN,
+    EXECUTION_PREFERENCE_AUTO,
+    EXECUTION_PREFERENCE_FAST,
+    EXECUTION_PREFERENCE_AGENTIC
   };
 
   @appendable struct RetrievalOptions {
@@ -69,10 +73,11 @@ module conversation_msgs {
   };
 
   @appendable enum InteractionActivityState {
-    started,
-    progress,
-    completed,
-    failed
+    INTERACTION_ACTIVITY_STATE_UNKNOWN,
+    INTERACTION_ACTIVITY_STATE_STARTED,
+    INTERACTION_ACTIVITY_STATE_PROGRESS,
+    INTERACTION_ACTIVITY_STATE_COMPLETED,
+    INTERACTION_ACTIVITY_STATE_FAILED
   };
 
   @appendable struct InteractionActivity {

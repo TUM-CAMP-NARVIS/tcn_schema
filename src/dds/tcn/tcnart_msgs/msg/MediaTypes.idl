@@ -22,32 +22,34 @@ module tcnart_msgs {
     };
 
     @appendable enum VideoPixelFormat {
-      PixelFormat_NV12,
-      PixelFormat_RGB24,
-      PixelFormat_BGR24,
-      PixelFormat_BGRA32,
-      PixelFormat_L8,
-      PixelFormat_L16,
-      PixelFormat_RGBA32
+      VIDEO_PIXEL_FORMAT_UNKNOWN,
+      VIDEO_PIXEL_FORMAT_NV12,
+      VIDEO_PIXEL_FORMAT_RGB24,
+      VIDEO_PIXEL_FORMAT_BGR24,
+      VIDEO_PIXEL_FORMAT_BGRA32,
+      VIDEO_PIXEL_FORMAT_L8,
+      VIDEO_PIXEL_FORMAT_L16,
+      VIDEO_PIXEL_FORMAT_RGBA32
     };
 
     @appendable enum VideoImageCompression {
-        CompressionType_Raw,
-        CompressionType_Png,
-        CompressionType_H26x,
-        CompressionType_Zdepth,
-        CompressionType_Jpeg,
+        VIDEO_IMAGE_COMPRESSION_UNKNOWN,
+        VIDEO_IMAGE_COMPRESSION_RAW,
+        VIDEO_IMAGE_COMPRESSION_PNG,
+        VIDEO_IMAGE_COMPRESSION_H26X,
+        VIDEO_IMAGE_COMPRESSION_ZDEPTH,
+        VIDEO_IMAGE_COMPRESSION_JPEG,
         // JPEG-LS (ISO 14495-1, CharLS): lossless or near-lossless 16-bit images (IR, depth); appended in 0.9.0,
         // receivers that do not know it skip the stream.
-        CompressionType_JpegLs
+        VIDEO_IMAGE_COMPRESSION_JPEG_LS
     };
 
     @appendable enum VideoH26xProfile {
-        H264Profile_Base,
-        H264Profile_Main,
-        H264Profile_High,
-        H265Profile_Main,
-        H26xProfile_None
+        VIDEO_H26X_PROFILE_NONE,
+        VIDEO_H26X_PROFILE_H264_BASE,
+        VIDEO_H26X_PROFILE_H264_MAIN,
+        VIDEO_H26X_PROFILE_H264_HIGH,
+        VIDEO_H26X_PROFILE_H265_MAIN
     };
 
     @appendable enum AudioAACProfile {
