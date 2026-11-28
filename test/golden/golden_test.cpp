@@ -444,6 +444,28 @@ static void descriptor()
     CHECK(!d_back.info().video().depth_units_per_meter().has_value());
     CHECK(d_back.info().video().intrinsics().has_value());
     CHECK(d_back.info().video().codec_data().size() == 4 && d_back.properties().empty());
+    CHECK(d_back.info().video().bitrate().has_value() && *d_back.info().video().bitrate() == 4000000);
+
+    // An unversioned tracker descriptor (#38 A7, P3): revision absent (presence 00, no uint32), "t", "", frame
+    // global:w, clock {"", UNKNOWN}, irregular (0 Hz), the tracker case above. Absent is "compare the content",
+    // never revision 0: decoding into an object that held a revision must leave it absent.
+    tm::StreamDescriptorMessage u;
+    u.stream_topic("t");
+    u.stream_topic_schema("");
+    u.frame(frame_ref(tcn_types::msg::SRNodeScope::SR_NODE_SCOPE_GLOBAL, "", "w"));
+    u.clock().id("");
+    u.frame_rate(0.0);
+    u.sensor_latency_ns(0);
+    u.calib_topic("");
+    u.info().tracker(tracker);
+    const std::vector<char> u_bytes = golden("tcnart_msgs_StreamDescriptorMessage_unversioned", u, Encoding::XCDR2);
+    tm::StreamDescriptorMessage u_back;
+    u_back.revision(7);
+    CHECK(tcn_test::decode(u_bytes, u_back));
+    CHECK(!u_back.revision().has_value());
+    CHECK(u_back.info()._d() == tm::StreamKind::STREAM_KIND_TRACKER && u_back.info().tracker().marker_system() == "a");
+    tm::StreamDescriptorMessage u_fresh;
+    CHECK(tcn_test::decode(u_bytes, u_fresh) && !u_fresh.revision().has_value());
 }
 
 int main()

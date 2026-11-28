@@ -95,7 +95,7 @@ class StreamHeaderTest(unittest.TestCase):
             ("width", "uint32", False), ("height", "uint32", False), ("step", "uint32", False),
             ("pixel_format", M + "VideoPixelFormat", False), ("semantics", M + "PixelSemantics", False),
             ("codec", M + "VideoCodec", False), ("h26x_profile", M + "VideoH26xProfile", False),
-            ("bitrate", "uint32", False), ("depth_units_per_meter", "float", True),
+            ("bitrate", "uint32", True), ("depth_units_per_meter", "float", True),
             ("intrinsics", T + "CameraIntrinsics", True), ("codec_data", "sequence<uint8>", False),
         ])
         self.assertEqual(shape("TrackerStreamInfo"), [

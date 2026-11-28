@@ -21,7 +21,7 @@ module tcnart_msgs {
     // A video stream (VideoStreamMessage): colour, depth, IR or mask, told apart by `semantics`.
     // `width`, `height`: pixels. `step`: bytes per row of a decoded frame.
     // `codec` selects the compression; `h26x_profile` is the H.26x profile only (NONE for other codecs).
-    // `bitrate`: bit/s of a lossy encoder's target; 0 if not applicable.
+    // `bitrate`: bit/s, a lossy encoder's target. Absent: not applicable (lossless or uncompressed) or not stated.
     // `depth_units_per_meter`: present for DEPTH with an integer pixel format (e.g. 1000 for L16 in mm); absent for
     // DEPTH_F32 (metres) and for every other semantics.
     // `intrinsics`: the nominal intrinsics (#37 T8). A frame's VideoStreamMessage.intrinsics overrides them for that
@@ -36,7 +36,7 @@ module tcnart_msgs {
       PixelSemantics semantics;
       VideoCodec codec;
       VideoH26xProfile h26x_profile;
-      uint32 bitrate;
+      @optional uint32 bitrate;
       @optional float depth_units_per_meter;
       @optional tcn_types::msg::CameraIntrinsics intrinsics;
       sequence<uint8> codec_data;
