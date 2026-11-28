@@ -14,6 +14,11 @@ class RoundtripGenTest(unittest.TestCase):
     def setUpClass(cls):
         cls.types = build_types(load_schema(REPO / "src" / "dds"), "0")
 
+    def test_encoding_follows_the_family(self):
+        # decisions E1, E2: tcn types are XCDR2, ROS 2 types XCDR1.
+        self.assertIn("#define TCN_ENCODING ::tcn_test::Encoding::XCDR2", generate(self.types, "tcnart_msgs"))
+        self.assertIn("#define TCN_ENCODING ::tcn_test::Encoding::XCDR1", generate(self.types, "std_msgs"))
+
     def test_emits_every_struct_and_union(self):
         src = generate(self.types, "tcnart_msgs")
         self.assertIn("TCN_ROUNDTRIP(tcnart_msgs::msg::Pose6DMessage)", src)

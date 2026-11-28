@@ -24,7 +24,7 @@ module sqe_msgs {
     // region around any seed is the transitive closure over every relation,
     // which in a fused deployment is the entire fleet. A read of it is
     // unbounded however small the reply that comes back is shaped.
-    enum SISGraphQueryKind {
+    @appendable enum SISGraphQueryKind {
         SIS_GQ_FRAGMENT,        // everything one client declared. Bounded by
                                 //   that fragment's own size
         SIS_GQ_NEIGHBOURS,      // one node and its incident relations. Bounded
@@ -49,7 +49,7 @@ module sqe_msgs {
     //
     // These mirror the engine's own predicates exactly -- there is no fourth,
     // looser rule reachable from here.
-    enum SISPathPredicate {
+    @appendable enum SISPathPredicate {
         SIS_PP_WALKABLE,        // the default: refuses uncalibrated relations,
                                 //   which is what a running stream composes by
         SIS_PP_CONNECTABLE,     // the relaxed shape rule a PENDING stream is
@@ -73,7 +73,7 @@ module sqe_msgs {
     // one database.
     //
     // Which fields matter depends on `kind`; the rest are ignored, not refused.
-    struct SISGraphQueryRequest {
+    @appendable struct SISGraphQueryRequest {
 
         SISGraphQueryKind kind;
 
@@ -195,7 +195,7 @@ module sqe_msgs {
 
     };
 
-    enum SISGraphQueryStatus {
+    @appendable enum SISGraphQueryStatus {
         SIS_GQ_OK,              // answered. A search matching nothing is OK
                                 //   with empty sequences, never an UNKNOWN_*:
                                 //   "no uncalibrated edges" is the SUCCESS of a
@@ -225,7 +225,7 @@ module sqe_msgs {
     // client and one origin, and a reply may span fragments and has no origin
     // at all. The two sequences are also independently paged, which a graph
     // could not express.
-    struct SISGraphQueryReply {
+    @appendable struct SISGraphQueryReply {
         SISGraphQueryStatus status;
         sequence<sqe_msgs::msg::SRNodeView> nodes;
         sequence<sqe_msgs::msg::SREdgeView> edges;
@@ -280,7 +280,7 @@ module sqe_msgs {
 
     // How a pattern was expanded to fit the graph. A pattern is never applied
     // unexpanded, so there is no third value meaning "as declared".
-    enum SRPatternExpansion {
+    @appendable enum SRPatternExpansion {
         SIS_PX_SPACE,           // several instances at one instant: three
                                 //   markers on a rigid body, seen together
         SIS_PX_TIME             // one instance at several instants: one marker
@@ -290,7 +290,7 @@ module sqe_msgs {
     };
 
     // One role of the pattern, bound to a real frame.
-    struct SISPatternRole {
+    @appendable struct SISPatternRole {
         string role;            // the pattern's own name for it: "camera"
         SISFrameRef frame;      // what it was bound to
     };
@@ -302,7 +302,7 @@ module sqe_msgs {
     // calibration tool composes these itself rather than asking the engine for
     // a relation stream, because a correspondence relates k measurements at
     // ONE instant and two streams have two independent triggers.
-    struct SISPatternSegment {
+    @appendable struct SISPatternSegment {
         string relation;                // the declared relation name
         SISFrameRef from;
         SISFrameRef to;
@@ -364,7 +364,7 @@ module sqe_msgs {
     };
 
     // One input of the pattern, bound to a concrete realisation.
-    struct SISPatternInput {
+    @appendable struct SISPatternInput {
         string role_from;
         string role_to;
 
@@ -414,7 +414,7 @@ module sqe_msgs {
     //    duplicates -> inputs -> segments) overflows the uint32 the IDL
     //    generator computes a worst-case CDR size into. That is not a style
     //    preference; the generated code does not compile.
-    struct SISPatternExpansionInput {
+    @appendable struct SISPatternExpansionInput {
         // Which duplicate this input belongs to: an index into
         // SISPatternInstance::space_instances.
         //
@@ -435,7 +435,7 @@ module sqe_msgs {
         SISPatternInput binding;
     };
 
-    struct SISPatternInstance {
+    @appendable struct SISPatternInstance {
         string pattern;                 // catalogue name: "hand_eye"
         string method;                  // the estimator this needs
         sequence<SISPatternRole> roles;
@@ -480,7 +480,7 @@ module sqe_msgs {
         sequence<SISPatternExpansionInput> space_inputs;
     };
 
-    struct SISPatternQueryRequest {
+    @appendable struct SISPatternQueryRequest {
 
         // The edge to be produced. Both frames must exist; the edge need not,
         // and normally does not -- that is the point.
@@ -502,7 +502,7 @@ module sqe_msgs {
         uint32 max_candidates;
     };
 
-    struct SISPatternQueryReply {
+    @appendable struct SISPatternQueryReply {
         // The graph read's vocabulary, reused: the refusals are identical --
         // rate limited, unknown frame, malformed request -- and a second enum
         // saying the same things in different words would be one more thing to

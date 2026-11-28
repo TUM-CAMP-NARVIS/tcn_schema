@@ -13,107 +13,107 @@ namespace rpc = sqe_msgs::rpc;
 
 TCN_SQE_TEST(cdr_encoding_names_every_registered_type_exactly)
 {
-    CHECK_STR_EQ(cdr_encoding<msg::Pose6DMessage>(),          "application/cdr;tcnart_msgs::msg::Pose6DMessage;tcn_schema=0.10");
-    CHECK_STR_EQ(cdr_encoding<msg::TargetTrackingMessage>(),  "application/cdr;tcnart_msgs::msg::TargetTrackingMessage;tcn_schema=0.10");
-    CHECK_STR_EQ(cdr_encoding<msg::StreamDescriptorMessage>(),"application/cdr;tcnart_msgs::msg::StreamDescriptorMessage;tcn_schema=0.10");
-    CHECK_STR_EQ(cdr_encoding<smsg::SRGraph>(),                "application/cdr;sqe_msgs::msg::SRGraph;tcn_schema=0.10");
-    CHECK_STR_EQ(cdr_encoding<smsg::SRNode>(),                 "application/cdr;sqe_msgs::msg::SRNode;tcn_schema=0.10");
-    CHECK_STR_EQ(cdr_encoding<smsg::SREdge>(),                 "application/cdr;sqe_msgs::msg::SREdge;tcn_schema=0.10");
-    CHECK_STR_EQ(cdr_encoding<smsg::SRNodeView>(),             "application/cdr;sqe_msgs::msg::SRNodeView;tcn_schema=0.10");
-    CHECK_STR_EQ(cdr_encoding<smsg::SREdgeView>(),             "application/cdr;sqe_msgs::msg::SREdgeView;tcn_schema=0.10");
+    CHECK_STR_EQ(cdr_encoding<msg::Pose6DMessage>(),          "application/cdr;tcnart_msgs::msg::Pose6DMessage;tcn_schema=0.11");
+    CHECK_STR_EQ(cdr_encoding<msg::TargetTrackingMessage>(),  "application/cdr;tcnart_msgs::msg::TargetTrackingMessage;tcn_schema=0.11");
+    CHECK_STR_EQ(cdr_encoding<msg::StreamDescriptorMessage>(),"application/cdr;tcnart_msgs::msg::StreamDescriptorMessage;tcn_schema=0.11");
+    CHECK_STR_EQ(cdr_encoding<smsg::SRGraph>(),                "application/cdr;sqe_msgs::msg::SRGraph;tcn_schema=0.11");
+    CHECK_STR_EQ(cdr_encoding<smsg::SRNode>(),                 "application/cdr;sqe_msgs::msg::SRNode;tcn_schema=0.11");
+    CHECK_STR_EQ(cdr_encoding<smsg::SREdge>(),                 "application/cdr;sqe_msgs::msg::SREdge;tcn_schema=0.11");
+    CHECK_STR_EQ(cdr_encoding<smsg::SRNodeView>(),             "application/cdr;sqe_msgs::msg::SRNodeView;tcn_schema=0.11");
+    CHECK_STR_EQ(cdr_encoding<smsg::SREdgeView>(),             "application/cdr;sqe_msgs::msg::SREdgeView;tcn_schema=0.11");
 
-    CHECK_STR_EQ(cdr_encoding<rpc::SISJoinRequest>(),         "application/cdr;sqe_msgs::rpc::SISJoinRequest;tcn_schema=0.10");
-    CHECK_STR_EQ(cdr_encoding<rpc::SISLeaveRequest>(),        "application/cdr;sqe_msgs::rpc::SISLeaveRequest;tcn_schema=0.10");
-    CHECK_STR_EQ(cdr_encoding<rpc::SISNodeUpdateRequest>(),   "application/cdr;sqe_msgs::rpc::SISNodeUpdateRequest;tcn_schema=0.10");
-    CHECK_STR_EQ(cdr_encoding<rpc::SISNodeRemoveRequest>(),   "application/cdr;sqe_msgs::rpc::SISNodeRemoveRequest;tcn_schema=0.10");
-    CHECK_STR_EQ(cdr_encoding<rpc::SISEdgeUpdateRequest>(),   "application/cdr;sqe_msgs::rpc::SISEdgeUpdateRequest;tcn_schema=0.10");
-    CHECK_STR_EQ(cdr_encoding<rpc::SISEdgeRemoveRequest>(),   "application/cdr;sqe_msgs::rpc::SISEdgeRemoveRequest;tcn_schema=0.10");
+    CHECK_STR_EQ(cdr_encoding<rpc::SISJoinRequest>(),         "application/cdr;sqe_msgs::rpc::SISJoinRequest;tcn_schema=0.11");
+    CHECK_STR_EQ(cdr_encoding<rpc::SISLeaveRequest>(),        "application/cdr;sqe_msgs::rpc::SISLeaveRequest;tcn_schema=0.11");
+    CHECK_STR_EQ(cdr_encoding<rpc::SISNodeUpdateRequest>(),   "application/cdr;sqe_msgs::rpc::SISNodeUpdateRequest;tcn_schema=0.11");
+    CHECK_STR_EQ(cdr_encoding<rpc::SISNodeRemoveRequest>(),   "application/cdr;sqe_msgs::rpc::SISNodeRemoveRequest;tcn_schema=0.11");
+    CHECK_STR_EQ(cdr_encoding<rpc::SISEdgeUpdateRequest>(),   "application/cdr;sqe_msgs::rpc::SISEdgeUpdateRequest;tcn_schema=0.11");
+    CHECK_STR_EQ(cdr_encoding<rpc::SISEdgeRemoveRequest>(),   "application/cdr;sqe_msgs::rpc::SISEdgeRemoveRequest;tcn_schema=0.11");
     CHECK_STR_EQ(cdr_encoding<rpc::SISRelationStreamStartRequest>(),
-                 "application/cdr;sqe_msgs::rpc::SISRelationStreamStartRequest;tcn_schema=0.10");
+                 "application/cdr;sqe_msgs::rpc::SISRelationStreamStartRequest;tcn_schema=0.11");
     CHECK_STR_EQ(cdr_encoding<rpc::SISRelationStreamStopRequest>(),
-                 "application/cdr;sqe_msgs::rpc::SISRelationStreamStopRequest;tcn_schema=0.10");
+                 "application/cdr;sqe_msgs::rpc::SISRelationStreamStopRequest;tcn_schema=0.11");
     CHECK_STR_EQ(cdr_encoding<rpc::SISRelationStreamStatus>(),
-                 "application/cdr;sqe_msgs::rpc::SISRelationStreamStatus;tcn_schema=0.10");
+                 "application/cdr;sqe_msgs::rpc::SISRelationStreamStatus;tcn_schema=0.11");
     CHECK_STR_EQ(cdr_encoding<rpc::SISRelationStreamHandle>(),
-                 "application/cdr;sqe_msgs::rpc::SISRelationStreamHandle;tcn_schema=0.10");
+                 "application/cdr;sqe_msgs::rpc::SISRelationStreamHandle;tcn_schema=0.11");
     CHECK_STR_EQ(cdr_encoding<rpc::SISReoptimisePolicy>(),
-                 "application/cdr;sqe_msgs::rpc::SISReoptimisePolicy;tcn_schema=0.10");
+                 "application/cdr;sqe_msgs::rpc::SISReoptimisePolicy;tcn_schema=0.11");
     CHECK_STR_EQ(cdr_encoding<rpc::SISBlockingRelation>(),
-                 "application/cdr;sqe_msgs::rpc::SISBlockingRelation;tcn_schema=0.10");
+                 "application/cdr;sqe_msgs::rpc::SISBlockingRelation;tcn_schema=0.11");
     CHECK_STR_EQ(cdr_encoding<rpc::SISRelationStreamReply>(),
-                 "application/cdr;sqe_msgs::rpc::SISRelationStreamReply;tcn_schema=0.10");
+                 "application/cdr;sqe_msgs::rpc::SISRelationStreamReply;tcn_schema=0.11");
     CHECK_STR_EQ(cdr_encoding<rpc::SISRelationStreamStatusNotification>(),
-                 "application/cdr;sqe_msgs::rpc::SISRelationStreamStatusNotification;tcn_schema=0.10");
+                 "application/cdr;sqe_msgs::rpc::SISRelationStreamStatusNotification;tcn_schema=0.11");
 
     CHECK_STR_EQ(cdr_encoding<rpc::SISMutationStatus>(),
-                 "application/cdr;sqe_msgs::rpc::SISMutationStatus;tcn_schema=0.10");
+                 "application/cdr;sqe_msgs::rpc::SISMutationStatus;tcn_schema=0.11");
     CHECK_STR_EQ(cdr_encoding<rpc::SISMutationReply>(),
-                 "application/cdr;sqe_msgs::rpc::SISMutationReply;tcn_schema=0.10");
+                 "application/cdr;sqe_msgs::rpc::SISMutationReply;tcn_schema=0.11");
     CHECK_STR_EQ(cdr_encoding<rpc::SISGraphQueryKind>(),
-                 "application/cdr;sqe_msgs::rpc::SISGraphQueryKind;tcn_schema=0.10");
+                 "application/cdr;sqe_msgs::rpc::SISGraphQueryKind;tcn_schema=0.11");
     CHECK_STR_EQ(cdr_encoding<rpc::SISGraphQueryStatus>(),
-                 "application/cdr;sqe_msgs::rpc::SISGraphQueryStatus;tcn_schema=0.10");
+                 "application/cdr;sqe_msgs::rpc::SISGraphQueryStatus;tcn_schema=0.11");
     CHECK_STR_EQ(cdr_encoding<rpc::SISGraphQueryRequest>(),
-                 "application/cdr;sqe_msgs::rpc::SISGraphQueryRequest;tcn_schema=0.10");
+                 "application/cdr;sqe_msgs::rpc::SISGraphQueryRequest;tcn_schema=0.11");
     CHECK_STR_EQ(cdr_encoding<rpc::SISGraphQueryReply>(),
-                 "application/cdr;sqe_msgs::rpc::SISGraphQueryReply;tcn_schema=0.10");
+                 "application/cdr;sqe_msgs::rpc::SISGraphQueryReply;tcn_schema=0.11");
 
     // 0.9.0: the pattern read (B63) and the target registry (B78).
     CHECK_STR_EQ(cdr_encoding<rpc::SRPatternExpansion>(),
-                 "application/cdr;sqe_msgs::rpc::SRPatternExpansion;tcn_schema=0.10");
+                 "application/cdr;sqe_msgs::rpc::SRPatternExpansion;tcn_schema=0.11");
     CHECK_STR_EQ(cdr_encoding<rpc::SISPatternQueryRequest>(),
-                 "application/cdr;sqe_msgs::rpc::SISPatternQueryRequest;tcn_schema=0.10");
+                 "application/cdr;sqe_msgs::rpc::SISPatternQueryRequest;tcn_schema=0.11");
     CHECK_STR_EQ(cdr_encoding<rpc::SISPatternQueryReply>(),
-                 "application/cdr;sqe_msgs::rpc::SISPatternQueryReply;tcn_schema=0.10");
+                 "application/cdr;sqe_msgs::rpc::SISPatternQueryReply;tcn_schema=0.11");
     CHECK_STR_EQ(cdr_encoding<rpc::SISTargetKind>(),
-                 "application/cdr;sqe_msgs::rpc::SISTargetKind;tcn_schema=0.10");
+                 "application/cdr;sqe_msgs::rpc::SISTargetKind;tcn_schema=0.11");
     CHECK_STR_EQ(cdr_encoding<rpc::SISTargetAlias>(),
-                 "application/cdr;sqe_msgs::rpc::SISTargetAlias;tcn_schema=0.10");
+                 "application/cdr;sqe_msgs::rpc::SISTargetAlias;tcn_schema=0.11");
     CHECK_STR_EQ(cdr_encoding<rpc::SISGlobalTarget>(),
-                 "application/cdr;sqe_msgs::rpc::SISGlobalTarget;tcn_schema=0.10");
+                 "application/cdr;sqe_msgs::rpc::SISGlobalTarget;tcn_schema=0.11");
     CHECK_STR_EQ(cdr_encoding<rpc::SISTargetQueryKind>(),
-                 "application/cdr;sqe_msgs::rpc::SISTargetQueryKind;tcn_schema=0.10");
+                 "application/cdr;sqe_msgs::rpc::SISTargetQueryKind;tcn_schema=0.11");
     CHECK_STR_EQ(cdr_encoding<rpc::SISTargetQueryRequest>(),
-                 "application/cdr;sqe_msgs::rpc::SISTargetQueryRequest;tcn_schema=0.10");
+                 "application/cdr;sqe_msgs::rpc::SISTargetQueryRequest;tcn_schema=0.11");
     CHECK_STR_EQ(cdr_encoding<rpc::SISTargetQueryStatus>(),
-                 "application/cdr;sqe_msgs::rpc::SISTargetQueryStatus;tcn_schema=0.10");
+                 "application/cdr;sqe_msgs::rpc::SISTargetQueryStatus;tcn_schema=0.11");
     CHECK_STR_EQ(cdr_encoding<rpc::SISTargetQueryReply>(),
-                 "application/cdr;sqe_msgs::rpc::SISTargetQueryReply;tcn_schema=0.10");
+                 "application/cdr;sqe_msgs::rpc::SISTargetQueryReply;tcn_schema=0.11");
     CHECK_STR_EQ(cdr_encoding<rpc::SISTargetMutationKind>(),
-                 "application/cdr;sqe_msgs::rpc::SISTargetMutationKind;tcn_schema=0.10");
+                 "application/cdr;sqe_msgs::rpc::SISTargetMutationKind;tcn_schema=0.11");
     CHECK_STR_EQ(cdr_encoding<rpc::SISTargetMutationRequest>(),
-                 "application/cdr;sqe_msgs::rpc::SISTargetMutationRequest;tcn_schema=0.10");
+                 "application/cdr;sqe_msgs::rpc::SISTargetMutationRequest;tcn_schema=0.11");
     CHECK_STR_EQ(cdr_encoding<rpc::SISTargetChange>(),
-                 "application/cdr;sqe_msgs::rpc::SISTargetChange;tcn_schema=0.10");
+                 "application/cdr;sqe_msgs::rpc::SISTargetChange;tcn_schema=0.11");
     // 0.9.2: the operator surface (B82). Same major.minor, so the same
     // annotation: the release adds types and changes none.
     CHECK_STR_EQ(cdr_encoding<rpc::SISEngineInfoReply>(),
-                 "application/cdr;sqe_msgs::rpc::SISEngineInfoReply;tcn_schema=0.10");
+                 "application/cdr;sqe_msgs::rpc::SISEngineInfoReply;tcn_schema=0.11");
     CHECK_STR_EQ(cdr_encoding<rpc::SISFragmentListReply>(),
-                 "application/cdr;sqe_msgs::rpc::SISFragmentListReply;tcn_schema=0.10");
+                 "application/cdr;sqe_msgs::rpc::SISFragmentListReply;tcn_schema=0.11");
     CHECK_STR_EQ(cdr_encoding<rpc::SISOperatorGraphQueryRequest>(),
-                 "application/cdr;sqe_msgs::rpc::SISOperatorGraphQueryRequest;tcn_schema=0.10");
+                 "application/cdr;sqe_msgs::rpc::SISOperatorGraphQueryRequest;tcn_schema=0.11");
     CHECK_STR_EQ(cdr_encoding<rpc::SISGraphChangeNotification>(),
-                 "application/cdr;sqe_msgs::rpc::SISGraphChangeNotification;tcn_schema=0.10");
+                 "application/cdr;sqe_msgs::rpc::SISGraphChangeNotification;tcn_schema=0.11");
     CHECK_STR_EQ(cdr_encoding<rpc::SISOperatorMutationRequest>(),
-                 "application/cdr;sqe_msgs::rpc::SISOperatorMutationRequest;tcn_schema=0.10");
-    // 0.9.3: explain (B89). 0.10.0 (B90) is a break: the annotation is 0.10.
+                 "application/cdr;sqe_msgs::rpc::SISOperatorMutationRequest;tcn_schema=0.11");
+    // 0.9.3: explain (B89). Every break moves the annotation (0.10.0 B90; 0.11.0, XCDR2).
     CHECK_STR_EQ(cdr_encoding<rpc::SISExplainRequest>(),
-                 "application/cdr;sqe_msgs::rpc::SISExplainRequest;tcn_schema=0.10");
+                 "application/cdr;sqe_msgs::rpc::SISExplainRequest;tcn_schema=0.11");
     CHECK_STR_EQ(cdr_encoding<rpc::SISExplainReply>(),
-                 "application/cdr;sqe_msgs::rpc::SISExplainReply;tcn_schema=0.10");
+                 "application/cdr;sqe_msgs::rpc::SISExplainReply;tcn_schema=0.11");
     CHECK_STR_EQ(cdr_encoding<rpc::SISTranslationPlan>(),
-                 "application/cdr;sqe_msgs::rpc::SISTranslationPlan;tcn_schema=0.10");
+                 "application/cdr;sqe_msgs::rpc::SISTranslationPlan;tcn_schema=0.11");
     // 0.10.1: the transaction log (B92). Additive, so the annotation is unchanged.
     CHECK_STR_EQ(cdr_encoding<rpc::SISTransactionLogRequest>(),
-                 "application/cdr;sqe_msgs::rpc::SISTransactionLogRequest;tcn_schema=0.10");
+                 "application/cdr;sqe_msgs::rpc::SISTransactionLogRequest;tcn_schema=0.11");
     CHECK_STR_EQ(cdr_encoding<rpc::SISTransactionLogReply>(),
-                 "application/cdr;sqe_msgs::rpc::SISTransactionLogReply;tcn_schema=0.10");
+                 "application/cdr;sqe_msgs::rpc::SISTransactionLogReply;tcn_schema=0.11");
     // 0.10.6: the relation sample (B93). Additive, so the annotation is unchanged.
     CHECK_STR_EQ(cdr_encoding<rpc::SISRelationSampleRequest>(),
-                 "application/cdr;sqe_msgs::rpc::SISRelationSampleRequest;tcn_schema=0.10");
+                 "application/cdr;sqe_msgs::rpc::SISRelationSampleRequest;tcn_schema=0.11");
     CHECK_STR_EQ(cdr_encoding<rpc::SISRelationSampleReply>(),
-                 "application/cdr;sqe_msgs::rpc::SISRelationSampleReply;tcn_schema=0.10");
+                 "application/cdr;sqe_msgs::rpc::SISRelationSampleReply;tcn_schema=0.11");
 }
 
 // The two replies are answers to different questions on different keys, and a
@@ -228,15 +228,15 @@ TCN_SQE_TEST(there_are_exactly_two_separators_and_no_space_after_either)
     CHECK_MSG(e[at + 1] != ' ' && e[at2 + 1] != ' ', "no space may follow a separator");
     CHECK_STR_EQ(e.substr(0, at), "application/cdr");
     CHECK_STR_EQ(e.substr(at + 1, at2 - at - 1), "sqe_msgs::rpc::SISJoinRequest");
-    CHECK_STR_EQ(e.substr(at2 + 1), "tcn_schema=0.10");
+    CHECK_STR_EQ(e.substr(at2 + 1), "tcn_schema=0.11");
     CHECK(kEncodingSeparator == ';');
-    CHECK_STR_EQ(std::string(kWireSchemaVersion), "0.10");
+    CHECK_STR_EQ(std::string(kWireSchemaVersion), "0.11");
 }
 
 TCN_SQE_TEST(json_encoding_uses_the_same_type_name)
 {
     CHECK_STR_EQ(json_encoding<rpc::SISJoinRequest>(),
-                 "application/json;sqe_msgs::rpc::SISJoinRequest;tcn_schema=0.10");
+                 "application/json;sqe_msgs::rpc::SISJoinRequest;tcn_schema=0.11");
     const std::string cdr = cdr_encoding<rpc::SISJoinRequest>();
     const std::string json = json_encoding<rpc::SISJoinRequest>();
     const std::string::size_type c_at = cdr.find(';');
@@ -315,7 +315,7 @@ TCN_SQE_TEST(an_annotation_this_library_writes_is_one_it_accepts)
     const WireEncoding parsed = parse_encoding(e);
     CHECK_STR_EQ(std::string(parsed.type_name), "sqe_msgs::rpc::SISMutationReply");
     CHECK(parsed.has_schema_version);
-    CHECK_STR_EQ(std::string(parsed.schema_version), "0.10");
+    CHECK_STR_EQ(std::string(parsed.schema_version), "0.11");
 }
 
 // SISMutationReply gained two trailing fields in 0.9.0 under the same name.
@@ -329,12 +329,16 @@ TCN_SQE_TEST(a_different_major_minor_is_refused)
     CHECK_ERR(check_declared_type<rpc::SISMutationReply>(
                   "application/cdr;sqe_msgs::rpc::SISMutationReply;tcn_schema=0.9"),
               Error::SchemaVersionMismatch);
+    // 0.11 changed the encoding (XCDR1 -> XCDR2): a 0.10 payload is refused, not misread.
+    CHECK_ERR(check_declared_type<rpc::SISMutationReply>(
+                  "application/cdr;sqe_msgs::rpc::SISMutationReply;tcn_schema=0.10"),
+              Error::SchemaVersionMismatch);
     CHECK_ERR(check_declared_type<rpc::SISMutationReply>(
                   "application/cdr;sqe_msgs::rpc::SISMutationReply;tcn_schema=1.9"),
               Error::SchemaVersionMismatch);
-    // A prefix is not a match: 0.100 is not 0.10, nor 0.1 0.10.
+    // A prefix is not a match: 0.110 is not 0.11, nor 0.1 0.11.
     CHECK_ERR(check_declared_type<rpc::SISMutationReply>(
-                  "application/cdr;sqe_msgs::rpc::SISMutationReply;tcn_schema=0.100"),
+                  "application/cdr;sqe_msgs::rpc::SISMutationReply;tcn_schema=0.110"),
               Error::SchemaVersionMismatch);
     CHECK_ERR(check_declared_type<rpc::SISMutationReply>(
                   "application/cdr;sqe_msgs::rpc::SISMutationReply;tcn_schema=0.1"),
@@ -351,9 +355,9 @@ TCN_SQE_TEST(a_different_major_minor_is_refused)
 TCN_SQE_TEST(a_patch_level_is_accepted_and_ignored)
 {
     CHECK_OK(check_declared_type<rpc::SISMutationReply>(
-        "application/cdr;sqe_msgs::rpc::SISMutationReply;tcn_schema=0.10.0"));
+        "application/cdr;sqe_msgs::rpc::SISMutationReply;tcn_schema=0.11.0"));
     CHECK_OK(check_declared_type<rpc::SISMutationReply>(
-        "application/cdr;sqe_msgs::rpc::SISMutationReply;tcn_schema=0.10.17"));
+        "application/cdr;sqe_msgs::rpc::SISMutationReply;tcn_schema=0.11.17"));
 }
 
 // Every pre-0.9 peer omits the parameter, and refusing them would make 0.9.0 a
@@ -374,9 +378,9 @@ TCN_SQE_TEST(an_absent_version_is_accepted_and_reported_as_absent)
 TCN_SQE_TEST(unknown_parameters_are_ignored)
 {
     CHECK_OK(check_declared_type<rpc::SISMutationReply>(
-        "application/cdr;sqe_msgs::rpc::SISMutationReply;foo=bar;tcn_schema=0.10;x=1"));
+        "application/cdr;sqe_msgs::rpc::SISMutationReply;foo=bar;tcn_schema=0.11;x=1"));
     CHECK_OK(check_declared_type<rpc::SISMutationReply>(
-        "application/cdr;sqe_msgs::rpc::SISMutationReply;flag;tcn_schema=0.10"));
+        "application/cdr;sqe_msgs::rpc::SISMutationReply;flag;tcn_schema=0.11"));
     CHECK_OK(check_declared_type<rpc::SISMutationReply>(
         "application/cdr;sqe_msgs::rpc::SISMutationReply;foo=bar"));
     // ... but an unknown parameter does not hide a bad version.
@@ -392,11 +396,11 @@ TCN_SQE_TEST(unknown_parameters_are_ignored)
 TCN_SQE_TEST(whitespace_around_every_segment_is_trimmed)
 {
     CHECK_OK(check_declared_type<rpc::SISMutationReply>(
-        "application/cdr; sqe_msgs::rpc::SISMutationReply ; tcn_schema = 0.10 "));
+        "application/cdr; sqe_msgs::rpc::SISMutationReply ; tcn_schema = 0.11 "));
     const WireEncoding parsed =
-        parse_encoding("application/cdr; sqe_msgs::rpc::SISMutationReply ; tcn_schema = 0.10 ");
+        parse_encoding("application/cdr; sqe_msgs::rpc::SISMutationReply ; tcn_schema = 0.11 ");
     CHECK_STR_EQ(std::string(parsed.type_name), "sqe_msgs::rpc::SISMutationReply");
-    CHECK_STR_EQ(std::string(parsed.schema_version), "0.10");
+    CHECK_STR_EQ(std::string(parsed.schema_version), "0.11");
     CHECK_ERR(check_declared_type<rpc::SISMutationReply>(
                   "application/cdr; sqe_msgs::rpc::SISMutationReply ;tcn_schema= 0.8"),
               Error::SchemaVersionMismatch);
@@ -431,13 +435,13 @@ TCN_SQE_TEST(a_malformed_version_is_a_mismatch_not_an_absence)
 // what a pre-0.9 reader of this library did.
 TCN_SQE_TEST(the_type_name_stops_at_the_second_separator)
 {
-    const WireEncoding e = parse_encoding("application/cdr;a::B;tcn_schema=0.10");
+    const WireEncoding e = parse_encoding("application/cdr;a::B;tcn_schema=0.11");
     CHECK_STR_EQ(std::string(e.media), "application/cdr");
     CHECK_STR_EQ(std::string(e.type_name), "a::B");
     CHECK(e.has_type_name);
 
     // No type, a version: still no type, which is refused.
-    CHECK_ERR(check_declared_type<rpc::SISMutationReply>("application/cdr;;tcn_schema=0.10"),
+    CHECK_ERR(check_declared_type<rpc::SISMutationReply>("application/cdr;;tcn_schema=0.11"),
               Error::MissingDeclaredType);
 }
 

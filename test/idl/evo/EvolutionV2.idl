@@ -1,0 +1,23 @@
+// Test only: version 2 of evo_v1::msg::Thing, which appends an optional and a plain member (0.11 plan 4).
+// A V1 reader skips them by the DHEADER; a V2 reader of V1 bytes sees `c` absent and `d` = 0 (decisions E8).
+#ifndef EVO_V2_MSG_EVOLUTION_V2_IDL
+#define EVO_V2_MSG_EVOLUTION_V2_IDL
+
+module evo_v2 {
+  module msg {
+    @appendable struct Thing {
+      int32 a;
+      string b;
+      @optional double c;
+      int64 d;
+    };
+
+    // Data after a grown struct: a reader that does not skip by the DHEADER misreads the second element and `tail`.
+    @appendable struct Holder {
+      sequence<Thing> things;
+      int32 tail;
+    };
+  };
+};
+
+#endif

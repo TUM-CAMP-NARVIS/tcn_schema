@@ -6,33 +6,24 @@
 module conversation_msgs {
   module msg {
 
-  struct TtsRequest {
+  @appendable struct TtsRequest {
     MessageHeader header;
-    string backend;
-    string voice;
-    string language;
     string text;
-    float speaking_rate;
-    float pitch;
-    float volume_gain_db;
-    boolean stream_output;
     unsigned long segment_index;
     boolean is_final_segment;
   };
 
-  struct TtsAudioChunk {
+  @appendable struct TtsAudioChunk {
     MessageHeader header;
     string backend;
     string voice;
     AudioFormat format;
-    PayloadKind payload_kind;
     unsigned long chunk_index;
     boolean is_final_chunk;
     sequence<float> samples_f32;
-    ShmRef shm_ref;
   };
 
-  struct TtsDone {
+  @appendable struct TtsDone {
     MessageHeader header;
     string backend;
     string voice;

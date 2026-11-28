@@ -8,95 +8,97 @@ module pcpd_msgs {
     struct Parameter;
     union ParameterValue;
 
-    enum RPCResponseStatus {
-      RPC_STATUS_SUCCESS,
-      RPC_STATUS_ERROR
+    @appendable enum RPCResponseStatus {
+      RPC_RESPONSE_STATUS_UNKNOWN,
+      RPC_RESPONSE_STATUS_SUCCESS,
+      RPC_RESPONSE_STATUS_ERROR
     };
 
     // null
-    struct NullRequest {
+    @appendable struct NullRequest {
         uint8 dummy;
     };
 
-    struct NullReply {
+    @appendable struct NullReply {
         RPCResponseStatus status;
     };
 
-    struct BoolReply {
+    @appendable struct BoolReply {
         boolean value;
         RPCResponseStatus status;
     };
 
-    struct StringListRequest {
+    @appendable struct StringListRequest {
       sequence<string> values;
     };
 
-    struct StringListReply {
+    @appendable struct StringListReply {
       sequence<string> values;
       RPCResponseStatus status;
     };
 
     // Generic Parameter Interface
-    enum ParameterValueType {
-      PVT_STRING,
-      PVT_INT32,
-      PVT_INT64,
-      PVT_FLOAT,
-      PVT_DOUBLE,
-      PVT_BOOL,
-      PVT_STRUCT,
-      // 0.9.0, appended: the ordinals above are unchanged.
-      PVT_UINT32,
-      PVT_UINT64
+    @appendable enum ParameterValueType {
+      PARAMETER_VALUE_TYPE_UNKNOWN,
+      PARAMETER_VALUE_TYPE_STRING,
+      PARAMETER_VALUE_TYPE_INT32,
+      PARAMETER_VALUE_TYPE_INT64,
+      PARAMETER_VALUE_TYPE_FLOAT,
+      PARAMETER_VALUE_TYPE_DOUBLE,
+      PARAMETER_VALUE_TYPE_BOOL,
+      PARAMETER_VALUE_TYPE_STRUCT,
+      // Appended in 0.9.0. 0.11 inserted PARAMETER_VALUE_TYPE_UNKNOWN first, so every value moved up by one.
+      PARAMETER_VALUE_TYPE_UINT32,
+      PARAMETER_VALUE_TYPE_UINT64
     };
 
-    struct ParameterList {
+    @appendable struct ParameterList {
         sequence<Parameter> parameters;
     };
 
-    struct Parameter {
+    @appendable struct Parameter {
         string key;
         ParameterValue value;
     };
 
-    union ParameterValue switch(ParameterValueType) {
-    case PVT_STRING:
+    @appendable union ParameterValue switch(ParameterValueType) {
+    case PARAMETER_VALUE_TYPE_STRING:
         string string_value;
-    case PVT_INT32:
+    case PARAMETER_VALUE_TYPE_INT32:
         int32 int32_value;
-    case PVT_INT64:
+    case PARAMETER_VALUE_TYPE_INT64:
         int64 int64_value;
-    case PVT_FLOAT:
+    case PARAMETER_VALUE_TYPE_FLOAT:
         float float_value;
-    case PVT_DOUBLE:
+    case PARAMETER_VALUE_TYPE_DOUBLE:
         double double_value;
-    case PVT_BOOL:
+    case PARAMETER_VALUE_TYPE_BOOL:
         boolean bool_value;
-    case PVT_STRUCT:
+    case PARAMETER_VALUE_TYPE_STRUCT:
         ParameterList struct_value;
     // 0.9.0, appended.
-    case PVT_UINT32:
+    case PARAMETER_VALUE_TYPE_UINT32:
         uint32 uint32_value;
-    case PVT_UINT64:
+    case PARAMETER_VALUE_TYPE_UINT64:
         uint64 uint64_value;
     };
 
-    struct ParameterSchema {
+    @appendable struct ParameterSchema {
         string key;
         ParameterValueType value_type;
         sequence<ParameterValue> valid_entries;
     };
 
-    struct ParameterListSchema {
+    @appendable struct ParameterListSchema {
         sequence<ParameterSchema> parameters;
     };
 
     // generic
-    struct GenericParameterRequest {
+    @appendable struct GenericParameterRequest {
         ParameterList value;
     };
 
-    struct GenericParameterReply {
+    @appendable struct GenericParameterReply {
         ParameterList value;
         RPCResponseStatus status;
     };
@@ -111,15 +113,16 @@ module pcpd_msgs {
     // (request: StringListRequest of keys, empty = all).
 
     /// How a parameter can be changed.
-    enum ParameterAccess {
-      PA_READ_WRITE_LIVE,      // set takes effect while running (next compute / next frame)
-      PA_READ_WRITE_RESTART,   // set accepted, applies after a restart / recompile
-      PA_READ_ONLY             // get only
+    @appendable enum ParameterAccess {
+      PARAMETER_ACCESS_UNKNOWN,
+      PARAMETER_ACCESS_READ_WRITE_LIVE,      // set takes effect while running (next compute / next frame)
+      PARAMETER_ACCESS_READ_WRITE_RESTART,   // set accepted, applies after a restart / recompile
+      PARAMETER_ACCESS_READ_ONLY             // get only
     };
 
-    /// One allowed enum value: the label as shown and sent (PVT_STRING),
+    /// One allowed enum value: the label as shown and sent (PARAMETER_VALUE_TYPE_STRING),
     /// and the underlying integer value.
-    struct EnumEntry {
+    @appendable struct EnumEntry {
         string label;
         int64 value;
     };
@@ -127,12 +130,11 @@ module pcpd_msgs {
     /// Full description of one parameter. ParameterSchema stays as the
     /// compact form.
     ///
-    /// minimum / maximum / step are optional. `@optional` is not used: with
-    /// fast-cdr 2.0.0 and the DDS_CDR (XCDR1) encoding every peer uses, an
-    /// optional member does not round-trip. Each is a plain member with a
-    /// `has_*` flag before it; when the flag is false the value is
+    /// minimum / maximum / step are optional. They predate 0.11, when the
+    /// XCDR1 encoding could not round-trip an `@optional` member, so each is a
+    /// plain member with a `has_*` flag before it (unchanged in 0.11); when the flag is false the value is
     /// meaningless (default-constructed) and must be ignored.
-    struct ParameterDescriptor {
+    @appendable struct ParameterDescriptor {
         string key;
         ParameterValueType value_type;
         ParameterAccess access;
@@ -144,17 +146,17 @@ module pcpd_msgs {
         ParameterValue maximum;             // inclusive
         boolean has_step;
         ParameterValue step;                // UI hint; absent = continuous
-        sequence<EnumEntry> enum_entries;   // non-empty for enums (value_type PVT_STRING)
+        sequence<EnumEntry> enum_entries;   // non-empty for enums (value_type PARAMETER_VALUE_TYPE_STRING)
         sequence<ParameterValue> valid_entries;  // other discrete sets (0.8.0 parity)
         ParameterValue default_value;
         uint64 generation;                  // server-side change counter of the current value
     };
 
-    struct ParameterDescriptorList {
+    @appendable struct ParameterDescriptorList {
         sequence<ParameterDescriptor> parameters;
     };
 
-    struct ParameterDescriptorReply {
+    @appendable struct ParameterDescriptorReply {
         ParameterDescriptorList value;
         RPCResponseStatus status;
     };
@@ -162,24 +164,25 @@ module pcpd_msgs {
     // A3. Per-key set results, served by `parameters/set_ex`
     // (request: GenericParameterRequest). `parameters/set` (NullReply) stays.
 
-    enum ParameterSetStatus {
-      PSS_APPLIED,          // in effect
-      PSS_UNCHANGED,        // equal to the current value
-      PSS_PENDING,          // accepted, not yet in effect within the server's wait
-      PSS_OUT_OF_RANGE,
-      PSS_TYPE_MISMATCH,
-      PSS_UNKNOWN_KEY,
-      PSS_READ_ONLY,
-      PSS_REJECTED          // other; see message
+    @appendable enum ParameterSetStatus {
+      PARAMETER_SET_STATUS_UNKNOWN,
+      PARAMETER_SET_STATUS_APPLIED,          // in effect
+      PARAMETER_SET_STATUS_UNCHANGED,        // equal to the current value
+      PARAMETER_SET_STATUS_PENDING,          // accepted, not yet in effect within the server's wait
+      PARAMETER_SET_STATUS_OUT_OF_RANGE,
+      PARAMETER_SET_STATUS_TYPE_MISMATCH,
+      PARAMETER_SET_STATUS_UNKNOWN_KEY,
+      PARAMETER_SET_STATUS_READ_ONLY,
+      PARAMETER_SET_STATUS_REJECTED          // other; see message
     };
 
-    struct ParameterSetResult {
+    @appendable struct ParameterSetResult {
         string key;
         ParameterSetStatus status;
         string message;
     };
 
-    struct ParameterSetReply {
+    @appendable struct ParameterSetReply {
         sequence<ParameterSetResult> results;
         RPCResponseStatus status;   // SUCCESS only if every key is APPLIED or UNCHANGED
     };
@@ -187,7 +190,7 @@ module pcpd_msgs {
     // A4. Change notification, published on
     // `<prefix>/str/service/<name>/parameters` whenever a value takes effect.
 
-    struct ParameterChanged {
+    @appendable struct ParameterChanged {
         string service;
         ParameterList value;   // keys that changed, with their new values
         uint64 generation;

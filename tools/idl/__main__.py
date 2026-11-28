@@ -35,7 +35,75 @@ def main(argv) -> int:
     mv.add_argument("--json", type=Path)
     mv.add_argument("--markdown", type=Path)
 
+    an = sub.add_parser("annotate", help="add explicit @appendable/@final to every tcn struct, union and enum (E1, E7)")
+    an.add_argument("--dds-root", type=Path, required=True)
+    an.add_argument("--final", default="", help="comma-separated fully qualified names to declare @final")
+
+    en = sub.add_parser("enums", help="apply an enum rename table and write the enum map (0.11 plan 4)")
+    en.add_argument("--dds-root", type=Path, required=True)
+    en.add_argument("--table", type=Path, required=True)
+    en.add_argument("--markdown", type=Path, required=True)
+
+    fl = sub.add_parser("fields", help="remove members, delete types, add @optional (0.11 plan 4)")
+    fl.add_argument("--dds-root", type=Path, required=True)
+    fl.add_argument("--spec", type=Path, required=True)
+
     args = ap.parse_args(argv)
+    if args.cmd == "fields":
+        import json
+        from .fields import apply_fields
+        spec = json.loads(args.spec.read_text(encoding="utf-8"))
+        schema = load_schema(args.dds_root)
+        named = set(spec.get("remove", {})) | set(spec.get("delete", [])) | set(spec.get("optional", {}))
+        missing = sorted(named - set(schema.decls()))
+        if missing:
+            raise SystemExit(f"not in the schema: {missing}")
+        for f in schema.files:
+            if f.family != "tcn":
+                continue
+            p = args.dds_root / "tcn" / f.path
+            text = p.read_text(encoding="utf-8")
+            new = apply_fields(text, f.decls, spec)
+            if new != text:
+                p.write_text(new, encoding="utf-8")
+        return 0
+    if args.cmd == "enums":
+        import json
+        from .enums import migration_rows, write_markdown
+        table = json.loads(args.table.read_text(encoding="utf-8"))["enums"]
+        schema = load_schema(args.dds_root)
+        decls = schema.decls()
+        missing = sorted(set(table) - set(decls))
+        if missing:
+            raise SystemExit(f"not in the schema: {missing}")
+        rows = {fq: migration_rows(decls[fq], t) for fq, t in table.items()}
+        from .enums import apply_enums
+        for f in schema.files:
+            if f.family != "tcn":
+                continue
+            p = args.dds_root / "tcn" / f.path
+            text = p.read_text(encoding="utf-8")
+            new = apply_enums(text, f.decls, table)
+            if new != text:
+                p.write_text(new, encoding="utf-8")
+        write_markdown(rows, args.markdown)
+        print(f"{len(table)} enums renamed")
+        return 0
+    if args.cmd == "annotate":
+        from .annotate import annotate
+        final = {x for x in args.final.split(",") if x}
+        changed = 0
+        for f in load_schema(args.dds_root).files:
+            if f.family != "tcn":
+                continue
+            p = args.dds_root / "tcn" / f.path
+            text = p.read_text(encoding="utf-8")
+            new = annotate(text, f.decls, final)
+            if new != text:
+                p.write_text(new, encoding="utf-8")
+                changed += 1
+        print(f"{changed} files annotated")
+        return 0
     if args.cmd == "tables":
         from .tables import write_tables
         write_tables(load_schema(args.dds_root), args.version, args.out)
@@ -48,9 +116,10 @@ def main(argv) -> int:
             restructure(args.dds_root, spec, args.dds_root)
             return 0
         from .moves import compare, write_reports
-        renames = {o: f"{e['module']}::{o.rsplit('::', 1)[1]}" for e in spec["files"] for o in e["decls"]}
+        renames = {o: f"{e['module']}::{o.rsplit('::', 1)[1]}" for e in spec.get("files", []) for o in e["decls"]}
         old, new = load_schema(args.old), load_schema(args.new)
-        report = compare(old, new, renames, set(spec.get("deleted", [])), spec.get("new_types", []))
+        report = compare(old, new, renames, set(spec.get("deleted", [])), spec.get("new_types", []),
+                         spec.get("expect"))
         for p in report.problems:
             print(p)
         write_reports(report, old, new, args.json, args.markdown)

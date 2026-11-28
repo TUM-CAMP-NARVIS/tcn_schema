@@ -7,50 +7,52 @@
 module conversation_msgs {
   module msg {
 
-  enum MemoryScopeKind {
-    disabled,
-    session,
-    client,
-    user,
-    anonymous
+  @appendable enum MemoryScopeKind {
+    MEMORY_SCOPE_KIND_UNKNOWN,
+    MEMORY_SCOPE_KIND_DISABLED,
+    MEMORY_SCOPE_KIND_SESSION,
+    MEMORY_SCOPE_KIND_CLIENT,
+    MEMORY_SCOPE_KIND_USER,
+    MEMORY_SCOPE_KIND_ANONYMOUS
   };
 
-  struct MemoryScope {
+  @appendable struct MemoryScope {
     MemoryScopeKind kind;
     string key;
   };
 
-  enum InteractionMode {
-    direct,
-    pipeline
+  @appendable enum InteractionMode {
+    INTERACTION_MODE_UNKNOWN,
+    INTERACTION_MODE_DIRECT,
+    INTERACTION_MODE_PIPELINE
   };
 
-  enum RetrievalPolicy {
-    auto_,  // C++ keyword; the pipeline names it `auto`; same value (0)
-    always,
-    never
+  @appendable enum RetrievalPolicy {
+    RETRIEVAL_POLICY_UNKNOWN,
+    RETRIEVAL_POLICY_AUTO,  // was `auto_` (C++ keyword; the pipeline says `auto`), value 0 in 0.10
+    RETRIEVAL_POLICY_ALWAYS,
+    RETRIEVAL_POLICY_NEVER
   };
 
-  enum ExecutionPreference {
-    AUTO,
-    FAST,
-    AGENTIC
+  @appendable enum ExecutionPreference {
+    EXECUTION_PREFERENCE_UNKNOWN,
+    EXECUTION_PREFERENCE_AUTO,
+    EXECUTION_PREFERENCE_FAST,
+    EXECUTION_PREFERENCE_AGENTIC
   };
 
-  struct RetrievalOptions {
+  @appendable struct RetrievalOptions {
     RetrievalPolicy policy;
-    sequence<string> preferred_domains;
-    sequence<string> excluded_domains;
     string filter;
     unsigned long top_k;
   };
 
-  struct ImageAttachment {
+  @appendable struct ImageAttachment {
     string mime_type;
     sequence<octet> data;
   };
 
-  struct InteractionRequest {
+  @appendable struct InteractionRequest {
     MessageHeader header;
     string request_id;
     InteractionMode mode;
@@ -61,28 +63,29 @@ module conversation_msgs {
     ClientIdentity identity;
   };
 
-  struct InteractionPartial {
+  @appendable struct InteractionPartial {
     MessageHeader header;
     string request_id;
     string text_delta;
     unsigned long token_count;
   };
 
-  enum InteractionActivityState {
-    started,
-    progress,
-    completed,
-    failed
+  @appendable enum InteractionActivityState {
+    INTERACTION_ACTIVITY_STATE_UNKNOWN,
+    INTERACTION_ACTIVITY_STATE_STARTED,
+    INTERACTION_ACTIVITY_STATE_PROGRESS,
+    INTERACTION_ACTIVITY_STATE_COMPLETED,
+    INTERACTION_ACTIVITY_STATE_FAILED
   };
 
-  struct InteractionActivity {
+  @appendable struct InteractionActivity {
     string request_id;
     string call_id;
     string tool_name;
     InteractionActivityState state;
   };
 
-  struct InteractionResponse {
+  @appendable struct InteractionResponse {
     MessageHeader header;
     string request_id;
     string text;
@@ -90,22 +93,20 @@ module conversation_msgs {
     unsigned long generated_tokens;
   };
 
-  struct LlmRequest {
+  @appendable struct LlmRequest {
     MessageHeader header;
     MemoryScope memory_scope;
     string backend;
     string model;
-    string system_prompt;
     string user_text;
     boolean stream_output;
-    boolean low_latency_mode;
     string interaction_request_id;
     sequence<ImageAttachment> images;
     RetrievalOptions retrieval;
     ExecutionPreference execution_preference;
   };
 
-  struct LlmPartial {
+  @appendable struct LlmPartial {
     MessageHeader header;
     string text_delta;
     unsigned long token_count;
@@ -113,7 +114,7 @@ module conversation_msgs {
     EventState state;
   };
 
-  struct LlmFinal {
+  @appendable struct LlmFinal {
     MessageHeader header;
     string text;
     string finish_reason;

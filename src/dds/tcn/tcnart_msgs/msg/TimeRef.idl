@@ -1,5 +1,5 @@
-// The time-reference query (tcnart's `tcn/time/ref/<name>` queryable): the request and reply payloads, CDR with the
-// encapsulation header (00 01 00 00). All times are ns since the Unix epoch of the sender's CLOCK_REALTIME: t1 the
+// The time-reference query (tcnart's `tcn/time/ref/<name>` queryable): the request and reply payloads, XCDR2 with the
+// encapsulation header (00 09 00 00) and a DHEADER, like every tcn type since 0.11. All times are ns since the Unix epoch of the sender's CLOCK_REALTIME: t1 the
 // client's send time, t2 the server's receive time (read first in the handler), t3 the server's send time.
 // Protocol: tcnart v3/docs/protocols/time-reference.md. New in 0.10.5.
 
@@ -9,11 +9,11 @@
 module tcnart_msgs {
   module msg {
 
-    struct TimeRefRequest {
+    @appendable struct TimeRefRequest {
       int64 t1;
     };
 
-    struct TimeRefReply {
+    @appendable struct TimeRefReply {
       int64 t1;
       int64 t2;
       int64 t3;

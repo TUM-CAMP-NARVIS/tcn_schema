@@ -15,7 +15,7 @@ module tcnart_msgs {
     // One inertial sample (0.10.4): accelerometer and gyroscope, each with the device's own time (they may be
     // sampled at different instants or rates; a message may carry one of them). header.stamp: the sample's time
     // on the publisher's clock; header.frame_id: the IMU's frame.
-    struct ImuMessage {
+    @appendable struct ImuMessage {
       std_msgs::msg::Header header;
       int64 acc_device_ns;   // the accelerometer sample's device time (ns)
       tcn_types::msg::Vector3 acc;           // m/s^2, in frame_id

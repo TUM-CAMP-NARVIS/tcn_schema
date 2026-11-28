@@ -1,0 +1,20 @@
+// Test only: version 1 of an appendable type (0.11 plan 4, decisions E1, E5, E8).
+#ifndef EVO_V1_MSG_EVOLUTION_V1_IDL
+#define EVO_V1_MSG_EVOLUTION_V1_IDL
+
+module evo_v1 {
+  module msg {
+    @appendable struct Thing {
+      int32 a;
+      string b;
+    };
+
+    // Data after a grown struct: a reader that does not skip by the DHEADER misreads the second element and `tail`.
+    @appendable struct Holder {
+      sequence<Thing> things;
+      int32 tail;
+    };
+  };
+};
+
+#endif

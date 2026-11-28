@@ -43,7 +43,7 @@ module sqe_msgs {
     // SISOperatorRef and the op/info types are in sqe_msgs/rpc/Session.idl.
 
     // --- sqe/{engine_id}/op/fragments -------------------------------------
-    struct SISFragmentListRequest {
+    @appendable struct SISFragmentListRequest {
         SISOperatorRef who;
         string prefix;             // keep ids under this prefix, by whole chunks;
                                    //   "" = the whole scope; outside it = REJECTED
@@ -51,7 +51,7 @@ module sqe_msgs {
         string cursor;             // opaque; "" on the first page
     };
 
-    struct SISFragmentSummary {
+    @appendable struct SISFragmentSummary {
         string client;             // the fragment id (the client id it joined under)
         string origin;             // its origin node
         boolean joined;            // the client holds its liveliness token now; a
@@ -64,7 +64,7 @@ module sqe_msgs {
 
     // Ordered by `client`. SIS_GQ_TRUNCATED with a `next_cursor` when there
     // are more pages; the statuses mean what they mean on a graph read.
-    struct SISFragmentListReply {
+    @appendable struct SISFragmentListReply {
         SISGraphQueryStatus status;
         sequence<SISFragmentSummary> fragments;
         string next_cursor;
@@ -77,13 +77,13 @@ module sqe_msgs {
     // and every anchor (`client`, `from.client`, `to.client`) must lie in the
     // engine's scope; a global frame (empty client) always does. A snapshot
     // is the fragment list followed by one SIS_GQ_FRAGMENT read per fragment.
-    struct SISOperatorGraphQueryRequest {
+    @appendable struct SISOperatorGraphQueryRequest {
         SISOperatorRef who;
         SISGraphQueryRequest query;
     };
 
     // --- sqe/{engine_id}/op/changes (published) ---------------------------
-    enum SISGraphChangeKind {
+    @appendable enum SISGraphChangeKind {
         SIS_GC_FRAGMENT_REPLACED,  // a join or re-join: re-read the fragment
         SIS_GC_FRAGMENT_REMOVED,   // retracted after its client left
         SIS_GC_CLIENT_JOINED,      // liveliness token appeared; graph unchanged
@@ -98,7 +98,7 @@ module sqe_msgs {
     // Names what changed; does not carry it -- re-read what it names.
     // `sequence_number` is gapless within one `engine_epoch`: a gap, or a new epoch,
     // means "re-read everything".
-    struct SISGraphChangeNotification {
+    @appendable struct SISGraphChangeNotification {
         uint64 sequence_number;
         uint64 engine_epoch;
         SISGraphChangeKind kind;
@@ -110,7 +110,7 @@ module sqe_msgs {
     };
 
     // --- sqe/{engine_id}/op/update ----------------------------------------
-    enum SISOperatorMutationKind {
+    @appendable enum SISOperatorMutationKind {
         SIS_OM_NODE_UPDATE,
         SIS_OM_NODE_REMOVE,
         SIS_OM_EDGE_UPDATE,
@@ -118,7 +118,7 @@ module sqe_msgs {
     };
 
     // The per-client mutation payloads, reused unchanged.
-    union SISOperatorMutation switch (SISOperatorMutationKind) {
+    @appendable union SISOperatorMutation switch (SISOperatorMutationKind) {
         case SIS_OM_NODE_UPDATE: SISNodeUpdateRequest node_update;
         case SIS_OM_NODE_REMOVE: SISNodeRemoveRequest node_remove;
         case SIS_OM_EDGE_UPDATE: SISEdgeUpdateRequest edge_update;
@@ -131,7 +131,7 @@ module sqe_msgs {
     // An operator edit lasts until the owner next declares the same thing: a
     // re-join replaces the whole fragment, and the owner's own update of the
     // same node or relation replaces the edit. The change feed reports both.
-    struct SISOperatorMutationRequest {
+    @appendable struct SISOperatorMutationRequest {
         SISOperatorRef who;
         string client;             // the fragment to edit; must lie in scope
         SISOperatorMutation mutation;
@@ -154,12 +154,12 @@ module sqe_msgs {
     // at one instant, is exactly what the engine publishes for that instant.
 
     // What to explain. Ordinals are the wire encoding; append only.
-    enum SISExplainKind {
+    @appendable enum SISExplainKind {
         SIS_EX_RELATION,        // dry run: compile observer/target now, start nothing
         SIS_EX_STREAM           // the running stream `handle`: the route it is on
     };
 
-    struct SISExplainRequest {
+    @appendable struct SISExplainRequest {
         SISOperatorRef who;
         SISExplainKind kind;
         // SIS_EX_RELATION: the relation, as a SISRelationStreamStartRequest
@@ -175,7 +175,7 @@ module sqe_msgs {
 
     // What the engine knows about a running stream's inputs right now.
     // Empty for a dry run.
-    struct SISPlanLive {
+    @appendable struct SISPlanLive {
         boolean running;                // a pipeline is evaluating this stream here
         sequence<int64> input_newest_ns;   // per input: newest buffered stamp (ns), 0 = none
         string last_hole;               // why the last tick had no value; "" = none yet
@@ -192,7 +192,7 @@ module sqe_msgs {
     // SIS_RS_PENDING / SIS_RS_UNKNOWN_FRAME / SIS_RS_CLOCK_DOMAIN_MISMATCH
     // with `relation_detail` and, when pending, `blocked_by` -- and then an
     // empty plan.
-    struct SISExplainReply {
+    @appendable struct SISExplainReply {
         SISGraphQueryStatus status;
         string detail;
         SISRelationStreamStatus relation;
@@ -215,13 +215,13 @@ module sqe_msgs {
     // --transaction-log-dir; otherwise a start is SIS_GQ_REJECTED.
 
     // Ordinals are the wire encoding; append only.
-    enum SISTransactionLogAction {
+    @appendable enum SISTransactionLogAction {
         SIS_TL_STATUS,          // say what is running; change nothing
         SIS_TL_START,           // start a log labelled `label`, stopping a running one
         SIS_TL_STOP             // stop the running log
     };
 
-    struct SISTransactionLogRequest {
+    @appendable struct SISTransactionLogRequest {
         SISOperatorRef who;
         SISTransactionLogAction action;
         string label;           // SIS_TL_START: names the log; part of its file name
@@ -231,7 +231,7 @@ module sqe_msgs {
     // SIS_GQ_OK when the request was carried out; SIS_GQ_REJECTED (no log
     // directory, a bad request) or SIS_GQ_UNAVAILABLE (the file could not be
     // created) with `detail` otherwise.
-    struct SISTransactionLogReply {
+    @appendable struct SISTransactionLogReply {
         SISGraphQueryStatus status;
         string detail;
         boolean active;

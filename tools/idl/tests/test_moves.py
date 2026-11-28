@@ -101,3 +101,51 @@ def _merge(schema):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class ExpectTest(unittest.TestCase):
+    OLD = {"p/msg/V.idl": """module p { module msg {
+        struct V { double x; double y; };
+        @final struct W { double z; };
+        enum E { A_ONE, A_TWO };
+        union U switch (E) { case A_ONE: double one; case A_TWO: long two; };
+    }; };"""}
+
+    def _cmp(self, new_text, expect):
+        from tools.idl.moves import compare
+        return compare(_schema(self.OLD), _schema({"p/msg/V.idl": new_text}), {}, set(), expect=expect)
+
+    NEW = """module p { module msg {
+        @appendable struct V { @optional double x; };
+        @final struct W { double z; };
+        @appendable enum E { E_UNKNOWN, E_ONE, E_TWO };
+        @appendable union U switch (E) { case E_ONE: double one; case E_TWO: long two; };
+    }; };"""
+    EXPECT = {"extensibility": {"*": "appendable"},
+              "removed_members": {"p::msg::V": ["y"]},
+              "optional": {"p::msg::V": ["x"]},
+              "enums": {"p::msg::E": [[None, "E_UNKNOWN"], ["A_ONE", "E_ONE"], ["A_TWO", "E_TWO"]]}}
+
+    def test_expected_changes_pass(self):
+        r = self._cmp(self.NEW, self.EXPECT)
+        self.assertEqual(r.problems, [])
+
+    def test_unexpected_change_still_fails(self):
+        r = self._cmp(self.NEW.replace("long two", "double two"), self.EXPECT)
+        self.assertEqual(len(r.problems), 1)
+        r = self._cmp(self.NEW, dict(self.EXPECT, removed_members={}))
+        self.assertEqual(len(r.problems), 1)
+
+    def test_star_does_not_override_explicit_final(self):
+        r = self._cmp(self.NEW.replace("@final struct W", "@appendable struct W"), self.EXPECT)
+        self.assertEqual(len(r.problems), 1)
+
+
+class ExpectTypoTest(unittest.TestCase):
+    def test_expect_naming_a_missing_member_is_an_error(self):
+        from tools.idl.moves import compare
+        s = {"p/msg/V.idl": "module p { module msg { struct V { double x; }; }; };"}
+        with self.assertRaises(ValueError):
+            compare(_schema(s), _schema(s), {}, set(), expect={"removed_members": {"p::msg::V": ["typo"]}})
+        with self.assertRaises(ValueError):
+            compare(_schema(s), _schema(s), {}, set(), expect={"optional": {"p::msg::V": ["typo"]}})

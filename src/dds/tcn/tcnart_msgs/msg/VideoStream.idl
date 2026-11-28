@@ -7,7 +7,7 @@
 module tcnart_msgs {
   module msg {
 
-    struct VideoStreamMessage {
+    @appendable struct VideoStreamMessage {
 
       std_msgs::msg::Header header;
 

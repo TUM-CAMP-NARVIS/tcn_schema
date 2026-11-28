@@ -7,20 +7,18 @@
 module pcpd_msgs {
   module rpc {
 
-    struct DeviceContextReply {
+    @appendable struct DeviceContextReply {
         string name;
-        boolean is_valid;
         float depth_units_per_meter;
         int32 frame_rate;
         string sensor_type;
         string serial_number;
-        uint64 timestamp_offset;
 
         pcpd_msgs::msg::CameraSensor value;
         pcpd_msgs::rpc::RPCResponseStatus status;
     };
 
-    struct ServiceInfoReply {
+    @appendable struct ServiceInfoReply {
         string name;
         string service_type;
         
@@ -39,7 +37,7 @@ module pcpd_msgs {
     // A5. Dataflow graph, verb `<P>/rpc/graph`. The graph is a versioned
     // JSON document (e.g. schema "tcn.plan_graph.v1") inside a CDR reply,
     // because a pipeline graph is nested and app-specific.
-    struct GraphReply {
+    @appendable struct GraphReply {
         string graph_json;
         string schema;
         pcpd_msgs::rpc::RPCResponseStatus status;
@@ -49,7 +47,7 @@ module pcpd_msgs {
     // token on `<P>/rpc` while it serves, and answers `<P>/rpc/info` with
     // a ProcessInfoReply. A changed pid or started_at on the same root is a
     // restart; two different answers on one root are a duplicate root.
-    struct ProcessInfo {
+    @appendable struct ProcessInfo {
         string app;
         string node;
         string host;
@@ -61,7 +59,7 @@ module pcpd_msgs {
         string rpc_root;     // `<P>/rpc`, as the process sees it
     };
 
-    struct ProcessInfoReply {
+    @appendable struct ProcessInfoReply {
         ProcessInfo value;
         pcpd_msgs::rpc::RPCResponseStatus status;
     };
@@ -69,7 +67,7 @@ module pcpd_msgs {
     // A7. Stream announcements, verb `<P>/rpc/streams`: the streams a process
     // publishes, announced by each sender when it starts, so a client can
     // find a preview without knowing the pipeline's parameter values.
-    struct StreamAnnouncement {
+    @appendable struct StreamAnnouncement {
         string op;         // operator (or component) that publishes it
         string topic;      // full Zenoh key expression
         string payload;    // payload type name
@@ -78,7 +76,7 @@ module pcpd_msgs {
         string mode;       // "stream" | "latched"
     };
 
-    struct StreamAnnouncementReply {
+    @appendable struct StreamAnnouncementReply {
         sequence<StreamAnnouncement> streams;
         pcpd_msgs::rpc::RPCResponseStatus status;
     };

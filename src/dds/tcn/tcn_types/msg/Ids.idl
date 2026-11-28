@@ -4,7 +4,7 @@
 module tcn_types {
   module msg {
 
-    struct UUID {
+    @appendable struct UUID {
       uint8 uuid[16];
     };
 

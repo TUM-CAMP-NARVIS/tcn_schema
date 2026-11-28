@@ -7,14 +7,11 @@
 module pcpd_msgs {
   module msg {
 
-    struct MeshBitstreamMessage {
+    @appendable struct MeshBitstreamMessage {
 
       std_msgs::msg::Header header;
 
-      tcn_types::msg::RigidTransform origin_offset;
-
       boolean enable_mesh_indices;
-      boolean is_compressed;
       uint32 num_camera_ids;
 
       uint64 vertices_capacity;

@@ -67,6 +67,9 @@ function(FASTDDS_GENERATE_CPP MODPATH MODTYP SOURCES HEADERS DLLEXPORT GEN_DEPEN
     list(APPEND CMDARGS -typeros2)
     list(APPEND CMDARGS -cs)
     list(APPEND CMDARGS -replace)
+    # Default extensibility for a type declared without one (0.11 O6). Every tcn and ROS type declares its own
+    # (E1, E2); this only pins what fastddsgen would otherwise default to.
+    list(APPEND CMDARGS -de appendable)
     list(APPEND CMDARGS ${FASTDDSGEN_FLAGS})
 
     # On macOS fastddsgen runs `cpp`, which Apple ships as clang in traditional
@@ -122,11 +125,27 @@ exec xcrun clang -E -x c "$@" -o "$out"
         list(APPEND CMDARGS "${CMAKE_CURRENT_SOURCE_DIR}/${schema_file}")
         list(APPEND ${SOURCES} "${output_base}.cxx")
         list(APPEND ${HEADERS} "${output_base}.h")
-        list(APPEND ${SOURCES} "${output_base}CdrAux.ipp")
-        list(APPEND ${HEADERS} "${output_base}CdrAux.hpp")
+        # fastddsgen 3.0.0 writes no CdrAux.{hpp,ipp} and no PubSubTypes.cxx for an IDL file that declares only enums
+        # and consts (same rule as tools/idl/roundtrip.py); listing them would break the build graph and the install.
+        # Decided here from the IDL text, comments stripped: does it declare a struct or union?
+        file(READ "${file_path}" _idl_text)
+        string(REGEX REPLACE "/\\*([^*]|\\*+[^*/])*\\*+/" "" _idl_text "${_idl_text}")
+        string(REGEX REPLACE "//[^\n]*" "" _idl_text "${_idl_text}")
+        if(_idl_text MATCHES "(^|[^A-Za-z0-9_])(struct|union)[ \t\r\n]+[A-Za-z_]")
+            set(_has_aggregates TRUE)
+        else()
+            set(_has_aggregates FALSE)
+        endif()
+        set_property(DIRECTORY APPEND PROPERTY CMAKE_CONFIGURE_DEPENDS "${file_path}")
+        if(_has_aggregates)
+            list(APPEND ${SOURCES} "${output_base}CdrAux.ipp")
+            list(APPEND ${HEADERS} "${output_base}CdrAux.hpp")
+        endif()
         list(APPEND ${DLLEXPORT} "${output_path}_SOURCE")
         if (WITH_DDS)
-          list(APPEND ${SOURCES} "${output_base}PubSubTypes.cxx")
+          if(_has_aggregates)
+            list(APPEND ${SOURCES} "${output_base}PubSubTypes.cxx")
+          endif()
           list(APPEND ${HEADERS} "${output_base}PubSubTypes.h")
         endif()
     endforeach()

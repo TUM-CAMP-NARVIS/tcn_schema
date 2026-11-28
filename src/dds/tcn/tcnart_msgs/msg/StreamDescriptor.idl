@@ -10,7 +10,7 @@
 module tcnart_msgs {
   module msg {
 
-    struct StreamDescriptorMessage {
+    @appendable struct StreamDescriptorMessage {
 
       std_msgs::msg::Header header;
 
@@ -18,16 +18,12 @@ module tcnart_msgs {
       string stream_topic_schema;
 
       string calib_topic;
-      string calib_topic_schema;
 
       SensorType sensor_type;
 
       uint32 frame_rate;
 
       BufferInfo buffer_info;
-
-      // used if sensor has locality
-      tcn_types::msg::RigidTransform pose;
 
       // used for pose trackers
       tcn_types::msg::MarkerType marker_type;
@@ -42,10 +38,6 @@ module tcnart_msgs {
       // used for h26x compression
       VideoH26xProfile h26x_profile;
       uint32 h26x_bitrate;
-
-      // used for microphone
-      uint8 audio_channels;
-      AudioAACProfile aac_profile;
 
       // nanoseconds between the measurement and the header stamp; 0 if unknown.
       // A consumer interpolating across sensors subtracts this before use.

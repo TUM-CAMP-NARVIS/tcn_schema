@@ -6,7 +6,7 @@
 module conversation_msgs {
   module msg {
 
-  struct StageMetric {
+  @appendable struct StageMetric {
     MessageHeader header;
 
     string stage;
@@ -22,11 +22,10 @@ module conversation_msgs {
     double time_to_first_audio_ms;
 
     double cpu_utilization_pct;
-    double gpu_utilization_pct;
     double memory_used_mb;
   };
 
-  struct HealthStatus {
+  @appendable struct HealthStatus {
     MessageHeader header;
     string _component;  // IDL keyword: the leading underscore escapes it; the member is `component`
     boolean ready;

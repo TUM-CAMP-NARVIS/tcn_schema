@@ -1,8 +1,8 @@
 // SPDX-License-Identifier: internal
 //
 // Round trip of tcnart_msgs::msg::PersonTrackingMessage (0.10.5) through CDR the way the Zenoh transport
-// carries it (DDS_CDR with the encapsulation header, as HTA's tcn::zenoh serde). The avatar extension (HTA design 70): the
-// joint set, previous_id, per-joint age, ambiguous, the group number and the orientation fields.
+// carries it (XCDR2, encapsulation 00 09, 0.11 decisions E1). The avatar extension (HTA design 70): the
+// joint set, previous_id, per-joint age, ambiguous and the group number (0.11 removed the never-written orientation and role fields).
 #include <cmath>
 #include <cstdint>
 #include <cstdio>
@@ -33,8 +33,8 @@ static bool encode(const msg::PersonTrackingMessage& m, std::vector<char>& out)
 {
     out.assign(1 << 20, 0);
     FastBuffer fb(out.data(), out.size());
-    Cdr ser(fb, Cdr::DEFAULT_ENDIAN, CdrVersion::DDS_CDR);
-    try { ser.serialize_encapsulation(); ser << m; } catch (...) { return false; }
+    Cdr ser(fb, Cdr::DEFAULT_ENDIAN, CdrVersion::XCDRv2);
+    try { ser.set_encoding_flag(eprosima::fastcdr::EncodingAlgorithmFlag::DELIMIT_CDR2); ser.serialize_encapsulation(); ser << m; } catch (...) { return false; }
     out.resize(ser.get_serialized_data_length());
     return true;
 }
@@ -43,7 +43,7 @@ static bool decode(const std::vector<char>& in, msg::PersonTrackingMessage& m)
 {
     std::vector<char> copy(in);
     FastBuffer fb(copy.data(), copy.size());
-    Cdr de(fb, Cdr::DEFAULT_ENDIAN, CdrVersion::DDS_CDR);
+    Cdr de(fb, Cdr::DEFAULT_ENDIAN, CdrVersion::XCDRv2);
     try { de.read_encapsulation(); de >> m; } catch (...) { return false; }
     return true;
 }
@@ -75,13 +75,6 @@ static msg::Person make_person(uint32_t id, std::size_t joints, std::size_t bone
     p.views().push_back(v);
     v.camera(5);
     p.views().push_back(v);
-    p.role(-1);
-    p.role_confidence(0.f);
-    p.has_root_orientation(true);
-    p.root_orientation().x(0.0); p.root_orientation().y(0.0); p.root_orientation().z(0.6); p.root_orientation().w(0.8);
-    ::tcn_types::msg::Quaternion q; q.w(1.0);
-    p.joint_rotations(std::vector<::tcn_types::msg::Quaternion>(joints, q));
-    p.joint_rotation_confidence(std::vector<float>(joints, 0.5f));
     return p;
 }
 
@@ -121,10 +114,6 @@ int main()
     CHECK(a.confidence() == 0.875f && a.age_s() == 12.5 && a.last_seen_ns() == 1700000000123456789LL);
     CHECK(a.root().x() == 1.0 && a.root().y() == -2.0 && a.root().z() == 0.9);
     CHECK(a.views().size() == 2 && a.views()[1].camera() == 5 && a.views()[0].box()[2] == 110.f);
-    CHECK(a.role() == -1 && a.role_confidence() == 0.f);
-    CHECK(a.has_root_orientation() && a.root_orientation().z() == 0.6 && a.root_orientation().w() == 0.8);
-    CHECK(a.joint_rotations().size() == 17 && a.joint_rotations()[3].w() == 1.0);
-    CHECK(a.joint_rotation_confidence().size() == 17);
     CHECK(b.state() == msg::PERSON_STATE_PREDICTED && b.id() == 9);
     CHECK(out.header().stamp().sec() == 1700000000 && out.header().stamp().nanosec() == 123456789);
     CHECK(out.camera_count() == 4 && out.camera_reprojection_px().size() == 4 && out.up().z() == 1.0);
@@ -147,15 +136,11 @@ int main()
     CHECK(empty_out.persons().empty() && empty_out.group() == 0 && empty_out.joint_set().to_string().empty());
     msg::PersonTrackingMessage one;
     msg::Person p = make_person(1, 17, 16);
-    p.has_root_orientation(false);
-    p.joint_rotations({});
-    p.joint_rotation_confidence({});
     p.previous_id(0);
     one.persons().push_back(p);
     CHECK(encode(one, wire));
     msg::PersonTrackingMessage one_out;
     CHECK(decode(wire, one_out));
-    CHECK(!one_out.persons()[0].has_root_orientation() && one_out.persons()[0].joint_rotations().empty());
     CHECK(one_out.persons()[0].previous_id() == 0);
 
     if (g_failures == 0) std::printf("person_tracking: all checks passed\n");

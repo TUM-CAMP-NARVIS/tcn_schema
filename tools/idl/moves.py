@@ -29,7 +29,7 @@ def _mapper(renames: Dict[str, str]):
 
 def _member(x, m):
     # Annotations that can matter on the wire or in generated code; comments (@verbatim) and units do not.
-    ann = {k: v for k, v in x.annotations.items() if k not in ("verbatim", "unit")}
+    ann = {k: v for k, v in x.annotations.items() if k not in ("verbatim", "unit", "optional")}  # optional: x.optional
     return (x.name, m(x.type), x.optional, x.array, sorted(ann.items()))
 
 
@@ -48,11 +48,42 @@ def _layout(d, m):
     raise TypeError(d)
 
 
+def _expected(d, name: str, expect: dict, label_map: Dict[str, str]):
+    """The old declaration as it should look after the listed, deliberate changes (0.11 plan 4).
+
+    expect keys: "extensibility" {fq or "*": value; "*" applies only where none was declared},
+    "removed_members" {fq: [member]}, "optional" {fq: [member]}, "enums" {fq: [[old or None, new], ...]}.
+    """
+    import dataclasses
+    if not isinstance(d, (Struct, Enum, Union)):
+        return d
+    ext = expect.get("extensibility", {})
+    want = ext.get(name) or (ext.get("*") if d.extensibility == "default" else None) or d.extensibility
+    d = dataclasses.replace(d, extensibility=want)
+    if isinstance(d, Struct):
+        gone, opt = set(expect.get("removed_members", {}).get(name, [])), set(expect.get("optional", {}).get(name, []))
+        unknown = (gone | opt) - {x.name for x in d.members}
+        if unknown:
+            raise ValueError(f"{name}: expect names members it does not have: {sorted(unknown)}")
+        d = dataclasses.replace(d, members=[dataclasses.replace(x, optional=x.optional or x.name in opt)
+                                            for x in d.members if x.name not in gone])
+    elif isinstance(d, Enum) and name in expect.get("enums", {}):
+        table = expect["enums"][name]
+        if sorted(o for o, _ in table if o is not None) != sorted(n for n, _ in d.enumerators):
+            raise ValueError(f"{name}: the rename table must list every old enumerator exactly once")
+        d = dataclasses.replace(d, enumerators=[(n, i) for i, (_, n) in enumerate(table)])
+    elif isinstance(d, Union):
+        d = dataclasses.replace(d, cases=[([label_map.get(l, l) for l in labels], x) for labels, x in d.cases])
+    return d
+
+
 def compare(old: Schema, new: Schema, renames: Dict[str, str], deleted: Set[str],
-            new_types: Iterable[str] = ()) -> Report:
+            new_types: Iterable[str] = (), expect: dict = None) -> Report:
     r = Report()
     m = _mapper(renames)
     od, nd = old.decls(), new.decls()
+    expect = expect or {}
+    label_map = {o: n for t in expect.get("enums", {}).values() for o, n in t if o is not None}
     reached = set()
     for name in sorted(od):
         if name in deleted:
@@ -69,7 +100,7 @@ def compare(old: Schema, new: Schema, renames: Dict[str, str], deleted: Set[str]
             oh, nh = header_of(name, old), header_of(target, new)
             if oh and nh and oh != nh:
                 r.relocated.append((name, oh, nh))
-        a, b = _layout(od[name], m), _layout(nd[target], lambda t: t)
+        a, b = _layout(_expected(od[name], name, expect, label_map), m), _layout(nd[target], lambda t: t)
         if a != b:
             r.problems.append(f"{target}: layout differs from {name}: {a} != {b}")
     for name in sorted(set(nd) - reached - set(new_types)):

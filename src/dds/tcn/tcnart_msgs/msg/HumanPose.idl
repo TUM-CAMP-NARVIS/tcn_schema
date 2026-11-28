@@ -27,14 +27,14 @@ module tcnart_msgs {
 
     const uint8 HUMAN_JOINT_HAS_ROTATION = 8;  // `rotation` is valid; else identity, ignore
 
-    struct HumanJoint {
+    @appendable struct HumanJoint {
       tcn_types::msg::Vector3 position;        // m, header.frame_id
       tcn_types::msg::Quaternion rotation;     // header.frame_id, relative to the joint set's rest pose
       float confidence;        // [0,1]
       uint8 flags;             // HUMAN_JOINT_* bits
     };
 
-    struct HumanPose {
+    @appendable struct HumanPose {
       uint32 person;                    // stable id after merging source tracks; never reused within a session
       string<32> participant;           // session user name linked to this person; empty: anonymous
       uint8 state;                      // HUMAN_POSE_*
@@ -44,7 +44,7 @@ module tcnart_msgs {
     };
 
     // The persons of one site as tcnart's human_pose authority sees them.
-    struct HumanPoseMessage {
+    @appendable struct HumanPoseMessage {
       std_msgs::msg::Header header;     // stamp: deployment clock time of the poses; frame_id: Global SQE node
       string<64> joint_set;             // e.g. "tcnart_body_v1"
       string<64> source;                // the source topic (e.g. holoscan-tcn's persons stream)

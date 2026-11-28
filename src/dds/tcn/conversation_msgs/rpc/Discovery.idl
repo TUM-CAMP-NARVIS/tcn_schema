@@ -6,7 +6,7 @@
 module conversation_msgs {
   module rpc {
 
-  struct AppServerInfo {
+  @appendable struct AppServerInfo {
     conversation_msgs::msg::MessageHeader header;
     string display_name;
     string topic_prefix;
