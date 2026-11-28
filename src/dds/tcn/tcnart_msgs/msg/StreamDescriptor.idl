@@ -66,12 +66,13 @@ module tcnart_msgs {
     };
 
     // A mesh stream (#38 A2, with #37 T12). The capacities size a receiver's preallocated buffers:
-    // `vertices_capacity`, `faces_capacity`: the most vertices and faces one message carries.
+    // `vertices_capacity`, `faces_capacity`: the most vertices and faces one message carries; absent: unbounded
+    // (the receiver grows its buffers as messages arrive).
     // `camera_id_count`: the number of camera ids per vertex.
     @appendable struct MeshStreamInfo {
       MeshEncoding encoding;
-      uint64 vertices_capacity;
-      uint64 faces_capacity;
+      @optional uint64 vertices_capacity;
+      @optional uint64 faces_capacity;
       uint32 camera_id_count;
     };
 
@@ -114,8 +115,8 @@ module tcnart_msgs {
     // whose live inputs come from two domains (REJECTED + CLOCK_DOMAIN_MISMATCH, or PENDING for a running stream)
     // rather than compose stamps that cannot be compared.
     // `frame_rate`: Hz; 0 means irregular (no nominal rate).
-    // `sensor_latency_ns`: ns between the measurement and the messages' StreamHeader.capture_time_ns; 0 if
-    // unknown. A consumer interpolating across sensors subtracts it before use.
+    // `sensor_latency_ns`: ns between the measurement and the messages' StreamHeader.capture_time_ns; absent:
+    // unknown (0 is a stated zero latency). A consumer interpolating across sensors subtracts it before use.
     // `calib_topic`: where the sensor's calibration is published; "" if none.
     // `info`: the typed part for the stream's kind.
     // `properties`: vendor extensions only; nothing the typed fields can say.
@@ -126,7 +127,7 @@ module tcnart_msgs {
       tcn_types::msg::SRFrameRef frame;
       tcn_types::msg::ClockDomain clock;
       double frame_rate;
-      int64 sensor_latency_ns;
+      @optional int64 sensor_latency_ns;
       string calib_topic;
       StreamInfo info;
       sequence<BufferInfoProperty> properties;

@@ -56,7 +56,8 @@ module tcnart_msgs {
       // PERSON_TRACK_STATE_PREDICTED its joints move with the root (the last observed pose carried along the root's
       // prediction), every joint observed false, age_s the time since that joint was last observed.
       sequence<PersonJoint, 32> joints;
-      // m, NaN until the length is frozen; one per bone of the joint set's bone list (tcnart_msgs/msg/JointSets.md).
+      // m, NaN until the length is frozen (a named exception to the @optional rule, docs/idl-style.md, as
+      // HumanShape.bone_lengths); one per bone of the joint set's bone list (tcnart_msgs/msg/JointSets.md).
       sequence<float, 32> bone_lengths;
       sequence<PersonCameraView, 8> views;
 
@@ -71,7 +72,9 @@ module tcnart_msgs {
     // PersonStreamInfo.up.
     // `joint_set`, `joint_set_version`: the joints' and bones' order (was a "coco17" / "halpe26" string;
     // JointSets.md, "Retired names"). They equal the stream descriptor's PersonStreamInfo.joint_set and
-    // joint_set_version: one joint set per stream.
+    // joint_set_version: one joint set per stream. Only a set with at most 32 joints and 32 bones fits
+    // (Person.joints, Person.bone_lengths): COCO17, HALPE26, TCN_LITE, TCN_BODY or SMPL_24, never SMPLX_55 or
+    // SMPLH_52 (those travel in HumanPoseMessage; JointSets.md, "Bounds").
     // `camera_count`: number of cameras (<= 8) that fed the group.
     // `camera_reprojection_px`: per camera, the median reprojection residual of the group, pixels.
     @appendable struct PersonTrackingMessage {

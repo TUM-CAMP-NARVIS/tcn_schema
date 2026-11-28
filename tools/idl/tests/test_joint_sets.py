@@ -148,6 +148,25 @@ class JointSetTableTest(unittest.TestCase):
         errors = js.check_table(t)
         self.assertTrue(errors and any("64" in e and "COCO17" in e for e in errors), errors)
 
+    def test_bone_bound(self):
+        # HumanShape.bone_lengths holds at most 64: one per bone of the set's bone list.
+        t = self.fresh()
+        s = _set(t, "HALPE26")
+        s.bones += [js.Bone("nose", "left_eye", None) for _ in range(65 - len(s.bones))]  # 65 bones
+        errors = js.check_table(t)
+        self.assertEqual(len(errors), 1, errors)
+        self.assertIn("HALPE26", errors[0])
+        self.assertIn("65 bones", errors[0])
+        self.assertIn("HumanShape.bone_lengths", errors[0])
+        t = self.fresh()
+        s = _set(t, "HALPE26")
+        s.bones += [js.Bone("nose", "left_eye", None) for _ in range(64 - len(s.bones))]  # 64 bones: fits
+        self.assertEqual(js.check_table(t), [])
+
+    def test_markdown_states_person_tracking_bound(self):
+        md = js.render_markdown(self.table)
+        self.assertIn("`PersonTrackingMessage` carries only a set with at most 32 joints and 32 bones", md)
+
     def test_load_rejects_unknown_keys_and_bad_shorthands(self):
         with self.assertRaises(ValueError):
             js.load_table(self.text.replace("    purpose: the joint order of SmplParams.pose for SMPL-X; no model data\n",

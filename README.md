@@ -56,7 +56,7 @@ ctest --test-dir build/Release
 | `golden` | Fixed values encode to exactly the bytes in [test/golden/](test/golden/). These files are the shared contract for all hand-written codecs: XCDR1 for a ROS type, XCDR2 for tcn types, and two versions of one appendable type (`evo_v1_Thing`, `evo_v2_Thing`, from [test/idl/evo/](test/idl/evo/)) that prove decoding across versions in both directions, and a union pair (`evo_v1_Boxed`, `evo_v2_Boxed`) that proves a reader skips a union case it does not know. |
 | `tcnart_msgs_*` | Hand-written round trips (PersonTracking, HumanPose, TimeRef). |
 | `joint_sets` | The generated `tcn/joint_sets.h` agrees with the `JointSet` enum, and `find` refuses an unknown (set, version) pair. |
-| `install_smoke`, `install_smoke_files` | The whole tree installs (`cmake --install`, what conan's `package()` runs), and the joint-set files are in place. |
+| `install_smoke`, `install_smoke_files`, `install_smoke_header` | The whole tree installs (`cmake --install`, what conan's `package()` runs), the joint-set files are in place, and `#include <tcn/joint_sets.h>` compiles against the install prefix alone. |
 | `idl_lint` | The IDL style rules, against the shrinking baseline `tools/idl/lint_baseline.txt`. |
 | `idl_tools` | The Python tools' unit tests: `python3 -m unittest discover -s tools -p 'test_*.py' -t .` |
 | `sqe_contract`, `sqe_must_not_compile.*` | The SQE contract library (`TCN_SCHEMA_BUILD_SQE_TESTS`). |
@@ -89,7 +89,7 @@ The installed package also contains `share/tcn_schema/packages.json` (the packag
   descriptor's clock, never the deployment clock) and the `frame` (`SRFrameRef`).
 - **The stream descriptor** (`tcnart_msgs/msg/StreamDescriptor.idl`), announced latched beside each stream:
   `StreamDescriptorMessage` is a common header (`stream_topic`, `stream_topic_schema`, an optional `revision`,
-  `frame`, `clock`, `frame_rate`, `sensor_latency_ns`, `calib_topic`) plus `StreamInfo info`, a union over
+  `frame`, `clock`, `frame_rate`, an optional `sensor_latency_ns`, `calib_topic`) plus `StreamInfo info`, a union over
   `StreamKind` with one `*StreamInfo` case per kind (video, tracker, persons, mesh; surfels, eye, hand and IMU are
   empty until 0.11.x), and `properties` for vendor extensions only. A changed `revision` means changed content;
   absent means compare the content.

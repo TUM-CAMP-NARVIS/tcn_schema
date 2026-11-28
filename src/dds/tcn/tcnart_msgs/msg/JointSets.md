@@ -59,7 +59,16 @@ Every rest pose is stated in the canonical body frame B: right-handed, +x the pe
 ## Bone lengths
 
 `HumanShape.bone_lengths[i]` is the length of bone i of the set, in metres, and **NaN while not frozen** (a
-track's lengths become valid once it is confirmed). A set without bones sends none.
+track's lengths become valid once it is confirmed). A set without bones sends none. `Person.bone_lengths`
+(`PersonTrackingMessage`) follows the same rule.
+
+## Bounds
+
+`HumanPoseMessage` and `HumanShapeMessage` carry a set with at most 64 joints and 64 bones
+(`HumanPose.joints`, `HumanShape.bone_lengths`); the table check refuses a larger set.
+`PersonTrackingMessage` carries only a set with at most 32 joints and 32 bones
+(`Person.joints`, `Person.bone_lengths`): of the sets above, `COCO17`, `HALPE26`, `TCN_LITE`, `TCN_BODY`, `SMPL_24`.
+A larger set travels in `HumanPoseMessage` only.
 
 ## Trees
 

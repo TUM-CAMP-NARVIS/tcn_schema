@@ -68,8 +68,10 @@ renames are listed in [migration/0.11-enum-map.md](migration/0.11-enum-map.md).
 ## Rules not (yet) checked by the lint
 
 - **`@optional` instead of placeholders.** Absence is explicit: use `@optional`, not flag pairs (`has_x` + `x`),
-  sentinel values (`-1`, NaN, an identity pose) or "empty means absent". A documented exception is
-  `HumanShape.bone_lengths` (decisions §7).
+  sentinel values (`-1`, NaN, an identity pose) or "empty means absent". Documented exceptions are
+  `tcnart_msgs::msg::HumanShape.bone_lengths` (decisions §7) and `tcnart_msgs::msg::Person.bone_lengths`
+  (`PersonTracking.idl`): NaN for a bone whose length is not frozen yet. An element of a fixed-length per-bone
+  sequence cannot be `@optional`.
 
   A second named exception is `pcpd_msgs::rpc::ParameterDescriptor`: it keeps its `has_minimum` + `minimum`,
   `has_maximum` + `maximum` and `has_step` + `step` pairs. They predate 0.11 (0.9.0, when XCDR1 could not round-trip

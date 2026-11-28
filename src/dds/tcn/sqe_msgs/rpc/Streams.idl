@@ -498,6 +498,9 @@ module sqe_msgs {
         // The outer `clock_domain` and `sequence_number` win over the embedded
         // StreamHeader's: the engine leaves `targets.header.clock` absent and
         // sets `targets.header.sequence_number` equal to the outer one.
+        // It sets `targets.header.frame` to the relation's source frame (the
+        // frame the poses are expressed in) and `targets.header.capture_time_ns`
+        // to the evaluation instant, in the outer `clock_domain`.
         tcnart_msgs::msg::TargetTrackingMessage targets;
     };
 

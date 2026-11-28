@@ -106,8 +106,19 @@ if(TCN_SCHEMA_BUILD_MSG_TESTS)
            "${_smoke}/include/tcn/joint_sets.h" "${_smoke}/share/tcn_schema/joint_sets.json"
            "${_smoke}/share/tcn_schema/JointSets.cs" "${_smoke}/share/tcn_schema/dds/tcnart_msgs/msg/JointSets.md"
            "${_smoke}/share/tcn_schema/dds/tcnart_msgs/msg/JointSet.idl" "${_smoke}/include/tcnart_msgs/msg/JointSet.h")
+  # ... and the installed C++ joint-set header compiles on its own, against the install prefix only (no source-tree
+  # or build-tree include directory).
+  set(_smoke_tu "${CMAKE_BINARY_DIR}/install_smoke_joint_sets.cpp")
+  file(WRITE "${_smoke_tu}" "#include <tcn/joint_sets.h>\n")
+  set(_smoke_inc "${_smoke}/include")
+  if(MSVC)
+    set(_smoke_cc /nologo /std:c++17 /Zs "/I${_smoke_inc}" "${_smoke_tu}")
+  else()
+    set(_smoke_cc -std=c++17 -fsyntax-only "-I${_smoke_inc}" "${_smoke_tu}")
+  endif()
+  add_test(NAME install_smoke_header COMMAND "${CMAKE_CXX_COMPILER}" ${_smoke_cc})
   set_tests_properties(install_smoke PROPERTIES FIXTURES_SETUP install_smoke)
-  set_tests_properties(install_smoke_files PROPERTIES FIXTURES_REQUIRED install_smoke)
+  set_tests_properties(install_smoke_files install_smoke_header PROPERTIES FIXTURES_REQUIRED install_smoke)
 endif()
 
 # generated cpp/h files need one import from fastrtps, which we provide to avoid pulling the dependency, if it should be build without

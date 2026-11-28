@@ -119,6 +119,10 @@ class Task5TablesTest(unittest.TestCase):
             ("revision", "uint32", True),
             ("provenance", "tcn_types::msg::CalibrationProvenance", True),
             ("coord", "tcn_types::msg::CoordinateSystem", False)])
+        self.assertEqual(self._members("tcn_types::msg::CalibrationProvenance"), [
+            ("tool", "string", False), ("method", "string", False),
+            ("residual", "double", True), ("covariance", "tcn_types::msg::SRCovariance6", True),
+            ("computed_at_ns", "int64", True), ("samples", "uint32", True)])
         dc = {n: t for n, t, _ in self._members("pcpd_msgs::rpc::DeviceContextReply")}
         self.assertEqual(dc["frame_rate"], "double")
 

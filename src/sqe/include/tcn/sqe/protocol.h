@@ -11,7 +11,7 @@
 #include <cstdint>
 
 /// The **protocol floor**: the engine compatibility break (B-number) whose
-/// wire this library speaks -- the 0.11 break (provisionally B99). An engine
+/// wire this library speaks -- the 0.11 break (B99). An engine
 /// announcing a lower `SISEngineCapabilities.protocol_break` speaks an older
 /// wire (`Capabilities::meets_floor()`); optional features above the floor are
 /// capabilities (`Capabilities::has`), not higher numbers.

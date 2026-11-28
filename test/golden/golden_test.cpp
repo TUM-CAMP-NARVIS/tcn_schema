@@ -16,6 +16,8 @@
 
 #include "conversation_msgs/msg/Control.h"
 #include "conversation_msgs/msg/ControlCdrAux.hpp"
+#include "pcpd_msgs/msg/CameraSensor.h"
+#include "pcpd_msgs/msg/CameraSensorCdrAux.hpp"
 #include "pcpd_msgs/rpc/Parameters.h"
 #include "pcpd_msgs/rpc/ParametersCdrAux.hpp"
 #include "std_msgs/msg/Header.h"
@@ -409,7 +411,8 @@ static void descriptor()
     CHECK(!info_back.tracker().nominal_covariance().has_value());
 
     // The video case: frame domain:rig/cam1_color, clock {"", HOST}, 30 Hz, revision 2 (presence 01);
-    // H265 + COLOR + NV12, nominal intrinsics present (presence 01), codec_data 00 00 00 01, no properties.
+    // sensor_latency_ns present and 0 (presence 01, a stated zero latency); H265 + COLOR + NV12, nominal intrinsics
+    // present (presence 01), codec_data 00 00 00 01, no properties.
     tm::StreamDescriptorMessage d;
     d.stream_topic("rig/str/cam1_color");
     d.stream_topic_schema("tcnart_msgs::msg::VideoStreamMessage");
@@ -418,7 +421,7 @@ static void descriptor()
     d.clock().id("");
     d.clock().kind(tcn_types::msg::ClockKind::CLOCK_KIND_HOST);
     d.frame_rate(30.0);
-    d.sensor_latency_ns(0);
+    d.sensor_latency_ns(0);  // present: a stated zero latency (P3)
     d.calib_topic("");
     tm::VideoStreamInfo video;
     video.width(640);
@@ -444,6 +447,7 @@ static void descriptor()
     tm::StreamDescriptorMessage d_back;
     CHECK(tcn_test::decode(d_bytes, d_back));
     CHECK(d_back.revision().has_value() && *d_back.revision() == 2);
+    CHECK(d_back.sensor_latency_ns().has_value() && *d_back.sensor_latency_ns() == 0);
     CHECK(d_back.info()._d() == tm::StreamKind::STREAM_KIND_VIDEO);
     CHECK(!d_back.info().video().depth_units_per_meter().has_value());
     CHECK(d_back.info().video().intrinsics().has_value());
@@ -451,15 +455,15 @@ static void descriptor()
     CHECK(d_back.info().video().bitrate().has_value() && *d_back.info().video().bitrate() == 4000000);
 
     // An unversioned tracker descriptor (#38 A7, P3): revision absent (presence 00, no uint32), "t", "", frame
-    // global:w, clock {"", UNKNOWN}, irregular (0 Hz), the tracker case above. Absent is "compare the content",
-    // never revision 0: decoding into an object that held a revision must leave it absent.
+    // global:w, clock {"", UNKNOWN}, irregular (0 Hz), sensor_latency_ns absent (presence 00, unknown; P3), the
+    // tracker case above. Absent is "compare the content", never revision 0: decoding into an object that held a
+    // revision must leave it absent.
     tm::StreamDescriptorMessage u;
     u.stream_topic("t");
     u.stream_topic_schema("");
     u.frame(frame_ref(tcn_types::msg::SRNodeScope::SR_NODE_SCOPE_GLOBAL, "", "w"));
     u.clock().id("");
     u.frame_rate(0.0);
-    u.sensor_latency_ns(0);
     u.calib_topic("");
     u.info().tracker(tracker);
     const std::vector<char> u_bytes = golden("tcnart_msgs_StreamDescriptorMessage_unversioned", u, Encoding::XCDR2);
@@ -467,6 +471,7 @@ static void descriptor()
     u_back.revision(7);
     CHECK(tcn_test::decode(u_bytes, u_back));
     CHECK(!u_back.revision().has_value());
+    CHECK(!u_back.sensor_latency_ns().has_value());
     CHECK(u_back.info()._d() == tm::StreamKind::STREAM_KIND_TRACKER && u_back.info().tracker().marker_system() == "a");
     tm::StreamDescriptorMessage u_fresh;
     CHECK(tcn_test::decode(u_bytes, u_fresh) && !u_fresh.revision().has_value());
@@ -527,6 +532,43 @@ static void conversation()
     CHECK(tcn_test::decode(plain_bytes, plain_back) && !plain_back.barge_in_mode().has_value());
 }
 
+// CameraSensor with a stated calibration provenance (#38 A3/A4, P3): both intrinsics absent, identity poses,
+// 30 Hz, 1000 units/m, revision absent (presence 00: unversioned), provenance present (presence 01) with residual
+// 0.5 px, a covariance (upper[0] = 0.25, the rest 0), computed_at_ns absent and samples 12; coord OpenGL
+// (forward Z_NEG, right X_POS, up Y_POS, 3 dimensions). The DHEADERs and presence bytes are reviewed by hand.
+static void camera_sensor()
+{
+    pcpd_msgs::msg::CameraSensor c;
+    c.name("k");
+    c.serial_number("s");
+    c.depth_enabled(true);
+    c.camera_pose().rotation().w(1.0);
+    c.color2depth_transform().rotation().w(1.0);
+    c.frame_rate(30.0);
+    c.depth_units_per_meter(1000.0f);
+    tcn_types::msg::CalibrationProvenance prov;
+    prov.tool("t");
+    prov.method("m");
+    prov.residual(0.5);
+    tcn_types::msg::SRCovariance6 cov;
+    cov.upper()[0] = 0.25;
+    prov.covariance(cov);
+    prov.samples(12);
+    c.provenance(prov);
+    c.coord().forward(tcn_types::msg::CoordinateAxis::COORDINATE_AXIS_Z_NEG);
+    c.coord().right(tcn_types::msg::CoordinateAxis::COORDINATE_AXIS_X_POS);
+    c.coord().up(tcn_types::msg::CoordinateAxis::COORDINATE_AXIS_Y_POS);
+    c.coord().dimensions(3);
+    const std::vector<char> bytes = golden("pcpd_msgs_CameraSensor", c, Encoding::XCDR2);
+    pcpd_msgs::msg::CameraSensor back;
+    back.revision(5);
+    CHECK(tcn_test::decode(bytes, back));
+    CHECK(!back.revision().has_value() && !back.depth_parameters().has_value());
+    CHECK(back.provenance().has_value() && back.provenance()->samples().has_value());
+    CHECK(*back.provenance()->samples() == 12 && !back.provenance()->computed_at_ns().has_value());
+    CHECK(back.provenance()->covariance().has_value() && back.provenance()->covariance()->upper()[0] == 0.25);
+}
+
 int main()
 {
     golden("std_msgs_Header", header(), Encoding::XCDR1);
@@ -538,6 +580,8 @@ int main()
     descriptor();
 
     parameters();
+
+    camera_sensor();
 
     // The XCDR2 rules by hand: DHEADER 0x18; enum int32 LOCAL=1; "a" and "b" as length 2 + bytes + pad; enum FRAME=1.
     tcn_types::msg::SRFrameRef ref;

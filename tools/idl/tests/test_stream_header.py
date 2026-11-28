@@ -72,7 +72,7 @@ class StreamHeaderTest(unittest.TestCase):
             ("frame", T + "SRFrameRef", False),
             ("clock", T + "ClockDomain", False),
             ("frame_rate", "double", False),
-            ("sensor_latency_ns", "int64", False),
+            ("sensor_latency_ns", "int64", True),
             ("calib_topic", "string", False),
             ("info", M + "StreamInfo", False),
             ("properties", "sequence<" + M + "BufferInfoProperty>", False),
@@ -104,8 +104,8 @@ class StreamHeaderTest(unittest.TestCase):
             ("nominal_covariance", T + "SRCovariance6", True),
         ])
         self.assertEqual(shape("MeshStreamInfo"), [
-            ("encoding", M + "MeshEncoding", False), ("vertices_capacity", "uint64", False),
-            ("faces_capacity", "uint64", False), ("camera_id_count", "uint32", False),
+            ("encoding", M + "MeshEncoding", False), ("vertices_capacity", "uint64", True),
+            ("faces_capacity", "uint64", True), ("camera_id_count", "uint32", False),
         ])
         for empty in ("SurfelStreamInfo", "EyeStreamInfo", "HandStreamInfo", "ImuStreamInfo"):
             self.assertEqual(shape(empty), [], empty)

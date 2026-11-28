@@ -803,6 +803,8 @@ below carry their issue: #38 A1 is HTA's, #37 T8 tcnart's, #36 S4 the voice pipe
   from different clocks.
 - **`SISRelationOutput`** (Plan 5) embeds a `TargetTrackingMessage`: its outer `clock_domain` and `sequence_number`
   win. The engine leaves `targets.header.clock` absent and sets `targets.header.sequence_number` to the outer one.
+  It sets `targets.header.frame` to the relation's source frame (the frame the poses are expressed in, an
+  `SRFrameRef`) and `targets.header.capture_time_ns` to the evaluation instant, in the outer `clock_domain`.
 - **Encoding:** `StreamHeader` is `@appendable` (DHEADER), so the fixed prefix of every stream message changed.
   Golden: `tcn_types_StreamHeader.hex` (presence bytes of `device_time_ns`, `group_id`, `clock`).
 
@@ -844,7 +846,12 @@ The per-frame camera arrays of `VideoStreamMessage` go into the `pinhole` case o
 
 - **One joint set per stream:** every message (and every `HumanShape`) of a person stream carries exactly the
   descriptor's `PersonStreamInfo.joint_set` and `joint_set_version`.
-- **`bone_lengths` NaN** is the documented exception to the `@optional` rule: a bone that is not frozen yet.
+- **`bone_lengths` NaN** is a documented exception to the `@optional` rule ([idl-style.md](../idl-style.md)): a bone
+  that is not frozen yet. Both `HumanShape.bone_lengths` and `Person.bone_lengths` (`PersonTrackingMessage`) are
+  named exceptions.
+- **Bounds:** `HumanPoseMessage`/`HumanShapeMessage` carry a set with at most 64 joints and 64 bones (the table check
+  refuses a larger one); `PersonTrackingMessage` carries only a set with at most 32 joints and 32 bones (`COCO17`,
+  `HALPE26`, `TCN_LITE`, `TCN_BODY`, `SMPL_24`; `JointSets.md`, "Bounds").
 - The 0.10 `joint_set` strings: `coco17` → `JOINT_SET_COCO17` v1, `halpe26` → `JOINT_SET_HALPE26` v1,
   `tcnart_body_v1` → `JOINT_SET_TCN_BODY` v1 (`JointSets.md`, "Retired names").
 
@@ -856,14 +863,15 @@ kind (`VIDEO` → `video`, `TRACKER` → `tracker`, `PERSONS` → `persons`, `ME
 
 ```
 StreamDescriptorMessage { stream_topic; stream_topic_schema; ? uint32 revision; SRFrameRef frame; ClockDomain clock;
-                          double frame_rate; int64 sensor_latency_ns; calib_topic; StreamInfo info;
+                          double frame_rate; ? int64 sensor_latency_ns; calib_topic; StreamInfo info;
                           sequence<BufferInfoProperty> properties; }
 VideoStreamInfo   { width; height; step; VideoPixelFormat pixel_format; PixelSemantics semantics; VideoCodec codec;
                     VideoH26xProfile h26x_profile; ? uint32 bitrate; ? float depth_units_per_meter;
                     ? CameraIntrinsics intrinsics; sequence<uint8> codec_data; }
 TrackerStreamInfo { MarkerType marker_type; string marker_system; string marker_domain;
                     sequence<SISTargetInfo> targets; ? SRCovariance6 nominal_covariance; }
-MeshStreamInfo    { MeshEncoding encoding; uint64 vertices_capacity; uint64 faces_capacity; uint32 camera_id_count; }
+MeshStreamInfo    { MeshEncoding encoding; ? uint64 vertices_capacity; ? uint64 faces_capacity;
+                    uint32 camera_id_count; }
 SurfelStreamInfo, EyeStreamInfo, HandStreamInfo, ImuStreamInfo: empty in 0.11.0
 ```
 
@@ -873,7 +881,8 @@ Where each Plan 5 descriptor field went:
 |---|---|
 | `std_msgs/Header header`: `stamp` | gone; `revision` says when the content changed (A7, below) |
 | `header.frame_id` | `frame` (`SRFrameRef`) |
-| `stream_topic`, `stream_topic_schema`, `sensor_latency_ns`, `calib_topic` | unchanged |
+| `stream_topic`, `stream_topic_schema`, `calib_topic` | unchanged |
+| `int64 sensor_latency_ns` (0 if unknown) | `? int64 sensor_latency_ns`: absent = unknown; 0 is a stated zero latency (P3) |
 | `SensorType sensor_type` | `info`'s discriminator (`StreamKind`); for video also `info.video.semantics` (table below) |
 | `uint32 frame_rate` | `double frame_rate` (Hz; 0 = irregular). The persons' `rate_hz` property goes here too |
 | `string clock_domain` | `ClockDomain clock` (`id` "" = the deployment clock); authoritative for every message whose `header.clock` is absent |
@@ -890,7 +899,7 @@ Where each Plan 5 descriptor field went:
 | – | `info.tracker.nominal_covariance` (`?`; the default fusion weight for a target without `pose_covariance`) |
 | the person properties `joint_set`, `up`, `smoothing` | `info.persons.joint_set` + `joint_set_version`, `info.persons.up`, `info.persons.smoothing`; the one-euro parameters (`min_cutoff_hz`, `beta`, `d_cutoff_hz`, `bone_tol`) stay in `properties` |
 | the person properties `world_frame`, `clock_domain`, `handedness`, `units` | `frame`, `clock`; handedness (right) and units (m) are fixed by the schema and not sent |
-| the mesh properties (`num_cameraids`, capacities) | `info.mesh.camera_id_count`, `vertices_capacity`, `faces_capacity`, `encoding` |
+| the mesh properties (`num_cameraids`, capacities) | `info.mesh.camera_id_count`, `encoding`, `? vertices_capacity`, `? faces_capacity` (absent: unbounded, the receiver grows its buffers) |
 
 - **The revision rule (#38 A7).** `revision` present: a changed revision means changed content, and a reader (the
   SQE engine) re-reads the descriptor; an unchanged revision means unchanged content. Absent: unversioned, the reader
@@ -911,7 +920,7 @@ Where each Plan 5 descriptor field went:
 | Type | Plan 5 | rc1 |
 |---|---|---|
 | `CameraSensor` | …, `tcnart_msgs::msg::CameraModel depth_parameters`, `color_parameters`, `color2depth_transform`, `uint32 frame_rate`, … | …, **`? tcn_types::msg::CameraIntrinsics depth_parameters`**, **`? … color_parameters`** (absent: disabled or uncalibrated), `color2depth_transform`, **`double frame_rate`**, …, appended **`? uint32 revision`** (A7 rule), **`? CalibrationProvenance provenance`**, **`CoordinateSystem coord`** (the camera axes of `camera_pose`; ArteKMed's are OpenGL's) |
-| `CalibrationProvenance` (new) | – | `string tool` (`"sqe-calibrate"`, `"hta.rig_calibration"`), `string method`, `? double residual`, `? SRCovariance6 covariance`, `? int64 computed_at_ns` (Unix epoch), `uint32 samples` |
+| `CalibrationProvenance` (new) | – | `string tool` (`"sqe-calibrate"`, `"hta.rig_calibration"`), `string method`, `? double residual` (for a camera calibration the RMS reprojection error in px, otherwise in the unit `method` names), `? SRCovariance6 covariance`, `? int64 computed_at_ns` (Unix epoch), `? uint32 samples` (absent: not stated) |
 | `DeviceContextReply` | `int32 frame_rate` | `double frame_rate` |
 | `ParameterValueType` | `…`, `STRUCT` (7), `UINT32` (8), `UINT64` (9) | `STRUCT` deleted, `UINT32` 7, `UINT64` 8, **`ENUM` 9** (table below) |
 | `ParameterValue` (union) | case `STRUCT`: `ParameterList struct_value` | case `ENUM`: **`EnumEntry enum_value`** (`{ label, int64 value }`); `struct_value` removed |
@@ -955,7 +964,9 @@ The deleted `CameraModel` maps to the `pinhole` case of `CameraIntrinsics`:
 - **C++:** the new `@optional` members have `std::optional`-style accessors (`eprosima::fastcdr::optional`):
   `Target::pose()`, `Target::capture_time_ns()`, `HandTrackingMessage::gaze()`, `Person::previous_id()`,
   `HumanPose::member()`, `HumanJoint::rotation()`, `VideoStreamMessage::intrinsics()`,
-  `StreamDescriptorMessage::revision()`, `VideoStreamInfo::bitrate()`, `CameraSensor::revision()`/`provenance()`,
+  `StreamDescriptorMessage::revision()`/`sensor_latency_ns()`, `VideoStreamInfo::bitrate()`,
+  `MeshStreamInfo::vertices_capacity()`/`faces_capacity()`, `CameraSensor::revision()`/`provenance()`,
+  `CalibrationProvenance::samples()`,
   `SttFinal::confidence()`, `LlmFinal::prompt_tokens()`/`generated_tokens()`, `VadEvent::speech_probability()`,
   `SessionStart::barge_in_mode()`, and the others marked `?` above. Code that read `gaze_valid` or
   `has_confidence` no longer compiles. An optional bounded string needs an explicit
@@ -1140,8 +1151,9 @@ presence byte.
 | `tcnart_msgs_VideoStreamMessage_nominal.hex` | the same frame with **intrinsics absent**: the new fixed prefix for zero-copy encoders |
 | `tcnart_msgs_HumanPoseMessage.hex` | `group_id` present, `TCN_LITE` v1, `member` absent, one joint with and one without `rotation`, `smpl` absent |
 | `tcnart_msgs_StreamInfo.hex` | the union's tracker case |
-| `tcnart_msgs_StreamDescriptorMessage.hex` | a video descriptor: `revision` present, `bitrate` present, `depth_units_per_meter` absent, intrinsics present, `codec_data` |
-| `tcnart_msgs_StreamDescriptorMessage_unversioned.hex` | a tracker descriptor with **`revision` absent** |
+| `tcnart_msgs_StreamDescriptorMessage.hex` | a video descriptor: `revision` present, `sensor_latency_ns` present and 0, `bitrate` present, `depth_units_per_meter` absent, intrinsics present, `codec_data` |
+| `tcnart_msgs_StreamDescriptorMessage_unversioned.hex` | a tracker descriptor with **`revision` absent** and `sensor_latency_ns` absent |
+| `pcpd_msgs_CameraSensor.hex` | `CameraSensor`: both intrinsics absent, `revision` absent, **`provenance` present** (`residual` present, `covariance` present, `computed_at_ns` absent, `samples` present), `coord` OpenGL |
 | `evo_v1_Boxed.hex` / `evo_v2_Boxed.hex` | a union with a case unknown to the older reader: it skips the case by DHEADER and reads `tail` (V2 → V1: `tail` = -1; V1 → V2: `a` = 5, `tail` = 42) |
 | `pcpd_msgs_Parameter.hex` | `Parameter { "mode", enum_value { "auto", 2 } }`: discriminator 9 (`ENUM`) |
 | `conversation_msgs_SessionStart.hex` | the reshaped `SessionStart`, `barge_in_mode` present (`VAD` = 2); no padding after a struct's last member |
@@ -1154,13 +1166,19 @@ presence byte.
 3. **The device frame of a tracker** is `TargetTrackingMessage.header.frame`, an `SRFrameRef`; `Target.pose` is
    optional and a target may carry its own `capture_time_ns`.
 4. **The revision rule (A7):** a changed `revision` means changed content; absent means compare the content.
+5. **The embedded header of `SISRelationOutput`:** the engine writes `targets.header.frame` = the relation's source
+   frame (the frame the poses are expressed in, an `SRFrameRef`) and `targets.header.capture_time_ns` = the evaluation
+   instant in the output's `clock_domain`; `targets.header.clock` absent, `targets.header.sequence_number` = the outer
+   one. Confirm the engine can name the source frame as an `SRFrameRef`.
 
 #### Tools
 
 - `tools/idl_cli.py moves --old <plan 5 src/dds> --new src/dds --spec tools/idl/streams_0_11.json --plan "plan 6"
   --json src/dds/tcn/type_map_0_11_streams.json --markdown docs/migration/0.11-streams-type-map.md` proves that
   nothing else changed. The report now lists the spec's new types and says "none" under an empty section.
-- `tools/idl_cli.py joint-sets` generates and checks the joint-set files (above).
+- `tools/idl_cli.py joint-sets` generates and checks the joint-set files (above); the table check refuses a set
+  with more than 64 joints or 64 bones.
+- ctest `install_smoke_header` compiles `#include <tcn/joint_sets.h>` against the install prefix alone.
 - `tools/idl/tests/test_streams_enums.py` pins every enum of this plan (names, order, `@appendable`) and the deleted
   ones; `test_stream_header.py` pins the ten stream messages and the descriptor's shape.
 
@@ -1261,7 +1279,9 @@ about 111 lines of `marker_system` in 19 files; about 24 lines of `buffer_info` 
 - [ ] *Plan 6:* **decode `StreamHeader`** in `TargetTrackingMessage` (the mirror at `messages.rs:2059`), so also inside
   `SISRelationOutput`, and in `Pose6DMessage`: the device frame is `header.frame` (an `SRFrameRef`), not a
   `frame_id` string. In `SISRelationOutput` the outer `clock_domain` and `sequence_number` win; leave
-  `targets.header.clock` absent and set `targets.header.sequence_number` to the outer one.
+  `targets.header.clock` absent and set `targets.header.sequence_number` to the outer one; set `targets.header.frame`
+  to the relation's source frame (an `SRFrameRef`) and `targets.header.capture_time_ns` to the evaluation instant in
+  the outer `clock_domain`.
 - [ ] *Plan 6:* **`Target`** (`messages.rs:2027`): `pose` is optional (absent: no pose, never identity; skip the target
   for fusion, as for `is_tracked` false), and a per-target `capture_time_ns` overrides the header's for that target.
   sqe-calibrate reads `Target.pose` too (`crates/sqe-calibrate/src/sampler.rs`, `materialise.rs`).
@@ -1277,7 +1297,8 @@ about 111 lines of `marker_system` in 19 files; about 24 lines of `buffer_info` 
   `clock_domain` string (`messages.rs:1829`); a message whose `header.clock` is absent is in the descriptor's clock.
   The clock-mismatch refusal is unchanged.
 - [ ] *Plan 6:* the `SensorType` mirror becomes `StreamKind` (the value table in Plan 6); `BufferInfo` is gone
-  (`engine.rs:9615`); `frame_rate` is a `double` (0 = irregular); `properties` holds vendor extensions only.
+  (`engine.rs:9615`); `frame_rate` is a `double` (0 = irregular); `sensor_latency_ns` is optional (absent: unknown,
+  not 0); `properties` holds vendor extensions only.
 - [ ] *Plan 6:* skip an unknown `StreamInfo` case by its DHEADER (a 0.11.x kind), and read `properties` after it.
 
 **6. The protocol floor and capabilities** *(wire)*
@@ -1301,7 +1322,8 @@ about 111 lines of `marker_system` in 19 files; about 24 lines of `buffer_info` 
 - [ ] *Plan 5:* the Plan 5 goldens and `share/tcn_schema/sqe/frame_ref.tsv` (70 rows, mandatory).
 - [ ] *Plan 6:* `tcn_types_StreamHeader`, `tcnart_msgs_TargetTrackingMessage` (an absent pose),
   `tcnart_msgs_StreamInfo`, `tcnart_msgs_StreamDescriptorMessage_unversioned` (a tracker descriptor without
-  `revision`), `evo_v1/v2_Boxed` (an unknown union case).
+  `revision`), `evo_v1/v2_Boxed` (an unknown union case), `pcpd_msgs_CameraSensor` (provenance present, `revision`
+  absent).
 
 ### sqe_client_cpp
 
@@ -1367,8 +1389,6 @@ about 111 lines of `marker_system` in 19 files; about 24 lines of `buffer_info` 
   an `SRFrameRef`), `pose`, then the `intrinsics` presence byte (and the union when present) instead of the four
   `camera_*` arrays, then `image_bytes`, `image`. Pin it with `tcnart_msgs_VideoStreamMessage_nominal.hex`
   (intrinsics absent) and `tcnart_msgs_VideoStreamMessage.hex` (present).
-- [ ] *Plan 1:* check that no C++ code uses `operator==` on the parameter and service-info types to compare pointers
-  (Plan 6 made them compare values).
 
 **3. Enum values** (take them from the tables; `0` is `UNKNOWN`)
 - [ ] *Plan 4:* the renames: media types, `XRGazeSpaceType`, `CoordinateAxis`, the parameter RPC enums.
@@ -1416,8 +1436,9 @@ about 111 lines of `marker_system` in 19 files; about 24 lines of `buffer_info` 
 - [ ] *Plan 6:* **descriptors through `StreamInfo`:** video (`codec`, `semantics`, `h26x_profile` as profile only,
   `bitrate`, `codec_data` instead of the `h26x_codec_data` property: about 10 lines in 9 files), tracker
   (`marker_system` `family[:variant]` plus `marker_domain`, about 65 lines in 33 files, e.g.
-  `features/src/camera/marker_publish_op.cpp`, `capi/src/capi_marker.cpp`), mesh, with `revision` bumped on a content
-  change and `clock` a `ClockDomain`.
+  `features/src/camera/marker_publish_op.cpp`, `capi/src/capi_marker.cpp`), mesh (capacities optional: absent =
+  unbounded), with `revision` bumped on a content change, `clock` a `ClockDomain` and `sensor_latency_ns` absent
+  when unknown (never 0 for unknown).
 - [ ] *Plan 6:* **XR target ids in `targets`:** `features/src/xr/xr_wire.cpp:182` writes `target/<name>` properties
   and `features/src/pose/pose_wire.cpp:91` reads them; use `info.tracker.targets` (`SISTargetInfo`).
 - [ ] *Plan 6:* **`Target.pose` optional** and per-target `capture_time_ns` in the pose and XR features.
@@ -1433,6 +1454,9 @@ about 111 lines of `marker_system` in 19 files; about 24 lines of `buffer_info` 
 - [ ] *Plan 6:* **parameter `ENUM`:** `engine/src/param_service.cpp` and its tests use `struct_value` (4 files): the
   case is gone; an enum parameter is `PARAMETER_VALUE_TYPE_ENUM` with `enum_value` (`EnumEntry`), not a string.
   `ProcessInfo.started_at` is a `builtin_interfaces::msg::Time` (`engine/src/membership.cpp`, `engine/src/engine.cpp`).
+- [ ] *Plan 6:* **parameter `operator==`:** `ParameterValue` is held by value, so `operator==` on the parameter and
+  service-info types now compares values, not pointers; check that no C++ code relied on pointer comparison or on
+  `sizeof` of these classes (the Plan 1 note).
 - [ ] *Plan 6:* **`voice_agent.cpp`** (`features/src/voice/voice_agent.cpp`, the fake server
   `tests/voice/fake_app_server.cpp`): S1, no echo (the `SessionStart` built at `voice_agent.cpp:530-545` copies
   the formats, `language_hint` and `voice_hint` from discovery; send only `identity`, `allow_barge_in`, `enable_partial_stt`,
@@ -1444,7 +1468,7 @@ about 111 lines of `marker_system` in 19 files; about 24 lines of `buffer_info` 
 - [ ] *Plan 4/5:* the C# codec tests and the C++ wire tests against `test/golden/*.hex`; run `frame_ref.tsv`.
 - [ ] *Plan 6:* the Plan 6 goldens, in particular `tcnart_msgs_VideoStreamMessage{,_nominal}`,
   `tcnart_msgs_HumanPoseMessage`, `tcnart_msgs_StreamDescriptorMessage`, `pcpd_msgs_Parameter`,
-  `conversation_msgs_SessionStart`, `evo_v1/v2_Boxed`.
+  `pcpd_msgs_CameraSensor`, `conversation_msgs_SessionStart`, `evo_v1/v2_Boxed`.
 
 ### HTA (holoscan-tcn-applications)
 
@@ -1523,8 +1547,8 @@ about 111 lines of `marker_system` in 19 files; about 24 lines of `buffer_info` 
   (colour, depth, IR, mask), `depth_units_per_meter` or `DEPTH_F32`, `codec_data` instead of the `h26x_codec_data`
   property (`operators/transport/zenoh_io/src/zenoh_publisher_op.cpp`), the nominal `intrinsics` (the per-frame
   arrays are gone from `VideoStreamMessage`: see step 5).
-- [ ] *Plan 6:* **mesh:** `info.mesh` (`encoding`, `vertices_capacity`, `faces_capacity`, `camera_id_count` instead of
-  `num_cameraids`); `BufferInfo` and its `semantic_type` go (`libs/transport/mesh_bitstream/src/stream.cpp:37`,
+- [ ] *Plan 6:* **mesh:** `info.mesh` (`encoding`, optional `vertices_capacity`/`faces_capacity` (absent:
+  unbounded), `camera_id_count` instead of `num_cameraids`); `BufferInfo` and its `semantic_type` go (`libs/transport/mesh_bitstream/src/stream.cpp:37`,
   `operators/transport/stream_receive/src/mesh_bitstream_subscriber_op.cpp:54`).
 - [ ] *Plan 6:* **persons:** `info.persons` (`PersonStreamInfo`: `joint_set`, `joint_set_version`, `up`,
   `coast_limit_s`, `reid_window_s`, `smoothing`) instead of the properties
@@ -1533,7 +1557,8 @@ about 111 lines of `marker_system` in 19 files; about 24 lines of `buffer_info` 
 - [ ] *Plan 6:* **tracker targets:** `info.tracker` (`marker_system` `family[:variant]`, `marker_domain`, `targets`)
   instead of `{system}@{domain}` and the `target/<name>` properties
   (`operators/transport/pose_publish/src/pose_wire.cpp:95`); about 146 lines of `marker_system` in 26 files.
-- [ ] *Plan 6:* `revision` bumped on a content change; `clock` a `ClockDomain`; `frame` an `SRFrameRef`.
+- [ ] *Plan 6:* `revision` bumped on a content change; `clock` a `ClockDomain`; `frame` an `SRFrameRef`;
+  `sensor_latency_ns` absent when unknown (it was 0).
 
 **7. Persons, calibration, process info** *(wire)*
 - [ ] *Plan 6:* **`PersonTrackingMessage`:** `group` → `header.group_id`, `world_frame` → `header.frame` (about 107
@@ -1542,7 +1567,8 @@ about 111 lines of `marker_system` in 19 files; about 24 lines of `buffer_info` 
   instead of 0. Joint arrays from `include/tcn/joint_sets.h`.
 - [ ] *Plan 6:* **`CameraSensor`:** `depth_parameters`/`color_parameters` as optional `CameraIntrinsics` (the
   `CameraModel` mapping in Plan 6; `libs/transport/zenoh/src/calibration.cpp`), `frame_rate` a `double`, `revision`
-  (bump on recalibration), `provenance` (`tool` e.g. `"hta.rig_calibration"`), `coord` (the camera axes of
+  (bump on recalibration), `provenance` (`tool` e.g. `"hta.rig_calibration"`; `residual` the RMS reprojection
+  error in px; `samples` optional), `coord` (the camera axes of
   `camera_pose`). Python: `applications/capture/capture_server/python/capture_server.py`,
   `applications/calibration/rig_calibrator/python/rig_calibrator.py`.
 - [ ] *Plan 6:* **the FlatBuffers mirrors** (`schemas/*.fbs`, 36 files; e.g. `person_track_list.fbs`,
@@ -1558,7 +1584,7 @@ about 111 lines of `marker_system` in 19 files; about 24 lines of `buffer_info` 
 **8. Tests**
 - [ ] *Plan 4/5/6:* the serde tests against `test/golden/*.hex` (the Plan 6 ones: `tcn_types_StreamHeader`,
   `tcnart_msgs_HumanPoseMessage`, `tcnart_msgs_StreamDescriptorMessage`, `tcnart_msgs_VideoStreamMessage`,
-  `pcpd_msgs_Parameter`); `frame_ref.tsv` in `sqe_link`.
+  `pcpd_msgs_Parameter`, `pcpd_msgs_CameraSensor`); `frame_ref.tsv` in `sqe_link`.
 
 ### tcn web controller
 

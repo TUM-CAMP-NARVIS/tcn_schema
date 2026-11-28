@@ -41,17 +41,19 @@ module tcn_types {
 
         // Where a calibration came from (#37 T1, with an ns time). `tool` is a
         // stable id ("sqe-calibrate", "hta.rig_calibration"); `method` names the
-        // tool's procedure. `residual` is the tool's fit residual, in its own
-        // unit; `covariance` is the calibrated pose's, absent when not stated.
+        // tool's procedure. `residual` is the tool's fit residual: for a camera
+        // calibration the RMS reprojection error in pixels, otherwise in the
+        // unit `method` names; absent when not stated. `covariance` is the
+        // calibrated pose's, absent when not stated.
         // `computed_at_ns`: when it was computed, ns since the Unix epoch.
-        // `samples`: how many observations went into it.
+        // `samples`: how many observations went into it; absent when not stated.
         @appendable struct CalibrationProvenance {
           string tool;
           string method;
           @optional double residual;
           @optional SRCovariance6 covariance;
           @optional int64 computed_at_ns;
-          uint32 samples;
+          @optional uint32 samples;
         };
 
   };
