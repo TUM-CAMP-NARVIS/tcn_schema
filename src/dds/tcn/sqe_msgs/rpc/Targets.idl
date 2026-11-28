@@ -26,7 +26,8 @@ module sqe_msgs {
     //   * a template marker camera sets StreamDescriptorMessage.marker_system;
     //     a marker id registered under (family, variant, str(id)) is
     //     materialized as the registered target's node (name and uuid)
-    //     instead of `{prefix}__sis_marker__{id}`;
+    //     instead of a node whose name the engine chooses (SRMaterialization
+    //     records where it came from);
     //   * a client that names its own nodes (concrete edge claims) resolves
     //     (family, variant, key) here and declares the returned `name` as its Global
     //     node. The engine never rewrites node names inside a fragment.

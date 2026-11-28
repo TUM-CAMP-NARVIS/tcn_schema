@@ -1,5 +1,13 @@
 # A shared SQE contract library in `tcn_schema`
 
+> **Historical note (0.11).** This is the 2026-08-31 design proposal, kept as written. Parts of it are **superseded in
+> 0.11 by [the #35 SQE wire redesign](../migration/MIGRATION-0.11.0.md)** (Plan 5): the B-levels
+> (`kContractBLevel`, `kSessionBLevel`, `kProtocolBLevel`) are replaced by one protocol floor,
+> `kProtocolBreak`, plus capabilities; `Status` is replaced by `SISReplyHeader`/`SISStatus`/`SISReason`;
+> `FrameRef { client, node }`, the `@domain::name` and `:::*` spellings, the marker node-name helpers and the
+> `/sis/component/*`, `/sis/relation/*` keys are replaced by `SRFrameRef` and its text form, `/sis/node/*`,
+> `/sis/edge/*` and `/sis/stream/*`. Read the migration log for the current contract.
+
 **Status:** design proposal. Nothing in this repository has been changed except
 the addition of this file. No CMake, no `conanfile.py`, no IDL, no header was
 edited. This file is untracked; review it before it enters history.

@@ -33,10 +33,13 @@ namespace capability {
 inline constexpr std::string_view kSample = "sample";
 /// DOMAIN-scoped frames (`SR_NODE_SCOPE_DOMAIN`, `domain:<domain>/<name>`).
 inline constexpr std::string_view kDomain = "domain";
-/// The OpenCV rational distortion model (`SR_DISTORTION_MODEL_OPENCV_RATIONAL`).
+/// The engine accepts and applies the OpenCV rational distortion model
+/// (`SR_DISTORTION_MODEL_OPENCV_RATIONAL`); without it, a camera edge using that
+/// model is refused (REJECTED + UNSUPPORTED).
 inline constexpr std::string_view kRationalLens = "rational_lens";
-/// Marker domains: a marker id unique within a domain rather than engine-wide
-/// (`marker_domain`, #35 N6).
+/// The engine reads and writes marker domains: a marker id unique within a
+/// domain rather than engine-wide (`SRMaterialization.marker_domain`, and the
+/// `SISGraphFilter.marker_domain` filter).
 inline constexpr std::string_view kMarkerDomain = "marker_domain";
 
 }  // namespace capability

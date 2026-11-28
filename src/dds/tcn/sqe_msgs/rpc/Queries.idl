@@ -153,7 +153,7 @@ module sqe_msgs {
         string cursor;
     };
 
-    // One fragment as the operator and a FRAGMENT read describe it (#35 F-D3; moved here from Operator.idl so a
+    // One fragment as the operator and a FRAGMENT read describe it (declared here, not in Operator.idl, so a
     // FRAGMENT read can carry it).
     @appendable struct SISFragmentSummary {
         string fragment;           // the fragment id (the client id it joined under)

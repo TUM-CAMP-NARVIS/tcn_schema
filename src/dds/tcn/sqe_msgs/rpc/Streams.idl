@@ -29,7 +29,7 @@ module sqe_msgs {
                                         // path order, the request naming its path as
                                         // "target located in observer"
         SR_REFERENCE_POLICY_FASTEST,                // the hop with the highest declared frame_rate
-        SR_REFERENCE_POLICY_SLOWEST                 // the hop with the lowest declared non-zero rate
+        SR_REFERENCE_POLICY_SLOWEST                 // the hop with the lowest declared frame_rate
     };
 
     @appendable enum SRStreamTriggerKind {

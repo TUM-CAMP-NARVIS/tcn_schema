@@ -166,7 +166,7 @@ module sqe_msgs {
         SIS_EXPLAIN_KIND_STREAM           // the running stream `handle`: the route it is on
     };
 
-    // What to explain (#35 F10): a relation, as a start would name it, or a running stream.
+    // What to explain: a relation, as a start would name it, or a running stream.
     @appendable union SISExplainSubject switch (SISExplainKind) {
         // The relation, as a SISRelationStreamStartRequest would name it. The same terms compile the same route a
         // start would.
