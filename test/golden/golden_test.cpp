@@ -257,7 +257,7 @@ static void streams()
     golden("tcn_types_StreamHeader", stream_header(), Encoding::XCDR2);
 
     // Target 1 tracked with a pose (presence 01), no covariance, no stamp; target 2 untracked with no pose
-    // (presence 00, never identity) and its own capture_time_ns 5.
+    // (presence 00, never identity) and its own capture_time_ns 5; target 3 as target 1 with a covariance.
     tcnart_msgs::msg::TargetTrackingMessage tt;
     tt.header(stream_header());
     tcn_types::msg::Target tracked;
@@ -275,6 +275,13 @@ static void streams()
     lost.is_tracked(false);
     lost.capture_time_ns(5);
     tt.targets().push_back(lost);
+    // Target 3: tracked, pose present, a stated covariance (presence 01, SRCovariance6 DHEADER, upper[k] = k).
+    tcn_types::msg::Target stated = tracked;
+    stated.target_id(3);
+    tcn_types::msg::SRCovariance6 cov;
+    for (size_t k = 0; k < 21; ++k) cov.upper()[k] = static_cast<double>(k);
+    stated.pose_covariance(cov);
+    tt.targets().push_back(stated);
     tt.status_flags(tcnart_msgs::msg::TRACKER_STATUS_RUNNING);
     golden("tcnart_msgs_TargetTrackingMessage", tt, Encoding::XCDR2);
 
@@ -297,10 +304,10 @@ static void streams()
     golden("tcnart_msgs_VideoStreamMessage", video, Encoding::XCDR2);
 
     // The same frame with the intrinsics absent (the descriptor's nominal ones): the image after them survives.
+    // Presence 00 and no union bytes: image_bytes follows the pose directly.
     tcnart_msgs::msg::VideoStreamMessage nominal = video;
     nominal.intrinsics().reset();
-    std::vector<char> bytes;
-    CHECK(tcn_test::encode(nominal, bytes, Encoding::XCDR2));
+    const std::vector<char> bytes = golden("tcnart_msgs_VideoStreamMessage_nominal", nominal, Encoding::XCDR2);
     tcnart_msgs::msg::VideoStreamMessage back;
     CHECK(tcn_test::decode(bytes, back));
     CHECK(!back.intrinsics().has_value());
