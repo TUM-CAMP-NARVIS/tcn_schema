@@ -99,10 +99,6 @@ def _merge(schema):
     return schema
 
 
-if __name__ == "__main__":
-    unittest.main()
-
-
 class ExpectTest(unittest.TestCase):
     OLD = {"p/msg/V.idl": """module p { module msg {
         struct V { double x; double y; };
@@ -191,3 +187,47 @@ class EnumsFromTest(unittest.TestCase):
             self.assertIn("plan 5", text)
             self.assertIn("enum_renames_0_11_sqe.json", text)
             self.assertNotIn("plan 4", text)
+
+
+class ReshapedTest(unittest.TestCase):
+    """`expect.reshaped` names types whose layout changes on purpose: not layout-compared, listed in the report."""
+    OLD = {"p/msg/V.idl": "module p { module msg { struct V { double x; sequence<double, 21> cov; }; }; };"}
+    NEW = "module p { module msg { struct V { double x; @optional double cov; }; }; };"
+
+    def _cmp(self, expect, new=None):
+        from tools.idl.moves import compare
+        return compare(_schema(self.OLD), _schema({"p/msg/V.idl": new or self.NEW}), {}, set(), expect=expect)
+
+    def test_reshaped_layout_is_not_compared_and_is_reported(self):
+        self.assertEqual(self._cmp({}).problems.__len__(), 1)  # without the listing the change is a problem
+        r = self._cmp({"reshaped": ["p::msg::V"]})
+        self.assertEqual(r.problems, [])
+        self.assertEqual(r.reshaped, ["p::msg::V"])
+
+    def test_reshaped_type_that_keeps_a_removed_member_is_a_problem(self):
+        r = self._cmp({"reshaped": ["p::msg::V"], "removed_members": {"p::msg::V": ["cov"]}})
+        self.assertEqual(len(r.problems), 1)
+        self.assertIn("cov", r.problems[0])
+        r = self._cmp({"reshaped": ["p::msg::V"], "removed_members": {"p::msg::V": ["cov"]}},
+                      new="module p { module msg { struct V { double x; }; }; };")
+        self.assertEqual(r.problems, [])
+
+    def test_reshaped_report_section_and_provenance(self):
+        import json
+        from tools.idl.moves import write_reports
+        r = self._cmp({"reshaped": ["p::msg::V"]})
+        with tempfile.TemporaryDirectory() as d:
+            md, js = Path(d) / "m.md", Path(d) / "m.json"
+            old, new = _schema(self.OLD), _schema({"p/msg/V.idl": self.NEW})
+            write_reports(r, old, new, js, md, plan="plan 5", spec_name="sqe_0_11.json")
+            text = md.read_text()
+            self.assertIn("## Reshaped", text)
+            self.assertIn("`p::msg::V`", text)
+            self.assertIn("plan 5", text)
+            self.assertIn("sqe_0_11.json", text)
+            self.assertNotIn("(0.11 plan 3", text)
+            self.assertEqual(json.loads(js.read_text())["reshaped"], [{"name": "p::msg::V", "header": "p/msg/V.h"}])
+
+
+if __name__ == "__main__":
+    unittest.main()

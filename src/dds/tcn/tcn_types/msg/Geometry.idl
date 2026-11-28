@@ -27,6 +27,20 @@ module tcn_types {
       Quaternion rotation;
     };
 
+    // How well a 6-DoF pose is known: the upper triangle of the 6x6, row-major,
+    // (tx, ty, tz, rx, ry, rz), m^2/rad^2. Absent (an @optional member of this
+    // type) means "not stated", which is different from a zero covariance
+    // meaning "known exactly".
+    @appendable struct SRCovariance6 {
+      double upper[21];
+    };
+
+    // How well a position is known: the upper triangle of the 3x3, row-major,
+    // (x, y, z), m^2.
+    @appendable struct SRCovariance3 {
+      double upper[6];
+    };
+
     @appendable struct Ray {
       Vector3 origin;
       Vector3 direction;

@@ -8,6 +8,7 @@
 #define SQE_MSGS_RPC_TARGETS_IDL
 
 #include "tcn_types/msg/Ids.idl"
+#include "tcn_types/msg/Tracking.idl"
 
 module sqe_msgs {
   module rpc {
@@ -32,14 +33,6 @@ module sqe_msgs {
     // Not in the registry: poses, calibrations, static edges. Those are
     // fragments or pinned nodes owned by whoever measured them.
 
-    @appendable enum SISTargetKind {
-        SIS_TARGET_KIND_UNKNOWN,
-        SIS_TARGET_KIND_RIGID_BODY,
-        SIS_TARGET_KIND_FIDUCIAL,
-        SIS_TARGET_KIND_BOARD,
-        SIS_TARGET_KIND_DEVICE
-    };
-
     // How one tracking system identifies a target. `(system, key)` is unique
     // across the whole registry: one alias, one target.
     @appendable struct SISTargetAlias {
@@ -59,7 +52,7 @@ module sqe_msgs {
                                            // SRNode.uuid. All-zero in a
                                            // REGISTER asks the engine to
                                            // assign one.
-        SISTargetKind kind;                // informational
+        tcn_types::msg::SISTargetKind kind;  // informational
         sequence<SISTargetAlias> aliases;
         string description;
         string custom_data;                // same convention as SRNode

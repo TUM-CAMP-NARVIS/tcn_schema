@@ -1,9 +1,40 @@
 {
  "_comment": "0.11 plan 5 (#35): the expected differences between the plan 4 tree and the plan 5 tree, for `idl_cli.py moves --old <plan 4 src/dds> --new src/dds --spec tools/idl/sqe_0_11.json`. Each task appends what it changes.",
- "files": [],
+ "files": [
+  {
+   "path": "tcn_types/msg/Frames.idl",
+   "module": "tcn_types::msg",
+   "decls": [
+    "sqe_msgs::msg::SRNodeScope"
+   ]
+  },
+  {
+   "path": "tcn_types/msg/Tracking.idl",
+   "module": "tcn_types::msg",
+   "decls": [
+    "sqe_msgs::rpc::SISTargetKind"
+   ]
+  }
+ ],
  "deleted": [],
- "new_types": [],
+ "new_types": [
+  "tcn_types::msg::SRFrameSelector",
+  "tcn_types::msg::SRFrameRef",
+  "tcn_types::msg::ClockKind",
+  "tcn_types::msg::ClockDomain",
+  "tcn_types::msg::SRCovariance6",
+  "tcn_types::msg::SRCovariance3",
+  "tcn_types::msg::SRDistortionModel",
+  "tcn_types::msg::CameraIntrinsicsKind",
+  "tcn_types::msg::PinholeIntrinsics",
+  "tcn_types::msg::CameraIntrinsics",
+  "tcn_types::msg::SISTargetInfo"
+ ],
  "expect": {
-  "enums_from": "tools/idl/enum_renames_0_11_sqe.json"
+  "enums_from": "tools/idl/enum_renames_0_11_sqe.json",
+  "reshaped": [
+   "tcn_types::msg::Target",
+   "tcnart_msgs::msg::Pose6DMessage"
+  ]
  }
 }

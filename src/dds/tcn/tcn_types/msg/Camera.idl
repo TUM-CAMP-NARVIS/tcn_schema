@@ -1,0 +1,43 @@
+#ifndef TCN_TYPES_MSG_CAMERA_IDL
+#define TCN_TYPES_MSG_CAMERA_IDL
+
+module tcn_types {
+  module msg {
+
+        @appendable enum SRDistortionModel {
+          SR_DISTORTION_MODEL_UNKNOWN,
+          SR_DISTORTION_MODEL_NONE,
+          SR_DISTORTION_MODEL_OPENCV_RADTAN,
+          SR_DISTORTION_MODEL_OPENCV_RATIONAL
+        };
+
+        // Append only; FOV_ANGLES follows in 0.11.x.
+        @appendable enum CameraIntrinsicsKind {
+          CAMERA_INTRINSICS_KIND_UNKNOWN,
+          CAMERA_INTRINSICS_KIND_PINHOLE
+        };
+
+        // A pinhole camera in pixels. `distortion` holds the coefficients of
+        // `distortion_model` in OpenCV order. `metric_radius`, when present, is
+        // the normalized image-plane radius (sqrt(x^2+y^2) at z = 1) within
+        // which the model is valid. An absent image size is unknown.
+        @appendable struct PinholeIntrinsics {
+          double fx;
+          double fy;
+          double cx;
+          double cy;
+          SRDistortionModel distortion_model;
+          sequence<double, 16> distortion;
+          @optional double metric_radius;
+          @optional uint32 image_width;
+          @optional uint32 image_height;
+        };
+
+        @appendable union CameraIntrinsics switch (CameraIntrinsicsKind) {
+          case CAMERA_INTRINSICS_KIND_PINHOLE: PinholeIntrinsics pinhole;
+        };
+
+  };
+};
+
+#endif

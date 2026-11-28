@@ -3,6 +3,7 @@
 
 #include "builtin_interfaces/msg/Time.idl"
 #include "sqe_msgs/msg/Transforms.idl"
+#include "tcn_types/msg/Frames.idl"
 #include "tcn_types/msg/Geometry.idl"
 #include "tcn_types/msg/Ids.idl"
 #include "tcn_types/msg/Tracking.idl"
@@ -19,29 +20,6 @@ module sqe_msgs {
           SR_NODE_TYPE_DISPLAY,
           SR_NODE_TYPE_TRACKABLE,
           SR_NODE_TYPE_CONTENT
-        };
-
-        // Local nodes are private to their graph and are namespaced with the
-        // owner's prefix when two graphs are fused. Global nodes keep their bare
-        // name and join every graph of the engine that names them.
-        //
-        // Domain nodes (0.10.7, engine B94) join exactly the graphs that name
-        // them in the same domain: one physical thing several processes declare
-        // -- a rig's camera seen by the rig and an IR tracker -- without claiming
-        // its name engine-wide. A domain is a key-prefix-shaped string with the
-        // client-id alphabet and no "::" ("tcn/ksv1/rig01"). The node's `name`
-        // is its whole id, "@{domain}::{name}" (the contract library's
-        // domain_node_id), which is also how edges and a SISFrameRef (with an
-        // empty client) name it. Exact match: "tcn/ksv1/rig01" is not
-        // "tcn/ksv1". The engine refuses a domain outside its client scope.
-        //
-        // Ordinals are the wire encoding; append only. A reader that predates a
-        // value should treat an unknown scope as shared, not as local.
-        @appendable enum SRNodeScope {
-          SR_NODE_SCOPE_UNKNOWN,
-          SR_NODE_SCOPE_LOCAL,
-          SR_NODE_SCOPE_GLOBAL,
-          SR_NODE_SCOPE_DOMAIN
         };
 
         // --- templates ---------------------------------------------------------
@@ -73,7 +51,7 @@ module sqe_msgs {
             string name;
 
             SRNodeType node_type;
-            SRNodeScope scope;
+            tcn_types::msg::SRNodeScope scope;
 
             // The convention this node's data is expressed in.
             tcn_types::msg::CoordinateSystem coord;

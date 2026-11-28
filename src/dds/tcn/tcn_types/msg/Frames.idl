@@ -1,0 +1,52 @@
+#ifndef TCN_TYPES_MSG_FRAMES_IDL
+#define TCN_TYPES_MSG_FRAMES_IDL
+
+module tcn_types {
+  module msg {
+
+        // Local nodes are private to their graph and are namespaced with the
+        // owner's prefix when two graphs are fused. Global nodes keep their bare
+        // name and join every graph of the engine that names them.
+        //
+        // Domain nodes (0.10.7, engine B94) join exactly the graphs that name
+        // them in the same domain: one physical thing several processes declare
+        // -- a rig's camera seen by the rig and an IR tracker -- without claiming
+        // its name engine-wide. A domain is a key-prefix-shaped string with the
+        // client-id alphabet and no "::" ("tcn/ksv1/rig01"). The node's `name`
+        // is its whole id, "@{domain}::{name}" (the contract library's
+        // domain_node_id), which is also how edges and a SISFrameRef (with an
+        // empty client) name it. Exact match: "tcn/ksv1/rig01" is not
+        // "tcn/ksv1". The engine refuses a domain outside its client scope.
+        //
+        // Ordinals are the wire encoding; append only. A reader that predates a
+        // value should treat an unknown scope as shared, not as local.
+        @appendable enum SRNodeScope {
+          SR_NODE_SCOPE_UNKNOWN,
+          SR_NODE_SCOPE_LOCAL,
+          SR_NODE_SCOPE_GLOBAL,
+          SR_NODE_SCOPE_DOMAIN
+        };
+
+        // Which poses a stream or a query asks for at a frame: the frame itself,
+        // or every instance of the (templated) frame.
+        @appendable enum SRFrameSelector {
+          SR_FRAME_SELECTOR_UNKNOWN,
+          SR_FRAME_SELECTOR_FRAME,
+          SR_FRAME_SELECTOR_INSTANCES
+        };
+
+        // A frame named by (scope, owner, name), never by a composed string.
+        // `owner` is the fragment for LOCAL, the domain for DOMAIN and "" for
+        // GLOBAL. A LOCAL ref with an empty owner means "this fragment" and
+        // exists only inside a join on the wire.
+        @appendable struct SRFrameRef {
+          SRNodeScope scope;
+          string owner;
+          string name;
+          SRFrameSelector selector;
+        };
+
+  };
+};
+
+#endif

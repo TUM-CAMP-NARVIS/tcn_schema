@@ -14,10 +14,8 @@ module tcnart_msgs {
 
       tcn_types::msg::RigidTransform value;
 
-      // How well `value` is known: 0 or 21 doubles, upper triangle of the 6x6,
-      // row-major, (tx, ty, tz, rx, ry, rz), m^2/rad^2. Empty means "not
-      // stated".
-      sequence<double, 21> pose_covariance;
+      // How well `value` is known. Absent means "not stated".
+      @optional tcn_types::msg::SRCovariance6 pose_covariance;
 
     };
 

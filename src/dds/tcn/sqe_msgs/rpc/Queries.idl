@@ -8,6 +8,7 @@
 #define SQE_MSGS_RPC_QUERIES_IDL
 
 #include "sqe_msgs/msg/Graph.idl"
+#include "tcn_types/msg/Frames.idl"
 #include "sqe_msgs/msg/Transforms.idl"
 #include "sqe_msgs/rpc/Streams.idl"
 
@@ -158,7 +159,7 @@ module sqe_msgs {
         // question a fragment author asks, and usually the answer to why their
         // relation does not resolve: only a global or a domain node joins two
         // graphs.
-        sequence<sqe_msgs::msg::SRNodeScope> scope;
+        sequence<tcn_types::msg::SRNodeScope> scope;
 
         // Which node types to keep, as a set. Empty keeps all of them.
         sequence<sqe_msgs::msg::SRNodeType> node_type;

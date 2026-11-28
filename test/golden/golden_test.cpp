@@ -16,6 +16,8 @@
 
 #include "std_msgs/msg/Header.h"
 #include "std_msgs/msg/HeaderCdrAux.hpp"
+#include "tcn_types/msg/Frames.h"
+#include "tcn_types/msg/FramesCdrAux.hpp"
 #include "tcnart_msgs/msg/PoseTracking.h"
 #include "tcnart_msgs/msg/PoseTrackingCdrAux.hpp"
 #include "sqe_msgs/msg/Graph.h"
@@ -169,7 +171,22 @@ int main()
     target.pose().rotation().w(1);
     target.is_tracked(true);
     tt.targets().push_back(target);
+    // a second target with a stated covariance: upper[k] = k
+    tcn_types::msg::Target stated = target;
+    stated.target_id(8);
+    tcn_types::msg::SRCovariance6 cov;
+    for (size_t k = 0; k < 21; ++k) cov.upper()[k] = static_cast<double>(k);
+    stated.pose_covariance(cov);
+    tt.targets().push_back(stated);
     golden("tcnart_msgs_TargetTrackingMessage", tt, Encoding::XCDR2);
+
+    // The XCDR2 rules by hand: DHEADER 0x18; enum int32 LOCAL=1; "a" and "b" as length 2 + bytes + pad; enum FRAME=1.
+    tcn_types::msg::SRFrameRef ref;
+    ref.scope(tcn_types::msg::SRNodeScope::SR_NODE_SCOPE_LOCAL);
+    ref.owner("a");
+    ref.name("b");
+    ref.selector(tcn_types::msg::SRFrameSelector::SR_FRAME_SELECTOR_FRAME);
+    golden("tcn_types_SRFrameRef", ref, Encoding::XCDR2);
 
     sqe_msgs::msg::SRGraph g;
     sqe_msgs::msg::SRNode node;
