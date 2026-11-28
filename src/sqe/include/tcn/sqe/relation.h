@@ -2,9 +2,10 @@
 //
 // The terms of a relation stream, as plain C++ values.
 //
-// These mirror `SISFrameRef`, `SRStreamTrigger` and
-// `SISRelationStreamStartRequest` from `sqe_msgs/rpc/*.idl`, and they are
-// *not* those types. Two reasons, both load-bearing:
+// These mirror `SRStreamTrigger` and `SISRelationStreamStartRequest` from
+// `sqe_msgs/rpc/*.idl`, and they are *not* those types (the frames are
+// `FrameRef`, frame_ref.h, which reads and writes `SRFrameRef` itself). Two
+// reasons, both load-bearing:
 //
 //   * the generated trigger is an IDL union whose case accessors throw when the
 //     discriminator does not match (§3.3), and the lease table compares
@@ -25,8 +26,8 @@
 #include <utility>
 
 #include "tcn/sqe/error.h"
+#include "tcn/sqe/frame_ref.h"
 #include "tcn/sqe/result.h"
-#include "tcn/sqe/validate.h"
 
 namespace tcn {
 namespace sqe {
@@ -181,64 +182,6 @@ private:
     double hz_;
     std::string topic_;
     ReferencePolicy policy_;
-};
-
-/// `SISFrameRef`: a node within an owning graph.
-///
-/// The two halves take *different* rules and that is the whole reason this is
-/// a validated type rather than two strings: `client` is a key prefix and takes
-/// the fragment rule, `node` is a bare name and takes the identifier rule.
-/// Validating the client half as an identifier is B39 and it took the daemon
-/// down.
-class FrameRef
-{
-public:
-    static Result<FrameRef> parse(std::string_view client, std::string_view node)
-    {
-        const Result<void> c = check_fragment(client);
-        if (!c) { return Result<FrameRef>::fail(c.error()); }
-        const Result<void> n = check_identifier(node);
-        if (!n) { return Result<FrameRef>::fail(n.error()); }
-        return Result<FrameRef>::ok(FrameRef(std::string(client), std::string(node)));
-    }
-
-    /// A domain node (0.10.7, engine B94): no owning client, the node named by
-    /// its id `@{domain}::{name}` (`domain_node_id`). The engine resolves it in
-    /// the domain, whoever declared it.
-    static Result<FrameRef> domain(std::string_view domain, std::string_view name)
-    {
-        Result<std::string> id = domain_node_id(domain, name);
-        if (!id) { return Result<FrameRef>::fail(id.error()); }
-        return Result<FrameRef>::ok(FrameRef(std::string(), std::move(id.value())));
-    }
-
-    /// Whether this names a domain node (an empty client and a domain id).
-    bool is_domain() const noexcept
-    {
-        std::string_view d, n;
-        return client_.empty() && parse_domain_node_id(node_, d, n);
-    }
-
-    const std::string& client() const noexcept { return client_; }
-    const std::string& node() const noexcept { return node_; }
-
-    friend bool operator==(const FrameRef& a, const FrameRef& b) noexcept
-    {
-        return a.client_ == b.client_ && a.node_ == b.node_;
-    }
-    friend bool operator!=(const FrameRef& a, const FrameRef& b) noexcept { return !(a == b); }
-
-    /// Total order, so a `FrameRef` pair can key a `std::map` without a hash.
-    friend bool operator<(const FrameRef& a, const FrameRef& b) noexcept
-    {
-        if (a.client_ != b.client_) { return a.client_ < b.client_; }
-        return a.node_ < b.node_;
-    }
-
-private:
-    FrameRef(std::string c, std::string n) noexcept : client_(std::move(c)), node_(std::move(n)) {}
-    std::string client_;
-    std::string node_;
 };
 
 /// The default `freshness_bias`: prefer reuse.

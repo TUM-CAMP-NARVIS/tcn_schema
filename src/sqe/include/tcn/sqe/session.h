@@ -130,7 +130,7 @@ TCN_SQE_REGISTER_REQUEST_KEY(::sqe_msgs::rpc::SISTargetMutationRequest, keys::kT
 // reply. The engine may wait up to the request's wait_ms (capped at 5 s) for
 // data, after a graph read bounded like a start's, before it answers;
 // kDefaultQueryTimeoutMs is above both.
-TCN_SQE_REGISTER_REQUEST_KEY(::sqe_msgs::rpc::SISRelationSampleRequest, keys::kRelationSample, RequestMode::Query,
+TCN_SQE_REGISTER_REQUEST_KEY(::sqe_msgs::rpc::SISRelationSampleRequest, keys::kStreamSample, RequestMode::Query,
                              ::sqe_msgs::rpc::SISRelationSampleReply);
 
 namespace detail {

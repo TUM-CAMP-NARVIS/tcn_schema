@@ -17,11 +17,44 @@
 #ifndef TCN_SQE_CONTRACT_H
 #define TCN_SQE_CONTRACT_H
 
+#include <cstdint>
+
+// ---------------------------------------------------------------------------
+// The protocol floor (#35 R5)
+// ---------------------------------------------------------------------------
+//
+// Defined before the includes below, because capabilities.h (included below)
+// compares against it and includes this header in turn: whichever of the two a
+// consumer includes first, the value exists before it is used.
+
+/// The **protocol floor**: the engine compatibility break (B-number) whose
+/// wire this library speaks -- the 0.11 break (provisionally B99). An engine
+/// announcing a lower `SISEngineCapabilities.protocol_break` speaks an older
+/// wire (`Capabilities::meets_floor()`); optional features above the floor are
+/// capabilities (`Capabilities::has`), not higher numbers.
+///
+/// The number is written once, here, and the constant is derived from it.
+/// Hand-kept: the library is header-only and used from the source tree, so
+/// nothing generates it yet; Plan 6's version bump owns it.
+#define TCN_SQE_PROTOCOL_BREAK 99
+
+namespace tcn {
+namespace sqe {
+
+/// `TCN_SQE_PROTOCOL_BREAK`, typed like the wire field.
+inline constexpr std::uint32_t kProtocolBreak = TCN_SQE_PROTOCOL_BREAK;
+
+}  // namespace sqe
+}  // namespace tcn
+
+#include "tcn/sqe/capabilities.h"
 #include "tcn/sqe/client_id.h"
 #include "tcn/sqe/error.h"
+#include "tcn/sqe/frame_ref.h"
 #include "tcn/sqe/handle.h"
 #include "tcn/sqe/node_name.h"
 #include "tcn/sqe/result.h"
+#include "tcn/sqe/scope.h"
 #include "tcn/sqe/status.h"
 #include "tcn/sqe/topics.h"
 #include "tcn/sqe/tracker.h"

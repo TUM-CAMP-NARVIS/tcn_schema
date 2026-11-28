@@ -110,6 +110,16 @@ TCN_SQE_TEST(the_targets_changed_topic_has_the_engines_shape)
     CHECK_STR_EQ(engine_targets_changed_topic("lab1"), "sqe/lab1/targets/changed");
 }
 
+// The unscoped engine summary (#35 R5, D4): any client may ask any engine
+// what it is and which client ids it serves, before joining.
+TCN_SQE_TEST(the_engine_info_key_and_pattern_have_the_engines_shapes)
+{
+    CHECK_STR_EQ(engine_info_key("e1"), "sqe/e1/info");
+    CHECK_STR_EQ(engine_info_pattern(), "sqe/*/info");
+    // Not the operator info key, which is under op/.
+    CHECK(engine_info_key("e1") != engine_operator_key("e1", kOperatorInfo));
+}
+
 // ---------------------------------------------------------------------------
 // The tracker key family (tracker.h)
 // ---------------------------------------------------------------------------
@@ -120,8 +130,17 @@ TCN_SQE_TEST(the_three_tracker_keys_have_the_engines_shapes)
 
     CHECK_STR_EQ(descriptor_key(client, "camera").value(), "tcn/loc/app/default/cfg/desc/camera");
     CHECK_STR_EQ(tracker_stream_key(client, "camera").value(), "tcn/loc/app/default/str/trk/camera");
-    CHECK_STR_EQ(marker_announce_key(client, "camera", "_mtarucom___sis_marker__7").value(),
-                 "tcn/loc/app/default/cfg/marker/camera/_mtarucom___sis_marker__7");
+    CHECK_STR_EQ(marker_announce_key(client, "camera", 7).value(),
+                 "tcn/loc/app/default/cfg/marker/camera/7");
+}
+
+// The marker is its numeric id in decimal (#35 H5), not a composed node name.
+TCN_SQE_TEST(a_marker_announcement_names_the_marker_by_its_decimal_id)
+{
+    const ClientId a = ClientId::parse("a").value();
+    CHECK_STR_EQ(marker_announce_key(a, "cam", 7).value(), "a/cfg/marker/cam/7");
+    CHECK_STR_EQ(marker_announce_key(a, "cam", 0).value(), "a/cfg/marker/cam/0");
+    CHECK_STR_EQ(marker_announce_key(a, "cam", 4294967295u).value(), "a/cfg/marker/cam/4294967295");
 }
 
 // The engine resolves the descriptor key *from* the announcement key, taking
@@ -131,7 +150,7 @@ TCN_SQE_TEST(the_three_tracker_keys_have_the_engines_shapes)
 TCN_SQE_TEST(an_announcement_and_its_descriptor_name_the_same_device)
 {
     const ClientId client = ClientId::parse("tcn/loc/app/default").value();
-    const std::string announced = marker_announce_key(client, "camera", "m").value();
+    const std::string announced = marker_announce_key(client, "camera", 12).value();
     const std::string descriptor = descriptor_key(client, "camera").value();
 
     // What the engine does, step for step: split from the right twice for the
@@ -139,6 +158,7 @@ TCN_SQE_TEST(an_announcement_and_its_descriptor_name_the_same_device)
     // the client id -- from the right, because a client id contains '/' by
     // design. Then compose the descriptor key from those two.
     const std::size_t marker_at = announced.rfind('/');
+    CHECK_STR_EQ(announced.substr(marker_at + 1), "12");
     const std::string head = announced.substr(0, marker_at);
     const std::size_t device_at = head.rfind('/');
     const std::string device = head.substr(device_at + 1);
@@ -154,68 +174,20 @@ TCN_SQE_TEST(an_announcement_and_its_descriptor_name_the_same_device)
                  descriptor);
 }
 
-// A device or marker with a separator in it is refused, not passed through.
-// The engine parses an announcement by splitting from the right twice; one
-// extra separator makes the parse fail and the announcement is dropped with
-// nothing said anywhere.
-TCN_SQE_TEST(a_device_or_marker_that_is_not_an_identifier_is_refused)
+// A device with a separator in it is refused, not passed through. The engine
+// parses an announcement by splitting from the right twice; one extra
+// separator makes the parse fail and the announcement is dropped with nothing
+// said anywhere.
+TCN_SQE_TEST(a_device_that_is_not_an_identifier_is_refused)
 {
     const ClientId client = ClientId::parse("tcn/loc/app/default").value();
 
-    CHECK(!descriptor_key(client, "two/chunks"));
-    CHECK(!tracker_stream_key(client, "two/chunks"));
-    CHECK(!marker_announce_key(client, "two/chunks", "m"));
-    CHECK(!marker_announce_key(client, "camera", "two/chunks"));
-    CHECK(!descriptor_key(client, ""));
-    CHECK(!marker_announce_key(client, "camera", ""));
+    CHECK_ERR(descriptor_key(client, "two/chunks"), Error::ContainsSlash);
+    CHECK_ERR(tracker_stream_key(client, "two/chunks"), Error::ContainsSlash);
+    CHECK_ERR(marker_announce_key(client, "two/chunks", 1), Error::ContainsSlash);
+    CHECK_ERR(descriptor_key(client, ""), Error::Empty);
+    CHECK_ERR(marker_announce_key(client, "", 1), Error::Empty);
     // A wildcard would make the token match keys it does not name.
-    CHECK(!descriptor_key(client, "*"));
-    CHECK(!marker_announce_key(client, "camera", "**"));
-}
-
-// Three underscores in the middle, and that is the engine's own spelling: the
-// prefix ends with one and the infix begins with two. A name that differs by
-// one character is a different node, fed by nothing.
-TCN_SQE_TEST(a_marker_node_name_is_the_prefix_the_engine_derives)
-{
-    CHECK_STR_EQ(marker_node_name(MarkerKind::ArucoMarker, 7), "_mtarucom___sis_marker__7");
-    CHECK_STR_EQ(marker_node_name(MarkerKind::ArucoBoard, 0), "_mtarucob___sis_marker__0");
-    CHECK_STR_EQ(marker_node_name(MarkerKind::ArucoFractal, 1), "_mtarucof___sis_marker__1");
-    CHECK_STR_EQ(marker_node_name(MarkerKind::IrTarget, 2), "_mtirt___sis_marker__2");
-    CHECK_STR_EQ(marker_node_name(MarkerKind::HmdPose, 3), "_hmdvp___sis_marker__3");
-    CHECK_STR_EQ(marker_node_name(MarkerKind::None, 4), "_mtnone___sis_marker__4");
-    CHECK_STR_EQ(marker_node_name(MarkerKind::AprilTag, 5), "_mtapril___sis_marker__5");
-}
-
-// Every name it composes must survive the identifier rule, or the very key
-// that carries the announcement cannot be built.
-TCN_SQE_TEST(every_marker_node_name_is_a_legal_identifier_and_key_chunk)
-{
-    const ClientId client = ClientId::parse("c").value();
-    const MarkerKind kinds[] = {MarkerKind::None,     MarkerKind::ArucoMarker,
-                                MarkerKind::ArucoBoard, MarkerKind::ArucoFractal,
-                                MarkerKind::IrTarget,   MarkerKind::HmdPose,
-                                MarkerKind::AprilTag};
-    for (const MarkerKind kind : kinds)
-    {
-        const std::string name = marker_node_name(kind, 4294967295u);
-        CHECK(check_identifier(name));
-        CHECK(marker_announce_key(client, "cam", name));
-    }
-}
-
-// 0.10.7 (engine B94): the marker system qualifies the name, so the same id in
-// two dictionaries is two nodes.
-TCN_SQE_TEST(a_marker_node_name_is_qualified_by_its_system)
-{
-    CHECK_STR_EQ(marker_node_name(MarkerKind::ArucoMarker, 7, "aruco:DICT_4X4_50"),
-                 "_mtarucom_aruco.DICT_4X4_50___sis_marker__7");
-    CHECK_STR_EQ(marker_node_name(MarkerKind::ArucoFractal, 7, "FRACTAL_4L_6"), "_mtarucof_FRACTAL_4L_6___sis_marker__7");
-    CHECK(marker_node_name(MarkerKind::ArucoFractal, 7, "FRACTAL_4L_6") !=
-          marker_node_name(MarkerKind::ArucoFractal, 7, "FRACTAL_5L_6"));
-    CHECK_STR_EQ(marker_node_name(MarkerKind::IrTarget, 3, "art"), "_mtirt_art___sis_marker__3");
-    CHECK_STR_EQ(marker_node_name(MarkerKind::IrTarget, 3, "a b/c"), "_mtirt_a.b.c___sis_marker__3");
-    CHECK(valid_identifier(marker_node_name(MarkerKind::ArucoMarker, 7, "aruco:DICT_4X4_50")));
-    // Empty: the name of before.
-    CHECK_STR_EQ(marker_node_name(MarkerKind::ArucoMarker, 7, ""), "_mtarucom___sis_marker__7");
+    CHECK_ERR(descriptor_key(client, "*"), Error::ContainsWildcard);
+    CHECK_ERR(marker_announce_key(client, "**", 1), Error::ContainsWildcard);
 }

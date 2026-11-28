@@ -202,6 +202,31 @@ inline std::string engine_targets_changed_topic(std::string_view engine_id)
 }
 
 // ---------------------------------------------------------------------------
+// The engine summary (#35 R5, D4)
+// ---------------------------------------------------------------------------
+
+/// The tail of the unscoped engine summary key.
+inline constexpr std::string_view kEngineInfoSuffix = "info";
+
+/// `sqe/{engine_id}/info` -- the unscoped engine summary: a
+/// `SISEngineInfoRequest` answered with `SISEngineSummaryReply`, whose
+/// `SISEngineCapabilities` says what the engine offers and which client ids it
+/// serves. Any client may ask before it joins; unlike `op/info` it is not
+/// behind the operator ACL.
+inline std::string engine_info_key(std::string_view engine_id)
+{
+    return detail::engine_key(engine_id, kEngineInfoSuffix);
+}
+
+/// `sqe/*/info` -- every engine's summary key. A client that queries it and
+/// finds no engine whose `client_scope` contains its id reports "no engine
+/// serves <id>" instead of timing out.
+inline std::string engine_info_pattern()
+{
+    return engine_info_key("*");
+}
+
+// ---------------------------------------------------------------------------
 // The operator surface (B82, 0.9.2)
 // ---------------------------------------------------------------------------
 

@@ -89,7 +89,7 @@ static_assert(RequestKey<rpc::SISTargetQueryRequest>::mode == RequestMode::Query
 static_assert(RequestKey<rpc::SISTargetMutationRequest>::mode == RequestMode::Query, "");
 
 // The relation sample added in 0.10.6 (B93): a read with its own reply.
-static_assert(RequestKey<rpc::SISRelationSampleRequest>::suffix == keys::kRelationSample, "");
+static_assert(RequestKey<rpc::SISRelationSampleRequest>::suffix == keys::kStreamSample, "");
 static_assert(RequestKey<rpc::SISRelationSampleRequest>::mode == RequestMode::Query, "");
 static_assert(std::is_same<RequestKey<rpc::SISRelationSampleRequest>::Reply,
                            rpc::SISRelationSampleReply>::value, "");
@@ -334,10 +334,10 @@ TCN_SQE_TEST(every_mutation_request_is_a_query_to_its_own_key)
     CHECK_INT_EQ(t.published.size(), 0);
     CHECK_INT_EQ(t.queried.size(), 6);
     if (t.queried.size() != 6) { return; }
-    CHECK_STR_EQ(t.queried[0].key, "tcn/loc/pcpd/hl2-01/sis/component/update");
-    CHECK_STR_EQ(t.queried[1].key, "tcn/loc/pcpd/hl2-01/sis/component/remove");
-    CHECK_STR_EQ(t.queried[2].key, "tcn/loc/pcpd/hl2-01/sis/relation/update");
-    CHECK_STR_EQ(t.queried[3].key, "tcn/loc/pcpd/hl2-01/sis/relation/remove");
+    CHECK_STR_EQ(t.queried[0].key, "tcn/loc/pcpd/hl2-01/sis/node/update");
+    CHECK_STR_EQ(t.queried[1].key, "tcn/loc/pcpd/hl2-01/sis/node/remove");
+    CHECK_STR_EQ(t.queried[2].key, "tcn/loc/pcpd/hl2-01/sis/edge/update");
+    CHECK_STR_EQ(t.queried[3].key, "tcn/loc/pcpd/hl2-01/sis/edge/remove");
     CHECK_STR_EQ(t.queried[4].key, "tcn/loc/pcpd/hl2-01/sis/target/update");
     CHECK_STR_EQ(t.queried[5].key, "tcn/loc/pcpd/hl2-01/sis/join");
     CHECK_STR_EQ(t.queried[4].encoding,
@@ -424,7 +424,7 @@ TCN_SQE_TEST(the_relation_sample_goes_to_its_own_key)
 
     CHECK_INT_EQ(t.queried.size(), 1);
     if (t.queried.empty()) { return; }
-    CHECK_STR_EQ(t.queried[0].key, "tcn/loc/pcpd/hl2-01/sis/relation/sample");
+    CHECK_STR_EQ(t.queried[0].key, "tcn/loc/pcpd/hl2-01/sis/stream/sample");
     CHECK_STR_EQ(t.queried[0].encoding,
                  "application/cdr;sqe_msgs::rpc::SISRelationSampleRequest;tcn_schema=0.11");
 

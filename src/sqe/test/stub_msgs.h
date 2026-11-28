@@ -25,8 +25,64 @@
 #include "tcn/sqe/result.h"
 #include "tcn/sqe/transport.h"
 
+namespace tcn_types {
+namespace msg {
+
+/// Shaped like the generated enums: unscoped, `uint32_t`-based, UNKNOWN at 0.
+enum SRNodeScope : std::uint32_t
+{
+    SR_NODE_SCOPE_UNKNOWN,
+    SR_NODE_SCOPE_LOCAL,
+    SR_NODE_SCOPE_GLOBAL,
+    SR_NODE_SCOPE_DOMAIN
+};
+
+enum SRFrameSelector : std::uint32_t
+{
+    SR_FRAME_SELECTOR_UNKNOWN,
+    SR_FRAME_SELECTOR_FRAME,
+    SR_FRAME_SELECTOR_INSTANCES
+};
+
+/// Shaped like the generated `SRFrameRef`: a getter and a setter overload per
+/// member, which is what `FrameRef::from_wire` / `to_wire` touch.
+class SRFrameRef
+{
+public:
+    SRNodeScope scope() const { return scope_; }
+    void scope(SRNodeScope v) { scope_ = v; }
+    const std::string& owner() const { return owner_; }
+    void owner(const std::string& v) { owner_ = v; }
+    const std::string& name() const { return name_; }
+    void name(const std::string& v) { name_ = v; }
+    SRFrameSelector selector() const { return selector_; }
+    void selector(SRFrameSelector v) { selector_ = v; }
+
+private:
+    SRNodeScope scope_ = SR_NODE_SCOPE_UNKNOWN;
+    std::string owner_;
+    std::string name_;
+    SRFrameSelector selector_ = SR_FRAME_SELECTOR_UNKNOWN;
+};
+
+}  // namespace msg
+}  // namespace tcn_types
+
 namespace sqe_msgs {
 namespace rpc {
+
+/// What `Capabilities::from_wire` reads.
+class SISEngineCapabilities
+{
+public:
+    std::uint32_t protocol_break_ = 0;
+    std::vector<std::string> capabilities_;
+    std::string client_scope_;
+
+    std::uint32_t protocol_break() const { return protocol_break_; }
+    const std::vector<std::string>& capabilities() const { return capabilities_; }
+    const std::string& client_scope() const { return client_scope_; }
+};
 
 class SISJoinRequest
 {

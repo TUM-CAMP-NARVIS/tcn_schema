@@ -7,9 +7,7 @@
 #define TCN_SQE_VALIDATE_H
 
 #include <cstddef>
-#include <string>
 #include <string_view>
-#include <utility>
 
 #include "tcn/sqe/error.h"
 #include "tcn/sqe/result.h"
@@ -148,59 +146,23 @@ inline Result<void> check_fragment(std::string_view s) noexcept
 }
 
 // ---------------------------------------------------------------------------
-// Domain nodes (0.10.7, engine B94)
+// Domains and clock domains (#35 N1, N2a)
 // ---------------------------------------------------------------------------
 
-/// The first character of a domain node's id. No client id can start with it
-/// (it is outside the fragment alphabet), so a domain id never collides with a
-/// Local id `{fragment}::{name}`, even when the domain equals a client id.
-inline constexpr char kDomainNodeSigil = '@';
-
-/// Between a domain and a name, as between a fragment and a name.
-inline constexpr std::string_view kNodeIdSeparator = "::";
-
-/// A domain: the fragment rule (a key prefix, `tcn/ksv1/rig01`), and no `::`
-/// in it, so the first `::` of a domain id is the one that ends the domain.
+/// A domain (`tcn/ksv1/rig01`): the fragment rule, exactly. The owner of a
+/// DOMAIN frame reference (frame_ref.h). The 0.10.7 "no `::`" clause went with
+/// the composed `@{domain}::{name}` ids (N1): a domain and a name now travel in
+/// separate fields and never need a separator.
 inline Result<void> check_domain(std::string_view domain) noexcept
 {
-    const Result<void> f = check_fragment(domain);
-    if (!f) { return f; }
-    if (domain.find(kNodeIdSeparator) != std::string_view::npos) { return Result<void>::fail(Error::IllegalCharacter); }
-    return Result<void>::ok();
+    return check_fragment(domain);
 }
 
-/// `@{domain}::{name}`: the id of an SR_NODE_SCOPE_DOMAIN node, and what a
-/// SISFrameRef names it by (with an empty client). Two declarations are one
-/// node exactly when domain and name are equal.
-inline Result<std::string> domain_node_id(std::string_view domain, std::string_view name)
+/// A clock domain id: `""` (no clock domain declared) or the fragment rule.
+inline Result<void> check_clock_domain(std::string_view id) noexcept
 {
-    const Result<void> d = check_domain(domain);
-    if (!d) { return Result<std::string>::fail(d.error()); }
-    const Result<void> n = check_identifier(name);
-    if (!n) { return Result<std::string>::fail(n.error()); }
-    std::string out;
-    out.reserve(1 + domain.size() + kNodeIdSeparator.size() + name.size());
-    out += kDomainNodeSigil;
-    out.append(domain.data(), domain.size());
-    out.append(kNodeIdSeparator.data(), kNodeIdSeparator.size());
-    out.append(name.data(), name.size());
-    return Result<std::string>::ok(std::move(out));
-}
-
-/// The two halves of a domain node id; `false` when `id` is not one (no
-/// leading `@`, no `::`, or a half that breaks its rule).
-inline bool parse_domain_node_id(std::string_view id, std::string_view& domain, std::string_view& name) noexcept
-{
-    if (id.empty() || id.front() != kDomainNodeSigil) { return false; }
-    const std::string_view rest = id.substr(1);
-    const std::size_t sep = rest.find(kNodeIdSeparator);
-    if (sep == std::string_view::npos) { return false; }
-    const std::string_view d = rest.substr(0, sep);
-    const std::string_view n = rest.substr(sep + kNodeIdSeparator.size());
-    if (!check_domain(d) || !check_identifier(n)) { return false; }
-    domain = d;
-    name = n;
-    return true;
+    if (id.empty()) { return Result<void>::ok(); }
+    return check_fragment(id);
 }
 
 }  // namespace sqe

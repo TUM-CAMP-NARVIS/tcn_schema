@@ -33,7 +33,7 @@ namespace {
 
 FrameRef frame(const char* client, const char* node)
 {
-    return FrameRef::parse(client, node).value();
+    return FrameRef::local(client, node).value();
 }
 
 StreamTrigger hz(double v) { return StreamTrigger::fixed_rate(v).value(); }
@@ -81,7 +81,7 @@ public:
             starts.push_back(describe(r));
             if (start_error != Error::Ok) { return Result<StreamClaim>::fail(start_error); }
             const std::string topic = handle_override.empty()
-                                          ? ("sqe/eng/rel/" + r.observer().node() + "-" + r.target().node())
+                                          ? ("sqe/eng/rel/" + r.observer().name() + "-" + r.target().name())
                                           : handle_override;
             Handle h = handle_for(topic.c_str());
 
@@ -120,7 +120,7 @@ private:
     {
         char buf[64];
         std::snprintf(buf, sizeof(buf), "@%g/%g", r.trigger().hz(), r.freshness_bias());
-        return r.observer().node() + "->" + r.target().node() + buf;
+        return r.observer().name() + "->" + r.target().name() + buf;
     }
 };
 

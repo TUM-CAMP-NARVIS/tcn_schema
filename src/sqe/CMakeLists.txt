@@ -45,6 +45,12 @@ endforeach()
 install(DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/include/tcn
         DESTINATION ${CMAKE_INSTALL_INCLUDEDIR})
 
+# The shared N2a vector file: the frame-reference text form's contract, run by
+# this library's tests and by the engine's. Installed so an implementation in
+# another language runs the very rows this one does (#35 N2a).
+install(FILES ${CMAKE_CURRENT_SOURCE_DIR}/vectors/frame_ref.tsv
+        DESTINATION share/tcn_schema/sqe)
+
 install(TARGETS ${TCN_SQE_CONTRACT_TARGET} EXPORT ${TCN_SQE_CONTRACT_TARGET}Config)
 install(EXPORT ${TCN_SQE_CONTRACT_TARGET}Config DESTINATION share/${TCN_SQE_CONTRACT_TARGET}/cmake)
 export(TARGETS ${TCN_SQE_CONTRACT_TARGET} FILE ${TCN_SQE_CONTRACT_TARGET}Config.cmake)

@@ -2,6 +2,7 @@
 //
 // Key construction. Fourteen keys, and the client id that is allowed to build them.
 #include <string>
+#include <string_view>
 #include <type_traits>
 
 #include "check.h"
@@ -43,17 +44,17 @@ TCN_SQE_TEST(client_id_builds_all_fourteen_keys)
     CHECK_STR_EQ(c.join_key(),          "tcn/loc/pcpd/cam1/sis/join");
     CHECK_STR_EQ(c.leave_key(),         "tcn/loc/pcpd/cam1/sis/leave");
     CHECK_STR_EQ(c.alive_key(),         "tcn/loc/pcpd/cam1/sis/alive");
-    CHECK_STR_EQ(c.node_update_key(),   "tcn/loc/pcpd/cam1/sis/component/update");
-    CHECK_STR_EQ(c.node_remove_key(),   "tcn/loc/pcpd/cam1/sis/component/remove");
-    CHECK_STR_EQ(c.edge_update_key(),   "tcn/loc/pcpd/cam1/sis/relation/update");
-    CHECK_STR_EQ(c.edge_remove_key(),   "tcn/loc/pcpd/cam1/sis/relation/remove");
+    CHECK_STR_EQ(c.node_update_key(),   "tcn/loc/pcpd/cam1/sis/node/update");
+    CHECK_STR_EQ(c.node_remove_key(),   "tcn/loc/pcpd/cam1/sis/node/remove");
+    CHECK_STR_EQ(c.edge_update_key(),   "tcn/loc/pcpd/cam1/sis/edge/update");
+    CHECK_STR_EQ(c.edge_remove_key(),   "tcn/loc/pcpd/cam1/sis/edge/remove");
     CHECK_STR_EQ(c.stream_start_key(),  "tcn/loc/pcpd/cam1/sis/stream/start");
     CHECK_STR_EQ(c.stream_stop_key(),   "tcn/loc/pcpd/cam1/sis/stream/stop");
     CHECK_STR_EQ(c.graph_query_key(),   "tcn/loc/pcpd/cam1/sis/graph/query");
     CHECK_STR_EQ(c.pattern_query_key(), "tcn/loc/pcpd/cam1/sis/pattern/query");
     CHECK_STR_EQ(c.target_query_key(),  "tcn/loc/pcpd/cam1/sis/target/query");
     CHECK_STR_EQ(c.target_update_key(), "tcn/loc/pcpd/cam1/sis/target/update");
-    CHECK_STR_EQ(c.relation_sample_key(), "tcn/loc/pcpd/cam1/sis/relation/sample");
+    CHECK_STR_EQ(c.stream_sample_key(), "tcn/loc/pcpd/cam1/sis/stream/sample");
 }
 
 TCN_SQE_TEST(the_key_suffixes_are_the_engine_s)
@@ -61,17 +62,17 @@ TCN_SQE_TEST(the_key_suffixes_are_the_engine_s)
     CHECK_STR_EQ(std::string(keys::kJoin),        "/sis/join");
     CHECK_STR_EQ(std::string(keys::kLeave),       "/sis/leave");
     CHECK_STR_EQ(std::string(keys::kAlive),       "/sis/alive");
-    CHECK_STR_EQ(std::string(keys::kNodeUpdate),  "/sis/component/update");
-    CHECK_STR_EQ(std::string(keys::kNodeRemove),  "/sis/component/remove");
-    CHECK_STR_EQ(std::string(keys::kEdgeUpdate),  "/sis/relation/update");
-    CHECK_STR_EQ(std::string(keys::kEdgeRemove),  "/sis/relation/remove");
+    CHECK_STR_EQ(std::string(keys::kNodeUpdate),  "/sis/node/update");
+    CHECK_STR_EQ(std::string(keys::kNodeRemove),  "/sis/node/remove");
+    CHECK_STR_EQ(std::string(keys::kEdgeUpdate),  "/sis/edge/update");
+    CHECK_STR_EQ(std::string(keys::kEdgeRemove),  "/sis/edge/remove");
     CHECK_STR_EQ(std::string(keys::kStreamStart), "/sis/stream/start");
     CHECK_STR_EQ(std::string(keys::kStreamStop),  "/sis/stream/stop");
     CHECK_STR_EQ(std::string(keys::kGraphQuery),  "/sis/graph/query");
     CHECK_STR_EQ(std::string(keys::kPatternQuery), "/sis/pattern/query");
     CHECK_STR_EQ(std::string(keys::kTargetQuery), "/sis/target/query");
     CHECK_STR_EQ(std::string(keys::kTargetUpdate), "/sis/target/update");
-    CHECK_STR_EQ(std::string(keys::kRelationSample), "/sis/relation/sample");
+    CHECK_STR_EQ(std::string(keys::kStreamSample), "/sis/stream/sample");
 }
 
 // Every suffix begins with '/' and the id never ends with one, so no key can
@@ -90,7 +91,7 @@ TCN_SQE_TEST(no_constructed_key_can_contain_an_empty_chunk)
         id.value().stream_start_key(), id.value().stream_stop_key(),
         id.value().graph_query_key(), id.value().pattern_query_key(),
         id.value().target_query_key(), id.value().target_update_key(),
-        id.value().relation_sample_key(),
+        id.value().stream_sample_key(),
     };
     for (const std::string& k : all)
     {
@@ -98,5 +99,32 @@ TCN_SQE_TEST(no_constructed_key_can_contain_an_empty_chunk)
         CHECK_MSG(k.front() != '/', "a constructed key has a leading slash");
         CHECK_MSG(k.back() != '/', "a constructed key has a trailing slash");
         CHECK_MSG(k.compare(0, 1, "a") == 0, "a constructed key does not begin with the client id");
+    }
+}
+
+// The plan's example (#35 H4): the node and edge keys of a short client id.
+TCN_SQE_TEST(node_and_edge_keys_use_the_0_11_suffixes)
+{
+    const ClientId a = ClientId::parse("tcn/loc/a").value();
+    CHECK_STR_EQ(a.node_update_key(), "tcn/loc/a/sis/node/update");
+    CHECK_STR_EQ(a.node_remove_key(), "tcn/loc/a/sis/node/remove");
+    CHECK_STR_EQ(a.edge_update_key(), "tcn/loc/a/sis/edge/update");
+    CHECK_STR_EQ(a.edge_remove_key(), "tcn/loc/a/sis/edge/remove");
+    CHECK_STR_EQ(a.stream_sample_key(), "tcn/loc/a/sis/stream/sample");
+}
+
+// No 0.11 key is under `/sis/relation/` or `/sis/component/` any more (H4).
+TCN_SQE_TEST(no_key_uses_a_0_10_family)
+{
+    const std::string_view all[] = {
+        keys::kJoin, keys::kLeave, keys::kAlive, keys::kNodeUpdate, keys::kNodeRemove,
+        keys::kEdgeUpdate, keys::kEdgeRemove, keys::kStreamStart, keys::kStreamStop,
+        keys::kGraphQuery, keys::kPatternQuery, keys::kTargetQuery, keys::kTargetUpdate,
+        keys::kStreamSample,
+    };
+    for (const std::string_view k : all)
+    {
+        CHECK_MSG(k.find("/sis/relation/") == std::string_view::npos, "a key is under /sis/relation/");
+        CHECK_MSG(k.find("/sis/component/") == std::string_view::npos, "a key is under /sis/component/");
     }
 }

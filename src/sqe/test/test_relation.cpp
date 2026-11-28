@@ -14,7 +14,7 @@ namespace {
 
 FrameRef frame(const char* client, const char* node)
 {
-    return FrameRef::parse(client, node).value();
+    return FrameRef::local(client, node).value();
 }
 
 StreamTrigger hz(double v) { return StreamTrigger::fixed_rate(v).value(); }
@@ -22,32 +22,10 @@ StreamTrigger hz(double v) { return StreamTrigger::fixed_rate(v).value(); }
 }  // namespace
 
 // ---------------------------------------------------------------------------
-// A frame reference is two different rules, not one
+// Frame references (the rules themselves are in test_frame_ref.cpp)
 // ---------------------------------------------------------------------------
 
-// The client half is a key prefix and takes the fragment rule; the node half is
-// a bare name and takes the identifier rule. Validating the client half as an
-// identifier is B39, and it took the daemon down.
-TCN_SQE_TEST(a_frame_ref_applies_the_fragment_rule_to_the_client_and_the_identifier_rule_to_the_node)
-{
-    CHECK_OK(FrameRef::parse("tcn/loc/pcpd/hl2-01", "head"));
-    CHECK_OK(FrameRef::parse("single", "head"));
-
-    // A '/' is legal on the left and illegal on the right.
-    CHECK_ERR(FrameRef::parse("tcn/loc/pcpd/hl2-01", "head/left"), Error::ContainsSlash);
-
-    // ... and the fragment rule's chunk structure still applies on the left.
-    CHECK_ERR(FrameRef::parse("/tcn/loc", "head"), Error::LeadingSlash);
-    CHECK_ERR(FrameRef::parse("tcn//loc", "head"), Error::EmptyChunk);
-    CHECK_ERR(FrameRef::parse("tcn/loc/", "head"), Error::TrailingSlash);
-
-    CHECK_ERR(FrameRef::parse("", "head"), Error::Empty);
-    CHECK_ERR(FrameRef::parse("tcn/loc", ""), Error::Empty);
-    CHECK_ERR(FrameRef::parse("tcn/*/loc", "head"), Error::ContainsWildcard);
-    CHECK_ERR(FrameRef::parse("tcn/loc", "he ad"), Error::ContainsWhitespace);
-}
-
-TCN_SQE_TEST(frame_refs_order_by_client_then_node)
+TCN_SQE_TEST(frame_refs_order_by_owner_then_name)
 {
     CHECK(frame("a", "z") < frame("b", "a"));
     CHECK(frame("a", "a") < frame("a", "b"));
@@ -249,16 +227,15 @@ TCN_SQE_TEST(same_terms_compares_the_evaluation_mode)
     CHECK(!engine.same_terms_as(local));
 }
 
-// 0.10.7 (engine B94): a domain node is named with no client and its domain id.
-TCN_SQE_TEST(a_domain_frame_ref_has_no_client_and_the_domain_id)
+// A domain frame is one more FrameRef: a request names it like any other
+// (#35 N2a), and two scopes with the same owner and name are two relations.
+TCN_SQE_TEST(a_domain_frame_is_a_relation_end_like_any_other)
 {
-    const auto f = FrameRef::domain("tcn/ksv1/rig01", "camera01_color");
-    CHECK_OK(f);
-    if (!f) { return; }
-    CHECK(f.value().client().empty());
-    CHECK_STR_EQ(f.value().node(), "@tcn/ksv1/rig01::camera01_color");
-    CHECK(f.value().is_domain());
-    CHECK(!frame("tcn/ksv1/rig01", "camera01_color").is_domain());
-    CHECK_ERR(FrameRef::domain("tcn::ksv1", "cam"), Error::IllegalCharacter);
-    CHECK_ERR(FrameRef::domain("tcn/ksv1", "a/b"), Error::ContainsSlash);
+    const FrameRef dom = FrameRef::domain("tcn/ksv1/rig01", "camera01_color").value();
+    const RelationStreamRequest a =
+        RelationStreamRequest::make(frame("a", "x"), dom, hz(30.0)).value();
+    const RelationStreamRequest b =
+        RelationStreamRequest::make(frame("a", "x"), frame("tcn/ksv1/rig01", "camera01_color"), hz(30.0)).value();
+    CHECK(a.target().scope() == NodeScope::Domain);
+    CHECK(!(a.relation() == b.relation()));
 }
