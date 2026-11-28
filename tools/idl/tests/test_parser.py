@@ -23,7 +23,7 @@ class RepoSchemaTest(unittest.TestCase):
         # 0.11 plan 2: the ROS 2 tree is generated from Jazzy (all tiers committed); plan 3: the tcn layout.
         self.assertEqual(len(self.schema.files), 472)
         n = sum(1 for f in self.schema.files for d in f.decls if isinstance(d, (Struct, Enum, Union)))
-        self.assertEqual(n, 1156)  # 0.11 plan 4 deleted six types (tools/idl/fields_0_11.json); plan 5 task 2 added 11
+        self.assertEqual(n, 1157)  # 0.11 plan 4 deleted six types (tools/idl/fields_0_11.json); plan 5 task 2 added 11, task 3 added 6 and deleted 5
 
     def test_sensor_type(self):
         e = self.decls["tcnart_msgs::msg::SensorType"]

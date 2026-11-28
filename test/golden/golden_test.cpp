@@ -188,17 +188,70 @@ int main()
     ref.selector(tcn_types::msg::SRFrameSelector::SR_FRAME_SELECTOR_FRAME);
     golden("tcn_types_SRFrameRef", ref, Encoding::XCDR2);
 
+    // The graph: a LOCAL and a DOMAIN node, an uncalibrated edge with no transform, a projection
+    // edge with pinhole intrinsics (metric_radius absent, image size present) and a pose edge
+    // naming entry 0. The presence bytes are reviewed by hand in the task report.
+    using tcn_types::msg::SRFrameSelector;
+    using tcn_types::msg::SRNodeScope;
+    auto frame = [](SRNodeScope scope, const char* owner, const char* name) {
+        tcn_types::msg::SRFrameRef r;
+        r.scope(scope);
+        r.owner(owner);
+        r.name(name);
+        r.selector(SRFrameSelector::SR_FRAME_SELECTOR_FRAME);
+        return r;
+    };
+
     sqe_msgs::msg::SRGraph g;
+    g.origin("a");
     sqe_msgs::msg::SRNode node;
     node.name("a");
+    node.scope(SRNodeScope::SR_NODE_SCOPE_LOCAL);
     g.nodes().push_back(node);
-    sqe_msgs::msg::SREdge edge;
-    edge.source("a");
-    edge.target("b");
-    tcn_types::msg::RigidTransform identity;
-    identity.rotation().w(1);
-    edge.transform().pose6d(identity);
-    g.edges().push_back(edge);
+    sqe_msgs::msg::SRNode dnode;
+    dnode.name("cam");
+    dnode.scope(SRNodeScope::SR_NODE_SCOPE_DOMAIN);
+    dnode.domain("rig01");
+    g.nodes().push_back(dnode);
+
+    sqe_msgs::msg::SREdge uncal;  // transform stays absent
+    uncal.name("e1");
+    uncal.source(frame(SRNodeScope::SR_NODE_SCOPE_LOCAL, "f", "a"));
+    uncal.target(frame(SRNodeScope::SR_NODE_SCOPE_DOMAIN, "rig01", "cam"));
+    uncal.kind(sqe_msgs::msg::SREdgeKind::SR_EDGE_KIND_POSE);
+    uncal.timing(sqe_msgs::msg::SREdgeTiming::SR_EDGE_TIMING_STATIC_UNCALIBRATED);
+    g.edges().push_back(uncal);
+
+    sqe_msgs::msg::SREdge proj;
+    proj.name("e2");
+    proj.source(frame(SRNodeScope::SR_NODE_SCOPE_DOMAIN, "rig01", "cam"));
+    proj.target(frame(SRNodeScope::SR_NODE_SCOPE_GLOBAL, "", "img"));
+    proj.kind(sqe_msgs::msg::SREdgeKind::SR_EDGE_KIND_PROJECTION);
+    proj.timing(sqe_msgs::msg::SREdgeTiming::SR_EDGE_TIMING_STATIC);
+    tcn_types::msg::PinholeIntrinsics pin;
+    pin.fx(600);
+    pin.fy(601);
+    pin.cx(320);
+    pin.cy(240);
+    pin.distortion_model(tcn_types::msg::SRDistortionModel::SR_DISTORTION_MODEL_OPENCV_RADTAN);
+    pin.distortion({0.1, 0.2, 0.3, 0.4, 0.5});
+    pin.image_width(640);
+    pin.image_height(480);
+    tcn_types::msg::CameraIntrinsics intr;
+    intr.pinhole(pin);
+    sqe_msgs::msg::SRTransform proj_tf;
+    proj_tf.projection(intr);
+    proj.transform(proj_tf);
+    g.edges().push_back(proj);
+
+    sqe_msgs::msg::SREdge pose;
+    pose.name("e3");
+    pose.source(frame(SRNodeScope::SR_NODE_SCOPE_GLOBAL, "", "world"));
+    pose.target(frame(SRNodeScope::SR_NODE_SCOPE_LOCAL, "f", "a"));
+    pose.kind(sqe_msgs::msg::SREdgeKind::SR_EDGE_KIND_POSE);
+    pose.timing(sqe_msgs::msg::SREdgeTiming::SR_EDGE_TIMING_DYNAMIC);
+    pose.entry_id(0);  // present, and 0
+    g.edges().push_back(pose);
     golden("sqe_msgs_SRGraph", g, Encoding::XCDR2);
 
     evolution();

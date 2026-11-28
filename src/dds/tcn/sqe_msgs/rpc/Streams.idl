@@ -9,6 +9,7 @@
 
 #include "sqe_msgs/msg/Graph.idl"
 #include "sqe_msgs/msg/Transforms.idl"
+#include "tcn_types/msg/Camera.idl"
 #include "tcn_types/msg/Geometry.idl"
 
 module sqe_msgs {
@@ -232,7 +233,7 @@ module sqe_msgs {
     // SISFrameRef -- the same {client, node} pair the start request named its
     // own frames with, so nothing new has to be learnt to read this.
     //
-    // `client` is empty exactly when the node is SRG_NODE_SCOPE_GLOBAL: a
+    // `client` is empty exactly when the node is SR_NODE_SCOPE_GLOBAL: a
     // global node has one name in one namespace and belongs to no fragment
     // (see SRNodeView, which draws the same distinction for the same reason).
     // It is not "unknown".
@@ -255,12 +256,12 @@ module sqe_msgs {
         SISFrameRef target;             // the relation's target frame
         string name;                    // SREdge.name, as declared
 
-        // Why this relation cannot be composed: today always
-        // SRG_EDGE_STATIC_UNCALIBRATED, the one temporal type the pathfinder
-        // refuses (see SREdgeTemporalType). Carried rather than assumed, so a
-        // client branches on the reason instead of on a status that has only
-        // ever had one.
-        sqe_msgs::msg::SREdgeTemporalType temporal_type;
+        // Why this relation cannot be composed: today always timing
+        // STATIC_UNCALIBRATED, the one timing the pathfinder refuses (see
+        // SREdgeTiming). Carried rather than assumed, so a client branches on
+        // the reason instead of on a status that has only ever had one.
+        sqe_msgs::msg::SREdgeKind kind;
+        sqe_msgs::msg::SREdgeTiming timing;
     };
 
     // --- the plan of a relation (B89, 0.9.3; carried by stream replies since 0.10.0) ---
@@ -290,14 +291,14 @@ module sqe_msgs {
         tcn_types::msg::CoordinateSystem to_coord;
     };
 
-    // STATIC carries SRG_TRANSFORM_POSE6D, _TRANSLATION3D or their _COV
-    // variants; the covariance is the edge's stated (systematic) one, already
-    // conjugated when the hop was walked backwards.
+    // STATIC carries a POSE6D or TRANSLATION3D SRTransform; its covariance, when
+    // present, is the edge's stated (systematic) one, already conjugated when
+    // the hop was walked backwards.
     @appendable union SISPlanOp switch (SISPlanOpKind) {
         case SIS_PLAN_OP_KIND_STATIC:     sqe_msgs::msg::SRTransform static_transform;
         case SIS_PLAN_OP_KIND_DYNAMIC:    SISPlanDynamicOp dynamic;
         case SIS_PLAN_OP_KIND_COORD_SWAP: SISPlanCoordSwapOp coord_swap;
-        case SIS_PLAN_OP_KIND_PROJECT:    sqe_msgs::msg::SRIntrinsics project;
+        case SIS_PLAN_OP_KIND_PROJECT:    tcn_types::msg::CameraIntrinsics project;
     };
 
     // One target's chain. A plain relation has one, `materialized_id` 0; a
@@ -321,7 +322,7 @@ module sqe_msgs {
     @appendable struct SISPlanInput {
         string topic;                   // the key the samples arrive on; "" when unbound
         string schema;                  // the declared payload type, e.g.
-                                        //   "tcnart_msgs::msg::Pose6DMapMessage"
+                                        //   "tcnart_msgs::msg::Pose6DMessage"
         tcn_types::msg::CoordinateSystem device_coord;   // the publisher's convention;
                                         //   ingest swaps each pose into the engine's
         boolean entry_bound;            // read only the entry `entry_id` ...
@@ -344,14 +345,15 @@ module sqe_msgs {
         SISFrameRef from;               // the frame this hop starts at (client "" = global)
         SISFrameRef to;
         string edge_name;               // the relation as declared (SREdge.name)
-        sqe_msgs::msg::SREdgeTemporalType temporal_type;
+        sqe_msgs::msg::SREdgeKind kind;
+        sqe_msgs::msg::SREdgeTiming timing;
         boolean derived;                // another stream's output, published as an edge
         boolean walked_inverted;        // declared to -> from, walked from -> to
         double weight;                  // the pathfinder's cost for this hop
         sequence<string> derived_from;  // a derived hop: the relations it composes
         int32 input;                    // a live hop: index into inputs; -1 for a fixed one
         sequence<double, 21> covariance;   // a fixed hop's stated covariance, packed as in
-                                           //   SRPose6DWithCovariance; empty = not stated
+                                           //   SRCovariance6; empty = not stated
     };
 
     @appendable struct SISTranslationPlan {

@@ -133,7 +133,7 @@ module sqe_msgs {
         //     matching everything, which is the unanchored search again;
         //   no top-level negation -- "every edge that is NOT calibrated" reads
         //     as a filter and behaves as a scan. Negation *inside*
-        //     `temporal_type` is fine: the set is finite, so spell the wanted
+        //     `timing` is fine: the set is finite, so spell the wanted
         //     variants out;
         //   no sort key -- sorting means materialising the whole candidate set
         //     before the first page, which defeats the cursor and turns a
@@ -144,14 +144,14 @@ module sqe_msgs {
         //     client's. It is unbounded, and it does not belong on a key
         //     prefixed by one client's id.
 
-        // Which temporal types to keep, as a set. Empty keeps all of them.
+        // Which edge timings to keep, as a set. Empty keeps all of them.
         //
-        // The reason search exists. { SRG_EDGE_STATIC_UNCALIBRATED } is the
+        // The reason search exists. { STATIC_UNCALIBRATED } is the
         // work queue an external calibration tool reads -- both ends known,
         // their relation not yet measured -- and a set rather than one value is
         // what makes "not usable yet" and "measured somehow" one round trip
         // each instead of one per variant.
-        sequence<sqe_msgs::msg::SREdgeTemporalType> temporal_type;
+        sequence<sqe_msgs::msg::SREdgeTiming> timing;
 
         // Which node scopes to keep, as a set. Empty keeps all of them.
         //

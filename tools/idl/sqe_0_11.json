@@ -16,7 +16,13 @@
    ]
   }
  ],
- "deleted": [],
+ "deleted": [
+  "sqe_msgs::msg::SRNodeTemplate",
+  "sqe_msgs::msg::SREdgeTemporalType",
+  "sqe_msgs::msg::SRPose6DWithCovariance",
+  "sqe_msgs::msg::SRTranslation3DWithCovariance",
+  "sqe_msgs::msg::SRIntrinsics"
+ ],
  "new_types": [
   "tcn_types::msg::SRFrameSelector",
   "tcn_types::msg::SRFrameRef",
@@ -28,13 +34,41 @@
   "tcn_types::msg::CameraIntrinsicsKind",
   "tcn_types::msg::PinholeIntrinsics",
   "tcn_types::msg::CameraIntrinsics",
-  "tcn_types::msg::SISTargetInfo"
+  "tcn_types::msg::SISTargetInfo",
+  "sqe_msgs::msg::SREdgeTiming",
+  "sqe_msgs::msg::SREdgeKind",
+  "sqe_msgs::msg::SRRelationRef",
+  "sqe_msgs::msg::SRMaterialization",
+  "sqe_msgs::msg::SRPose6D",
+  "sqe_msgs::msg::SRTranslation3D"
  ],
  "expect": {
   "enums_from": "tools/idl/enum_renames_0_11_sqe.json",
   "reshaped": [
    "tcn_types::msg::Target",
-   "tcnart_msgs::msg::Pose6DMessage"
-  ]
+   "tcnart_msgs::msg::Pose6DMessage",
+   "sqe_msgs::msg::SRNode",
+   "sqe_msgs::msg::SRCalibration",
+   "sqe_msgs::msg::SREdge",
+   "sqe_msgs::msg::SRGraph",
+   "sqe_msgs::msg::SRNodeView",
+   "sqe_msgs::msg::SREdgeView",
+   "sqe_msgs::msg::SRPoint2D",
+   "sqe_msgs::msg::SRTransformType",
+   "sqe_msgs::msg::SRTransform",
+   "sqe_msgs::rpc::SISBlockingRelation",
+   "sqe_msgs::rpc::SISPlanHop",
+   "sqe_msgs::rpc::SISPlanOp",
+   "sqe_msgs::rpc::SISGraphQueryRequest"
+  ],
+  "removed_members": {
+   "sqe_msgs::msg::SRNode": [
+    "node_template",
+    "custom_data"
+   ],
+   "sqe_msgs::msg::SRPoint2D": [
+    "covariance"
+   ]
+  }
  }
 }
