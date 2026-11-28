@@ -7,12 +7,6 @@
 module pcpd_msgs {
   module msg {
 
-    @appendable enum CameraSensorTypesEnum {
-        GENERIC_RGBD,
-        KINECT_AZURE,
-        FEMTO_MEGA
-    };
-
     @verbatim (language="comment", text=
       "This represents a camera sensor connected to a pcpd instance.")
     @appendable struct CameraSensor {
@@ -22,8 +16,6 @@ module pcpd_msgs {
       string name;
 
       string serial_number;
-
-      CameraSensorTypesEnum camera_type;
 
       boolean depth_enabled;
       boolean color_enabled;
@@ -42,11 +34,7 @@ module pcpd_msgs {
 
       uint32 frame_rate;
 
-      sequence<octet> raw_calibration;
-
       float depth_units_per_meter;
-
-      uint64 timestamp_offset_ns;
 
     };
 

@@ -17,7 +17,6 @@ module conversation_msgs {
   @appendable struct SttPartial {
     MessageHeader header;
     string text;
-    float stability;
     unsigned long start_ms;
     unsigned long end_ms;
     string detected_language;

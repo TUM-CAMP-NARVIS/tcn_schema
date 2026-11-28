@@ -4,11 +4,6 @@
 module conversation_msgs {
   module msg {
 
-  @appendable enum PayloadKind {
-    PAYLOAD_INLINE,
-    PAYLOAD_SHM_REF
-  };
-
   @appendable enum AudioCodec {
     AUDIO_CODEC_UNKNOWN,
     AUDIO_CODEC_PCM_F32,
@@ -99,12 +94,6 @@ module conversation_msgs {
     unsigned short channels;
     ChannelLayout channel_layout;
     unsigned short frame_duration_ms;
-  };
-
-  @appendable struct ShmRef {
-    string region_id;
-    unsigned long long offset_bytes;
-    unsigned long length_bytes;
   };
 
   @appendable struct Status {

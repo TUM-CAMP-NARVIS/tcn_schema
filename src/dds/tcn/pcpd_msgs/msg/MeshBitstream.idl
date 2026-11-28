@@ -11,10 +11,7 @@ module pcpd_msgs {
 
       std_msgs::msg::Header header;
 
-      tcn_types::msg::RigidTransform origin_offset;
-
       boolean enable_mesh_indices;
-      boolean is_compressed;
       uint32 num_camera_ids;
 
       uint64 vertices_capacity;

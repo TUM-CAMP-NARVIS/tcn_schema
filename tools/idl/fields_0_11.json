@@ -1,0 +1,99 @@
+{
+ "_comment": "0.11 plan 4: fields nobody writes (#39 \u00a74.5 F1, F2, F5 as amended by decisions \u00a74) and the types only they used; EyeTrackingMessage.scene_point and gaze_space stay as @optional (decisions \u00a74, overriding F2). F3/F4 (sqe_msgs) are plan 5. Applied once by `idl_cli.py fields`; kept as the record.",
+ "remove": {
+  "tcnart_msgs::msg::StreamDescriptorMessage": [
+   "calib_topic_schema",
+   "pose",
+   "audio_channels",
+   "aac_profile"
+  ],
+  "tcnart_msgs::msg::BufferInfo": [
+   "is_fixed_size",
+   "is_valid"
+  ],
+  "pcpd_msgs::msg::MeshBitstreamMessage": [
+   "origin_offset",
+   "is_compressed"
+  ],
+  "pcpd_msgs::msg::CameraSensor": [
+   "camera_type",
+   "raw_calibration",
+   "timestamp_offset_ns"
+  ],
+  "pcpd_msgs::rpc::DeviceContextReply": [
+   "timestamp_offset",
+   "is_valid"
+  ],
+  "tcnart_msgs::msg::TargetTrackingMessage": [
+   "target_origin"
+  ],
+  "tcn_types::msg::Target": [
+   "quality",
+   "markers"
+  ],
+  "tcnart_msgs::msg::HandState": [
+   "aim",
+   "aim_valid",
+   "tracked"
+  ],
+  "tcnart_msgs::msg::HandJointPose": [
+   "accuracy"
+  ],
+  "tcnart_msgs::msg::Person": [
+   "role",
+   "role_confidence",
+   "has_root_orientation",
+   "root_orientation",
+   "joint_rotations",
+   "joint_rotation_confidence"
+  ],
+  "conversation_msgs::msg::AudioOpusFrame": [
+   "packet_loss_concealment_applied"
+  ],
+  "conversation_msgs::msg::TtsRequest": [
+   "speaking_rate",
+   "volume_gain_db",
+   "backend",
+   "voice",
+   "language",
+   "stream_output",
+   "pitch"
+  ],
+  "conversation_msgs::msg::LlmRequest": [
+   "system_prompt",
+   "low_latency_mode"
+  ],
+  "conversation_msgs::msg::RetrievalOptions": [
+   "preferred_domains",
+   "excluded_domains"
+  ],
+  "conversation_msgs::msg::SttPartial": [
+   "stability"
+  ],
+  "conversation_msgs::msg::StageMetric": [
+   "gpu_utilization_pct"
+  ],
+  "conversation_msgs::msg::AudioPcmChunk": [
+   "shm_ref",
+   "payload_kind"
+  ],
+  "conversation_msgs::msg::TtsAudioChunk": [
+   "shm_ref",
+   "payload_kind"
+  ]
+ },
+ "delete": [
+  "tcn_types::msg::Marker",
+  "tcnart_msgs::msg::AudioAACProfile",
+  "pcpd_msgs::msg::CameraSensorTypesEnum",
+  "tcnart_msgs::msg::JointPoseAccuracy",
+  "conversation_msgs::msg::PayloadKind",
+  "conversation_msgs::msg::ShmRef"
+ ],
+ "optional": {
+  "tcnart_msgs::msg::EyeTrackingMessage": [
+   "gaze_space",
+   "scene_point"
+  ]
+ }
+}

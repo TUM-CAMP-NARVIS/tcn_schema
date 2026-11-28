@@ -22,7 +22,6 @@ module conversation_msgs {
     double time_to_first_audio_ms;
 
     double cpu_utilization_pct;
-    double gpu_utilization_pct;
     double memory_used_mb;
   };
 

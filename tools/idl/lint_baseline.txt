@@ -1,7 +1,5 @@
 # IDL lint baseline: accepted findings as rule<TAB>file<TAB>symbol. This list only shrinks.
 # Regenerate with: python3 -I tools/idl_cli.py lint --dds-root src/dds --baseline tools/idl/lint_baseline.txt --update-baseline
-enum-first-unknown	conversation_msgs/msg/Common.idl	conversation_msgs::msg::PayloadKind
-enum-first-unknown	pcpd_msgs/msg/CameraSensor.idl	pcpd_msgs::msg::CameraSensorTypesEnum
 enum-first-unknown	sqe_msgs/msg/Graph.idl	sqe_msgs::msg::SREdgeTemporalType
 enum-first-unknown	sqe_msgs/msg/Graph.idl	sqe_msgs::msg::SRNodeScope
 enum-first-unknown	sqe_msgs/msg/Graph.idl	sqe_msgs::msg::SRNodeType
@@ -29,10 +27,6 @@ enum-first-unknown	sqe_msgs/rpc/Targets.idl	sqe_msgs::rpc::SISTargetKind
 enum-first-unknown	sqe_msgs/rpc/Targets.idl	sqe_msgs::rpc::SISTargetMutationKind
 enum-first-unknown	sqe_msgs/rpc/Targets.idl	sqe_msgs::rpc::SISTargetQueryKind
 enum-first-unknown	sqe_msgs/rpc/Targets.idl	sqe_msgs::rpc::SISTargetQueryStatus
-enum-first-unknown	tcnart_msgs/msg/HandTracking.idl	tcnart_msgs::msg::JointPoseAccuracy
-enum-first-unknown	tcnart_msgs/msg/MediaTypes.idl	tcnart_msgs::msg::AudioAACProfile
-enum-prefix	conversation_msgs/msg/Common.idl	conversation_msgs::msg::PayloadKind
-enum-prefix	pcpd_msgs/msg/CameraSensor.idl	pcpd_msgs::msg::CameraSensorTypesEnum
 enum-prefix	sqe_msgs/msg/Graph.idl	sqe_msgs::msg::SREdgeTemporalType
 enum-prefix	sqe_msgs/msg/Graph.idl	sqe_msgs::msg::SRNodeScope
 enum-prefix	sqe_msgs/msg/Graph.idl	sqe_msgs::msg::SRNodeType
@@ -61,5 +55,3 @@ enum-prefix	sqe_msgs/rpc/Targets.idl	sqe_msgs::rpc::SISTargetKind
 enum-prefix	sqe_msgs/rpc/Targets.idl	sqe_msgs::rpc::SISTargetMutationKind
 enum-prefix	sqe_msgs/rpc/Targets.idl	sqe_msgs::rpc::SISTargetQueryKind
 enum-prefix	sqe_msgs/rpc/Targets.idl	sqe_msgs::rpc::SISTargetQueryStatus
-enum-prefix	tcnart_msgs/msg/HandTracking.idl	tcnart_msgs::msg::JointPoseAccuracy
-enum-prefix	tcnart_msgs/msg/MediaTypes.idl	tcnart_msgs::msg::AudioAACProfile

@@ -9,12 +9,10 @@ module pcpd_msgs {
 
     @appendable struct DeviceContextReply {
         string name;
-        boolean is_valid;
         float depth_units_per_meter;
         int32 frame_rate;
         string sensor_type;
         string serial_number;
-        uint64 timestamp_offset;
 
         pcpd_msgs::msg::CameraSensor value;
         pcpd_msgs::rpc::RPCResponseStatus status;

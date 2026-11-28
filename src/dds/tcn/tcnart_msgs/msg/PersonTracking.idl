@@ -47,21 +47,10 @@ module tcnart_msgs {
       sequence<float, 32> bone_lengths;
       sequence<PersonCameraView, 8> views;
 
-      // The role the person plays (e.g. surgeon, nurse): an id from the application's role table and the
-      // classifier's confidence. -1 and 0 while not assigned (reserved: not produced yet).
-      int16 role;
-      float role_confidence;
-
-      // Orientations from a body-model fit with temporal smoothing (none yet: has_root_orientation false, the
-      // sequences empty). world_frame, (x, y, z, w); the rest pose of each joint set is in tcnart_msgs/msg/JointSets.md.
-      boolean has_root_orientation;
-      tcn_types::msg::Quaternion root_orientation;                  // the pelvis
-      sequence<tcn_types::msg::Quaternion, 32> joint_rotations;     // empty, or one per joint of the joint set
-      sequence<float, 32> joint_rotation_confidence;  // empty, or one per joint, [0,1]
     };
 
-    // The persons tracked in one frame group (design 65). CDR with the encapsulation header (DDS_CDR), like the
-    // other tcnart_msgs messages. Positions are right-handed, metres. The stream's descriptor states the joint set,
+    // The persons tracked in one frame group (design 65). XCDR2 with the encapsulation header (00 09), like
+    // every tcn type. Positions are right-handed, metres. The stream's descriptor states the joint set,
     // frame, up axis, clock domain and smoothing (tcnart_msgs/msg/JointSets.md).
     @appendable struct PersonTrackingMessage {
 

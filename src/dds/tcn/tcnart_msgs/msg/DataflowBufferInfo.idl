@@ -31,8 +31,6 @@ module tcnart_msgs {
       @verbatim (language="comment", text=
         "Provides information about buffer allocation.")
 
-      boolean is_valid;
-      boolean is_fixed_size;
       uint64 semantic_type;
       uint64 frame_size;
 

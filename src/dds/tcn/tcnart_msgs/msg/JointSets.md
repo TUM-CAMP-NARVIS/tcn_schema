@@ -2,8 +2,7 @@
 
 The registry of skeleton joint sets shared by `PersonTrackingMessage` (`PersonTracking.idl`: tracks from a
 multi-camera tracker, holoscan-tcn-applications) and `HumanPoseMessage` (`HumanPose.idl`: tcnart's stabilised persons
-for avatars). `joint_set` names the order of every person's `joints` and `bone_lengths` (and of
-`joint_rotations`); a producer sends one joint set per stream, and the stream's descriptor names it too. Both messages
+for avatars). `joint_set` names the order of every person's `joints` and `bone_lengths`; a producer sends one joint set per stream, and the stream's descriptor names it too. Both messages
 bound joints at 32, so one consumer buffer fits either. A new set gets its section here with its first producer.
 
 | set | joints | root | first producer |
@@ -108,7 +107,6 @@ twist and feet stay without rotation until a source with rotations exists.
 
 ## Rotations
 
-`PersonTrackingMessage`: `root_orientation` and `joint_rotations` are sent only from a body-model fit with temporal
-smoothing; until then `has_root_orientation` is false and the sequences are empty. `HumanPoseMessage`: a joint's
+`PersonTrackingMessage` carries no rotations (0.11 removed the never-written orientation fields). `HumanPoseMessage`: a joint's
 `rotation` is valid when `HUMAN_JOINT_HAS_ROTATION` is set. The rest pose (bone axes per joint set) is defined here
 together with each set's first producer of rotations.

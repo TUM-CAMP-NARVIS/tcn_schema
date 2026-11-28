@@ -130,10 +130,9 @@ module pcpd_msgs {
     /// Full description of one parameter. ParameterSchema stays as the
     /// compact form.
     ///
-    /// minimum / maximum / step are optional. `@optional` is not used: with
-    /// fast-cdr 2.0.0 and the DDS_CDR (XCDR1) encoding every peer uses, an
-    /// optional member does not round-trip. Each is a plain member with a
-    /// `has_*` flag before it; when the flag is false the value is
+    /// minimum / maximum / step are optional. They predate 0.11, when the
+    /// XCDR1 encoding could not round-trip an `@optional` member, so each is a
+    /// plain member with a `has_*` flag before it (unchanged in 0.11); when the flag is false the value is
     /// meaningless (default-constructed) and must be ignored.
     @appendable struct ParameterDescriptor {
         string key;

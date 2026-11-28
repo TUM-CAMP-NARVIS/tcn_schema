@@ -52,14 +52,6 @@ module tcnart_msgs {
         VIDEO_H26X_PROFILE_H265_MAIN
     };
 
-    @appendable enum AudioAACProfile {
-        AACProfile_12000,
-        AACProfile_16000,
-        AACProfile_20000,
-        AACProfile_24000,
-        AACProfile_None
-    };
-
   };
 };
 

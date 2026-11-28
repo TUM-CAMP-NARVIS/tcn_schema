@@ -43,8 +43,6 @@ module conversation_msgs {
 
   @appendable struct RetrievalOptions {
     RetrievalPolicy policy;
-    sequence<string> preferred_domains;
-    sequence<string> excluded_domains;
     string filter;
     unsigned long top_k;
   };
@@ -100,10 +98,8 @@ module conversation_msgs {
     MemoryScope memory_scope;
     string backend;
     string model;
-    string system_prompt;
     string user_text;
     boolean stream_output;
-    boolean low_latency_mode;
     string interaction_request_id;
     sequence<ImageAttachment> images;
     RetrievalOptions retrieval;

@@ -13,22 +13,13 @@ module tcnart_msgs {
       HANDEDNESS_RIGHT
     };
 
-    @appendable enum JointPoseAccuracy {
-      JointPoseAccuracy_High,
-      JointPoseAccuracy_Approximate
-    };
-
     @appendable struct HandJointPose {
       tcn_types::msg::RigidTransform pose;
       float radius;
-      JointPoseAccuracy accuracy;
     };
 
     @appendable struct HandState {
       Handedness hand;
-      boolean tracked;
-      boolean aim_valid;
-      tcn_types::msg::Ray aim;
       sequence<HandJointPose> joints;
     };
 

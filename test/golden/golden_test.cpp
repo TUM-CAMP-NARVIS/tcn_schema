@@ -139,7 +139,6 @@ int main()
     target.pose().translation().y(2);
     target.pose().translation().z(3);
     target.pose().rotation().w(1);
-    target.quality(1.0f);
     target.is_tracked(true);
     tt.targets().push_back(target);
     golden("tcnart_msgs_TargetTrackingMessage", tt, Encoding::XCDR2);

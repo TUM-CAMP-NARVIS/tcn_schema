@@ -40,8 +40,8 @@ module tcnart_msgs {
 
     const uint32 EYE_VALID_SCENE_POINT = 4096;         // scene_point (0.10.4)
 
-    // One eye-tracker sample. Rays: origin in metres, direction a unit vector, both in gaze_space (LOCAL: the
-    // header's frame_id). viewpoint: the head pose at the sample. Openness, squeeze, wide in [0,1].
+    // One eye-tracker sample. Rays: origin in metres, direction a unit vector, both in gaze_space (absent or LOCAL:
+    // the header's frame_id). viewpoint: the head pose at the sample. Openness, squeeze, wide in [0,1].
     @appendable struct EyeTrackingMessage {
 
       std_msgs::msg::Header header;
@@ -67,11 +67,14 @@ module tcnart_msgs {
       float right_squeeze;
       float left_wide;              // [0,1]
       float right_wide;
-      XRGazeSpaceType gaze_space;   // the space the rays are in (LOCAL = the header's frame_id)
+      // The space the rays are in. Absent means LOCAL (the header's frame_id); a producer that only ever has the
+      // local space leaves it absent (0.11, decisions §4).
+      @optional XRGazeSpaceType gaze_space;
 
-      // appended in 0.10.4
-      tcn_types::msg::Vector2 scene_point;          // the gaze point in the image of the head-mounted scene (world-facing) camera,
-                                    // normalized [0,1], +x right, +y down (image convention); (0,0) when not valid
+      // The gaze point in the image of the head-mounted scene (world-facing) camera, normalized [0,1], +x right,
+      // +y down (image convention). Present only when measured (e.g. Tobii Pro Glasses 2); a writer sets
+      // EYE_VALID_SCENE_POINT exactly when it is present. Appended in 0.10.4; optional since 0.11.
+      @optional tcn_types::msg::Vector2 scene_point;
     };
 
   };

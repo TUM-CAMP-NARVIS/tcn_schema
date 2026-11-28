@@ -44,7 +44,29 @@ def main(argv) -> int:
     en.add_argument("--table", type=Path, required=True)
     en.add_argument("--markdown", type=Path, required=True)
 
+    fl = sub.add_parser("fields", help="remove members, delete types, add @optional (0.11 plan 4)")
+    fl.add_argument("--dds-root", type=Path, required=True)
+    fl.add_argument("--spec", type=Path, required=True)
+
     args = ap.parse_args(argv)
+    if args.cmd == "fields":
+        import json
+        from .fields import apply_fields
+        spec = json.loads(args.spec.read_text(encoding="utf-8"))
+        schema = load_schema(args.dds_root)
+        named = set(spec.get("remove", {})) | set(spec.get("delete", [])) | set(spec.get("optional", {}))
+        missing = sorted(named - set(schema.decls()))
+        if missing:
+            raise SystemExit(f"not in the schema: {missing}")
+        for f in schema.files:
+            if f.family != "tcn":
+                continue
+            p = args.dds_root / "tcn" / f.path
+            text = p.read_text(encoding="utf-8")
+            new = apply_fields(text, f.decls, spec)
+            if new != text:
+                p.write_text(new, encoding="utf-8")
+        return 0
     if args.cmd == "enums":
         import json
         from .enums import migration_rows, write_markdown

@@ -13,7 +13,6 @@ module conversation_msgs {
 
     boolean end_of_utterance;
     boolean end_of_stream;
-    boolean packet_loss_concealment_applied;
 
     unsigned long long capture_ts_mono_ns;
     unsigned long long first_sample_index;
@@ -25,7 +24,6 @@ module conversation_msgs {
     MessageHeader header;
     StreamDirection direction;
     AudioFormat format;
-    PayloadKind payload_kind;
 
     boolean end_of_utterance;
     boolean end_of_stream;
@@ -35,7 +33,6 @@ module conversation_msgs {
     unsigned long sample_count_per_channel;
 
     sequence<float> samples_f32;
-    ShmRef shm_ref;
   };
 
   @appendable struct VadEvent {
