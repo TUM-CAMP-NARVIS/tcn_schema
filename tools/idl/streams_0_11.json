@@ -4,7 +4,8 @@
  "deleted": [],
  "new_types": [
   "tcn_types::msg::StreamHeader",
-  "tcn_types::msg::CalibrationProvenance"
+  "tcn_types::msg::CalibrationProvenance",
+  "tcnart_msgs::msg::JointSet"
  ],
  "expect": {
   "reshaped": [

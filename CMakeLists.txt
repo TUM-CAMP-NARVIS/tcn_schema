@@ -55,6 +55,11 @@ install(FILES "${CMAKE_CURRENT_SOURCE_DIR}/src/dds/tcn/type_map_0_11.json" DESTI
 # The plan 5 (#35) moves, deletions and reshaped types. Apply type_map_0_11.json first, then this one: it supersedes
 # the plan 3 entries for SRNodeScope and SISTargetKind (moved again) and for types deleted since.
 install(FILES "${CMAKE_CURRENT_SOURCE_DIR}/src/dds/tcn/type_map_0_11_sqe.json" DESTINATION share/tcn_schema)
+# The joint-set table's generated arrays (decisions §7 HumanPose; source tcnart_msgs/msg/joint_sets.yaml): the
+# header-only C++ arrays, and the C# arrays and JSON for the other languages.
+install(FILES "${CMAKE_CURRENT_SOURCE_DIR}/src/joint_sets/include/tcn/joint_sets.h" DESTINATION include/tcn)
+install(FILES "${CMAKE_CURRENT_SOURCE_DIR}/src/joint_sets/joint_sets.json"
+              "${CMAKE_CURRENT_SOURCE_DIR}/src/joint_sets/cs/JointSets.cs" DESTINATION share/tcn_schema)
 
 # The SQE contract core. Header-only and dependency-free, so it adds nothing to
 # a link line; it is added last because its INTERFACE target names
@@ -89,6 +94,14 @@ if(TCN_SCHEMA_BUILD_MSG_TESTS)
   # `cmake --install` (what conan's package() runs) of this build tree into a scratch prefix must succeed: every
   # header the install lists has to exist (enum-only IDL files once listed CdrAux headers fastddsgen never writes).
   add_test(NAME install_smoke COMMAND "${CMAKE_COMMAND}" --install "${CMAKE_BINARY_DIR}" --prefix "${CMAKE_BINARY_DIR}/install_smoke")
+  # ... and put the files consumers look for in place (sha256sum fails on a missing file).
+  set(_smoke "${CMAKE_BINARY_DIR}/install_smoke")
+  add_test(NAME install_smoke_files COMMAND "${CMAKE_COMMAND}" -E sha256sum
+           "${_smoke}/include/tcn/joint_sets.h" "${_smoke}/share/tcn_schema/joint_sets.json"
+           "${_smoke}/share/tcn_schema/JointSets.cs" "${_smoke}/share/tcn_schema/dds/tcnart_msgs/msg/JointSets.md"
+           "${_smoke}/share/tcn_schema/dds/tcnart_msgs/msg/JointSet.idl" "${_smoke}/include/tcnart_msgs/msg/JointSet.h")
+  set_tests_properties(install_smoke PROPERTIES FIXTURES_SETUP install_smoke)
+  set_tests_properties(install_smoke_files PROPERTIES FIXTURES_REQUIRED install_smoke)
 endif()
 
 # generated cpp/h files need one import from fastrtps, which we provide to avoid pulling the dependency, if it should be build without

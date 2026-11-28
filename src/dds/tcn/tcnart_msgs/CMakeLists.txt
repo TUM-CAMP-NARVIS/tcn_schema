@@ -7,6 +7,7 @@ tcn_add_idl_package(
             "msg/EyeTracking.idl"
             "msg/HandTracking.idl"
             "msg/HumanPose.idl"
+            "msg/JointSet.idl"
             "msg/Imu.idl"
             "msg/PersonTracking.idl"
             "msg/PoseTracking.idl"

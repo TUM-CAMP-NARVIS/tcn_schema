@@ -49,7 +49,16 @@ def main(argv) -> int:
     fl.add_argument("--dds-root", type=Path, required=True)
     fl.add_argument("--spec", type=Path, required=True)
 
+    js = sub.add_parser("joint-sets", help="check the joint-set table and write (or --check) its generated files")
+    js.add_argument("--table", type=Path, required=True)
+    js.add_argument("--previous", type=Path, help="the previous release's table: changed sets need a new version")
+    js.add_argument("--check", action="store_true", help="write nothing; exit 1 naming each file that differs")
+    js.add_argument("--root", type=Path, default=Path(__file__).resolve().parents[2],
+                    help="the repository root the outputs are written under (default: this checkout)")
+
     args = ap.parse_args(argv)
+    if args.cmd == "joint-sets":
+        return _joint_sets(args)
     if args.cmd == "fields":
         import json
         from .fields import apply_fields
@@ -134,6 +143,31 @@ def main(argv) -> int:
     if args.cmd == "lint":
         return _lint(args)
     return 2
+
+
+def _joint_sets(args) -> int:
+    from .joint_sets import OUTPUTS, check_table, load_table
+    table = load_table(args.table.read_text(encoding="utf-8"))
+    previous = load_table(args.previous.read_text(encoding="utf-8")) if args.previous else None
+    errors = check_table(table, previous)
+    for e in errors:
+        print(e)
+    if errors:
+        return 1
+    differ = []
+    for rel, render in OUTPUTS.items():
+        p = args.root / rel
+        text = render(table)
+        old = p.read_text(encoding="utf-8") if p.is_file() else None
+        if old == text:
+            continue
+        differ.append(rel)
+        if not args.check:
+            p.parent.mkdir(parents=True, exist_ok=True)
+            p.write_text(text, encoding="utf-8")
+    for rel in differ:
+        print(f"{'differs' if args.check else 'wrote'}: {rel}")
+    return 1 if args.check and differ else 0
 
 
 def _lint(args) -> int:
