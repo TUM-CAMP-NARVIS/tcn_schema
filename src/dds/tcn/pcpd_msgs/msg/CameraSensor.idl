@@ -1,12 +1,19 @@
 #ifndef PCPD_MSGS_MSG_CAMERASENSOR_IDL
 #define PCPD_MSGS_MSG_CAMERASENSOR_IDL
 
+#include "tcn_types/msg/Camera.idl"
 #include "tcn_types/msg/Geometry.idl"
-#include "tcnart_msgs/msg/CameraModel.idl"
 
 module pcpd_msgs {
   module msg {
 
+    // `depth_parameters` / `color_parameters` (#38 A3): the calibrated intrinsics of the depth and colour streams,
+    // absent when the stream has none (disabled or uncalibrated).
+    // `frame_rate` (S1): frames per second, a double as everywhere in 0.11.
+    // `revision` (#38 A4, A7): a changed revision means a changed calibration; an unchanged revision means unchanged
+    // content. Absent: unversioned, the reader compares the content.
+    // `provenance` (#38 A4): where the calibration came from, absent when not stated.
+    // `coord`: the camera axes of `camera_pose` (ArteKMed's are OpenGL's).
     @verbatim (language="comment", text=
       "This represents a camera sensor connected to a pcpd instance.")
     @appendable struct CameraSensor {
@@ -23,18 +30,22 @@ module pcpd_msgs {
 
       string depth_descriptor_topic;
       string infrared_descriptor_topic;
-      tcnart_msgs::msg::CameraModel depth_parameters;
+      @optional tcn_types::msg::CameraIntrinsics depth_parameters;
 
       string color_descriptor_topic;
-      tcnart_msgs::msg::CameraModel color_parameters;
+      @optional tcn_types::msg::CameraIntrinsics color_parameters;
 
       tcn_types::msg::RigidTransform camera_pose;
       // maybe not named correctly
-      tcn_types::msg::RigidTransform color2depth_transform; 
+      tcn_types::msg::RigidTransform color2depth_transform;
 
-      uint32 frame_rate;
+      double frame_rate;
 
       float depth_units_per_meter;
+
+      @optional uint32 revision;
+      @optional tcn_types::msg::CalibrationProvenance provenance;
+      tcn_types::msg::CoordinateSystem coord;
 
     };
 

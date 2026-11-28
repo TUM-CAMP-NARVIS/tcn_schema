@@ -1,0 +1,38 @@
+// A forward-declared, recursive union (the shape of pcpd_msgs/rpc/Parameters.idl before 0.11 plan 6 task 5).
+// fastddsgen 3.0.0 stores members of a forward-declared union's type as raw pointers.
+module fx {
+  module msg {
+    struct L;
+    union V;
+
+    @appendable enum K {
+      K_UNKNOWN,
+      K_INT,
+      K_LIST
+    };
+
+    @appendable struct P {
+      string key;
+      V value;
+    };
+
+    @appendable struct L {
+      sequence<P> items;
+    };
+
+    @appendable union V switch (K) {
+    case K_INT:
+      long int_value;
+    case K_LIST:
+      L list_value;
+    };
+
+    @appendable struct Holder {
+      L list;
+    };
+
+    @appendable struct Plain {
+      double x;
+    };
+  };
+};

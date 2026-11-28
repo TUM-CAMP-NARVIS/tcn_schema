@@ -2,7 +2,6 @@ tcn_add_idl_package(
         NAME tcnart_msgs
         MSG
             "msg/MediaTypes.idl"
-            "msg/CameraModel.idl"
             "msg/DataflowBufferInfo.idl"
             "msg/EyeTracking.idl"
             "msg/HandTracking.idl"

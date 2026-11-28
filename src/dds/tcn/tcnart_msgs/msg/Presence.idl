@@ -6,14 +6,19 @@
 module tcnart_msgs {
   module msg {
 
+    // `service_type` (0.11, #37 T15: was `service_info`): the service's type name.
     @appendable struct ServiceInfo {
         string service_name;
         string topic_prefix;
-        string service_info;
+        string service_type;
     };
 
+    // `header.frame_id` is unused. `rpc_root` (0.11, #37 T15): the process's RPC root, `<P>/rpc`, as in
+    // pcpd_msgs::rpc::ProcessInfo.rpc_root.
     @appendable struct TcnartPresenceMessage {
         std_msgs::msg::Header header;
+
+        string rpc_root;
 
         uint64 heart_beat_counter;
 

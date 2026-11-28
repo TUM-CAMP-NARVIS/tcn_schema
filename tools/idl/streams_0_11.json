@@ -14,7 +14,9 @@
   "tcnart_msgs::msg::HUMAN_JOINT_HAS_ROTATION",
   "tcnart_msgs::msg::SensorType",
   "tcnart_msgs::msg::VideoImageCompression",
-  "tcnart_msgs::msg::BufferInfo"
+  "tcnart_msgs::msg::BufferInfo",
+  "tcnart_msgs::msg::CameraModel",
+  "tcnart_msgs::msg::CameraModelType"
  ],
  "new_types": [
   "tcn_types::msg::StreamHeader",
@@ -41,7 +43,9 @@
   "tcnart_msgs::msg::StreamKind",
   "tcnart_msgs::msg::PixelSemantics",
   "tcnart_msgs::msg::VideoCodec",
-  "tcnart_msgs::msg::MeshEncoding"
+  "tcnart_msgs::msg::MeshEncoding",
+  "pcpd_msgs::rpc::StreamRole",
+  "pcpd_msgs::rpc::StreamMode"
  ],
  "expect": {
   "reshaped": [
@@ -59,7 +63,15 @@
    "tcnart_msgs::msg::Person",
    "tcnart_msgs::msg::PersonTrackingMessage",
    "tcnart_msgs::msg::StreamDescriptorMessage",
-   "tcnart_msgs::msg::VideoPixelFormat"
+   "tcnart_msgs::msg::VideoPixelFormat",
+   "pcpd_msgs::msg::CameraSensor",
+   "pcpd_msgs::rpc::DeviceContextReply",
+   "pcpd_msgs::rpc::ParameterValueType",
+   "pcpd_msgs::rpc::ParameterValue",
+   "pcpd_msgs::rpc::StreamAnnouncement",
+   "pcpd_msgs::rpc::ProcessInfo",
+   "tcnart_msgs::msg::TcnartPresenceMessage",
+   "tcnart_msgs::msg::ServiceInfo"
   ],
   "removed_members": {
    "tcnart_msgs::msg::VideoStreamMessage": [
@@ -100,6 +112,9 @@
     "h26x_bitrate",
     "clock_domain",
     "marker_system"
+   ],
+   "tcnart_msgs::msg::ServiceInfo": [
+    "service_info"
    ]
   }
  }

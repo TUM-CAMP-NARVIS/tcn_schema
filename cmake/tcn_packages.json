@@ -351,8 +351,8 @@
    "family": "tcn",
    "tier": "tcn",
    "deps": [
-    "tcn_types",
-    "tcnart_msgs"
+    "builtin_interfaces",
+    "tcn_types"
    ]
   },
   {

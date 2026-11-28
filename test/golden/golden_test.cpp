@@ -14,6 +14,8 @@
 
 #include "cdr_util.h"
 
+#include "pcpd_msgs/rpc/Parameters.h"
+#include "pcpd_msgs/rpc/ParametersCdrAux.hpp"
 #include "std_msgs/msg/Header.h"
 #include "std_msgs/msg/HeaderCdrAux.hpp"
 #include "tcn_types/msg/Frames.h"
@@ -468,6 +470,28 @@ static void descriptor()
     CHECK(tcn_test::decode(u_bytes, u_fresh) && !u_fresh.revision().has_value());
 }
 
+// The parameter union's ENUM case (0.11 plan 6 task 5, #37 T13), by hand: Parameter DHEADER 0x2c; "mode" (length 5
+// + pad 3); ParameterValue DHEADER 0x1c; discriminator PARAMETER_VALUE_TYPE_ENUM = 9 (STRUCT deleted, so UINT32 = 7,
+// UINT64 = 8); EnumEntry DHEADER 0x14; "auto" (length 5 + pad 3); int64 2 (XCDR2 aligns it to 4).
+static void parameters()
+{
+    namespace pr = pcpd_msgs::rpc;
+    pr::EnumEntry entry;
+    entry.label("auto");
+    entry.value(2);
+    pr::Parameter p;
+    p.key("mode");
+    p.value().enum_value(entry);
+    CHECK(p.value()._d() == pr::ParameterValueType::PARAMETER_VALUE_TYPE_ENUM);
+    CHECK(static_cast<int>(pr::ParameterValueType::PARAMETER_VALUE_TYPE_UINT32) == 7);
+    CHECK(static_cast<int>(pr::ParameterValueType::PARAMETER_VALUE_TYPE_UINT64) == 8);
+    const std::vector<char> bytes = golden("pcpd_msgs_Parameter", p, Encoding::XCDR2);
+    pr::Parameter back;
+    CHECK(tcn_test::decode(bytes, back));
+    CHECK(back.value()._d() == pr::ParameterValueType::PARAMETER_VALUE_TYPE_ENUM);
+    CHECK(back.value().enum_value().label() == "auto" && back.value().enum_value().value() == 2);
+}
+
 int main()
 {
     golden("std_msgs_Header", header(), Encoding::XCDR1);
@@ -475,6 +499,8 @@ int main()
     streams();
 
     descriptor();
+
+    parameters();
 
     // The XCDR2 rules by hand: DHEADER 0x18; enum int32 LOCAL=1; "a" and "b" as length 2 + bytes + pad; enum FRAME=1.
     tcn_types::msg::SRFrameRef ref;

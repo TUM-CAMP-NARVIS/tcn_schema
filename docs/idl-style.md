@@ -70,6 +70,11 @@ renames are listed in [migration/0.11-enum-map.md](migration/0.11-enum-map.md).
 - **`@optional` instead of placeholders.** Absence is explicit: use `@optional`, not flag pairs (`has_x` + `x`),
   sentinel values (`-1`, NaN, an identity pose) or "empty means absent". A documented exception is
   `HumanShape.bone_lengths` (decisions §7).
+
+  A second named exception is `pcpd_msgs::rpc::ParameterDescriptor`: it keeps its `has_minimum` + `minimum`,
+  `has_maximum` + `maximum` and `has_step` + `step` pairs. They predate 0.11 (0.9.0, when XCDR1 could not round-trip
+  an `@optional` member), and no 0.11 decision asks for the change, so 0.11 leaves the parameter protocol's
+  descriptor as it is. A false flag means the value is meaningless and must be ignored.
 - **New members from 0.11.x on** are `@optional`, unless 0, `""` or empty is a true reading of them (E8).
 - **Payload last.** In messages that zero-copy encoders write (`VideoStreamMessage`, point clouds, meshes), the
   payload is the last member, so its offset follows from the members before it.

@@ -18,8 +18,10 @@ class PackageTableTest(unittest.TestCase):
         self.assertEqual(self.deps["std_msgs"], {"builtin_interfaces"})
         self.assertEqual(self.deps["tcnart_msgs"], {"std_msgs", "tcn_types"})
         self.assertEqual(self.deps["conversation_msgs"], set())
-        # 0.11 plan 6 task 1 (#38 A1): MeshBitstreamMessage carries a tcn_types StreamHeader, not std_msgs/Header.
-        self.assertEqual(self.deps["pcpd_msgs"], {"tcn_types", "tcnart_msgs"})
+        # 0.11 plan 6: MeshBitstreamMessage carries a tcn_types StreamHeader, not std_msgs/Header (task 1, #38 A1);
+        # CameraSensor carries tcn_types CameraIntrinsics, not tcnart_msgs CameraModel (task 5, #38 A3); and
+        # ProcessInfo.started_at is a builtin_interfaces Time (task 5, #37 T14).
+        self.assertEqual(self.deps["pcpd_msgs"], {"builtin_interfaces", "tcn_types"})
         # 0.11 plan 5 (#35 H3): SISRelationOutput carries a whole tcnart_msgs TargetTrackingMessage.
         self.assertEqual(self.deps["sqe_msgs"], {"builtin_interfaces", "tcn_types", "tcnart_msgs"})
 

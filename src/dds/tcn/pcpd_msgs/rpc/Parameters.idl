@@ -4,10 +4,6 @@
 module pcpd_msgs {
   module rpc {
 
-    struct ParameterList;
-    struct Parameter;
-    union ParameterValue;
-
     @appendable enum RPCResponseStatus {
       RPC_RESPONSE_STATUS_UNKNOWN,
       RPC_RESPONSE_STATUS_SUCCESS,
@@ -38,6 +34,8 @@ module pcpd_msgs {
     };
 
     // Generic Parameter Interface
+    // 0.11 (#37 T13): PARAMETER_VALUE_TYPE_STRUCT (never produced) is deleted and PARAMETER_VALUE_TYPE_ENUM
+    // appended, so UINT32 is 7 (was 8) and UINT64 8 (was 9).
     @appendable enum ParameterValueType {
       PARAMETER_VALUE_TYPE_UNKNOWN,
       PARAMETER_VALUE_TYPE_STRING,
@@ -46,19 +44,16 @@ module pcpd_msgs {
       PARAMETER_VALUE_TYPE_FLOAT,
       PARAMETER_VALUE_TYPE_DOUBLE,
       PARAMETER_VALUE_TYPE_BOOL,
-      PARAMETER_VALUE_TYPE_STRUCT,
-      // Appended in 0.9.0. 0.11 inserted PARAMETER_VALUE_TYPE_UNKNOWN first, so every value moved up by one.
       PARAMETER_VALUE_TYPE_UINT32,
-      PARAMETER_VALUE_TYPE_UINT64
+      PARAMETER_VALUE_TYPE_UINT64,
+      PARAMETER_VALUE_TYPE_ENUM
     };
 
-    @appendable struct ParameterList {
-        sequence<Parameter> parameters;
-    };
-
-    @appendable struct Parameter {
-        string key;
-        ParameterValue value;
+    /// One allowed enum value: the label as shown and sent, and the underlying integer value. A
+    /// PARAMETER_VALUE_TYPE_ENUM value carries one.
+    @appendable struct EnumEntry {
+        string label;
+        int64 value;
     };
 
     @appendable union ParameterValue switch(ParameterValueType) {
@@ -74,13 +69,21 @@ module pcpd_msgs {
         double double_value;
     case PARAMETER_VALUE_TYPE_BOOL:
         boolean bool_value;
-    case PARAMETER_VALUE_TYPE_STRUCT:
-        ParameterList struct_value;
-    // 0.9.0, appended.
     case PARAMETER_VALUE_TYPE_UINT32:
         uint32 uint32_value;
     case PARAMETER_VALUE_TYPE_UINT64:
         uint64 uint64_value;
+    case PARAMETER_VALUE_TYPE_ENUM:
+        EnumEntry enum_value;
+    };
+
+    @appendable struct Parameter {
+        string key;
+        ParameterValue value;
+    };
+
+    @appendable struct ParameterList {
+        sequence<Parameter> parameters;
     };
 
     @appendable struct ParameterSchema {
@@ -120,20 +123,14 @@ module pcpd_msgs {
       PARAMETER_ACCESS_READ_ONLY             // get only
     };
 
-    /// One allowed enum value: the label as shown and sent (PARAMETER_VALUE_TYPE_STRING),
-    /// and the underlying integer value.
-    @appendable struct EnumEntry {
-        string label;
-        int64 value;
-    };
-
     /// Full description of one parameter. ParameterSchema stays as the
     /// compact form.
     ///
     /// minimum / maximum / step are optional. They predate 0.11, when the
     /// XCDR1 encoding could not round-trip an `@optional` member, so each is a
     /// plain member with a `has_*` flag before it (unchanged in 0.11); when the flag is false the value is
-    /// meaningless (default-constructed) and must be ignored.
+    /// meaningless (default-constructed) and must be ignored. docs/idl-style.md names it an exception to
+    /// the `@optional` rule.
     @appendable struct ParameterDescriptor {
         string key;
         ParameterValueType value_type;
@@ -146,7 +143,7 @@ module pcpd_msgs {
         ParameterValue maximum;             // inclusive
         boolean has_step;
         ParameterValue step;                // UI hint; absent = continuous
-        sequence<EnumEntry> enum_entries;   // non-empty for enums (value_type PARAMETER_VALUE_TYPE_STRING)
+        sequence<EnumEntry> enum_entries;   // non-empty for value_type PARAMETER_VALUE_TYPE_ENUM
         sequence<ParameterValue> valid_entries;  // other discrete sets (0.8.0 parity)
         ParameterValue default_value;
         uint64 generation;                  // server-side change counter of the current value
