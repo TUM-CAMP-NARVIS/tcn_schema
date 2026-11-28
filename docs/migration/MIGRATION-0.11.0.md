@@ -685,7 +685,7 @@ satisfies the spec. Each needs an answer from the SQE side before `0.11.0` (Plan
    Plan 3.
 3. **`SISPlanInput` names its edge by `SRRelationRef`** (it had `buffer_client`, `device` and `target`).
 4. **`covariance_hops` and `total_hops` are per `SISRelationOutput`**, not per target. With an `[instances]` selector
-   the instances may differ in covariance completeness; moving them per target is a reshape, so decide before rc1.
+   the instances may differ in covariance completeness; moving them per target is a reshape, so decide before 0.11.0.
 5. **The R6 counters are named `sequence_number`** (`sequence` is an IDL keyword), like
    `SISGraphChangeNotification.sequence_number`.
 6. **`NOT_IN_SCOPE` answers a frame, fragment or domain outside the engine's client scope**; `NOT_PERMITTED` is
@@ -1500,12 +1500,29 @@ about 111 lines of `marker_system` in 19 files; about 24 lines of `buffer_info` 
   descriptor's clock.
 - [ ] *Plan 6:* **`group_id` on video and mesh** (and persons): one capture group across streams; a
   `HumanPoseMessage` matches its `PersonTrackingMessage` by it.
+- [ ] *Plan 6:* **`VideoStreamMessage` per frame:** `camera_focal_length`, `camera_principal_point`,
+  `camera_radial_distortion` and `camera_tangential_distortion` are gone from every frame. Write the optional
+  `intrinsics` (a `CameraIntrinsics` pinhole case; the array → `fx fy cx cy` + OpenCV `distortion` map is in Plan 6)
+  only when a frame's intrinsics differ from the descriptor's, and leave it absent otherwise (never zeros). Sites: the
+  serde `libs/transport/zenoh/src/frame_serde.cpp:23-24,36-37` (behind `operators/transport/zenoh_io/src/zenoh_publisher_op.cpp`),
+  `tools/common/web_golden.hpp`, the tests `libs/transport/zenoh/tests/test_serde.cpp` and
+  `operators/transport/zenoh_io/tests/test_zenoh_io.cpp`. Pin the prefix with `tcnart_msgs_VideoStreamMessage_nominal.hex`.
+- [ ] *Plan 6:* **`Target.pose` is optional, with a per-target `capture_time_ns`:** a target without a pose leaves
+  `pose` absent (never identity); a target captured at another instant than the message carries its own
+  `capture_time_ns`. Writers: `operators/transport/pose_publish/src/pose_wire.cpp:32-35` (`to_target`),
+  `operators/transport/pose_publish/src/pose_publisher_op.cpp:230-250`, `operators/sqe/sqe_tracker/src/sqe_tracker_op.cpp:297`,
+  `operators/sqe/sqe_camera/src/sqe_marker_camera_op.cpp:463-468` (they write through `t.pose()`, which is now an
+  optional: set a `RigidTransform`). Readers: `pose_wire.cpp:84-87` (skip a target whose `pose` is absent).
+- [ ] *Plan 6:* **`HandTrackingMessage.gaze_valid` → optional `gaze`:** no HTA code uses `HandTrackingMessage`
+  (the grep finds none), so nothing to do unless a mirror is added; `libs/transport/tcnart_mirror/src/tcnart_mirror.cpp`
+  passes eye tracking only (Plan 4's optional `gaze_space`/`scene_point`).
 
 **6. Descriptors** *(wire)* (about 121 lines of `StreamDescriptorMessage` in 52 files; `buffer_info` about 23 lines in
 14 files; `SENSOR_TYPE_` about 44 lines in 23 files)
 - [ ] *Plan 6:* **video:** `info.video` with `codec` (H264/H265 no longer chosen by `h26x_profile`), `semantics`
   (colour, depth, IR, mask), `depth_units_per_meter` or `DEPTH_F32`, `codec_data` instead of the `h26x_codec_data`
-  property (`operators/transport/zenoh_io/src/zenoh_publisher_op.cpp`), nominal `intrinsics`.
+  property (`operators/transport/zenoh_io/src/zenoh_publisher_op.cpp`), the nominal `intrinsics` (the per-frame
+  arrays are gone from `VideoStreamMessage`: see step 5).
 - [ ] *Plan 6:* **mesh:** `info.mesh` (`encoding`, `vertices_capacity`, `faces_capacity`, `camera_id_count` instead of
   `num_cameraids`); `BufferInfo` and its `semantic_type` go (`libs/transport/mesh_bitstream/src/stream.cpp:37`,
   `operators/transport/stream_receive/src/mesh_bitstream_subscriber_op.cpp:54`).
