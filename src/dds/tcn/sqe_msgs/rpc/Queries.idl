@@ -52,7 +52,7 @@ module sqe_msgs {
     // looser rule reachable from here.
     @appendable enum SISPathPredicate {
         SIS_PATH_PREDICATE_UNKNOWN,
-        SIS_PATH_PREDICATE_WALKABLE,        // the default: refuses uncalibrated relations,
+        SIS_PATH_PREDICATE_WALKABLE,        // the usual choice: refuses uncalibrated relations,
                                 //   which is what a running stream composes by
         SIS_PATH_PREDICATE_CONNECTABLE,     // the relaxed shape rule a PENDING stream is
                                 //   probed with: is there a route at all, once
@@ -446,9 +446,9 @@ module sqe_msgs {
 
         SRPatternExpansion expansion;
 
-        // For SIS_PX_SPACE: the duplicates FOUND in the graph, one entry per
+        // For SR_PATTERN_EXPANSION_SPACE: the duplicates FOUND in the graph, one entry per
         // duplicate, each naming its own binding of the expandable role. Empty
-        // for SIS_PX_TIME, where the edges are the same on every measurement.
+        // for SR_PATTERN_EXPANSION_TIME, where the edges are the same on every measurement.
         //
         // Found, not assumed: three point correspondences for absolute
         // orientation are three nodes each observed by both frames, and a
@@ -474,7 +474,7 @@ module sqe_msgs {
         // Every duplicate's own path for every correspondence input, tagged by
         // which duplicate and which input it realises.
         //
-        // Empty for SIS_PX_TIME. For SIS_PX_SPACE this is what makes the
+        // Empty for SR_PATTERN_EXPANSION_TIME. For SR_PATTERN_EXPANSION_SPACE this is what makes the
         // expansion runnable: space_instances names the duplicates and this
         // says how to evaluate each one. A consumer that finds space_instances
         // non-empty and this empty is talking to a pre-0.7.0 engine and should

@@ -22,7 +22,7 @@ module sqe_msgs {
         string node;                    // SRNode.name within it
     };
 
-    // Which dynamic hop of a compiled path drives an SRG_TRIGGER_ON_REFERENCE
+    // Which dynamic hop of a compiled path drives an SR_STREAM_TRIGGER_KIND_ON_REFERENCE
     // stream. Ordinals are the wire encoding; append only.
     @appendable enum SRReferencePolicy {
         SR_REFERENCE_POLICY_UNKNOWN,
@@ -46,8 +46,8 @@ module sqe_msgs {
     // extrapolates every edge to the present, while the others interpolate the
     // rest of the path to one arriving sample's timestamp.
     //
-    // SRG_TRIGGER_ON_REFERENCE is the one to send for a composed relation, and
-    // is what the engine's own clients default to. SRG_TRIGGER_ON_ANY fires
+    // SR_STREAM_TRIGGER_KIND_ON_REFERENCE is the one to send for a composed relation, and
+    // is what the engine's own clients default to. SR_STREAM_TRIGGER_KIND_ON_ANY fires
     // once per input, so a path's output rate is the *sum* of its inputs'
     // rates -- and since a derived edge is itself an input to whatever reuses
     // it, that compounds down a chain: on a six-joint arm whose every sensor
@@ -77,14 +77,15 @@ module sqe_msgs {
     // so, because SIS_RS_ACTIVE is what the client is told. If that
     // calibration later arrives, the shorter route becomes available and
     // nothing looks at it again.
+    // UNKNOWN at 0 is never a valid request.
     @appendable enum SISReoptimisePolicy {
         SIS_REOPTIMISE_POLICY_UNKNOWN,
-        SIS_REOPTIMISE_POLICY_BEST_AVAILABLE_NOW,  // ordinal 0. Today's behaviour, and the
-                                    //   default: serve the best route
+        SIS_REOPTIMISE_POLICY_BEST_AVAILABLE_NOW,  // ordinal 1. Today's behaviour, and the
+                                    //   usual choice: serve the best route
                                     //   available at the moment of
                                     //   compilation, and re-evaluate only
                                     //   when something on that route changes.
-        SIS_REOPTIMISE_POLICY_BEST_POSSIBLE        // ordinal 1. Serve me now over whatever is
+        SIS_REOPTIMISE_POLICY_BEST_POSSIBLE        // ordinal 2. Serve me now over whatever is
                                     //   available, and move me when a better
                                     //   route appears -- typically when a
                                     //   calibration makes a shorter path
@@ -93,9 +94,10 @@ module sqe_msgs {
 
     // Where a relation stream is evaluated (0.10.0, engine B90). Ordinals are
     // the wire encoding; append only.
+    // UNKNOWN at 0 is never a valid request.
     @appendable enum SISEvaluationMode {
         SIS_EVALUATION_MODE_UNKNOWN,
-        SIS_EVALUATION_MODE_ENGINE,          // ordinal 0, the default: the engine composes and publishes
+        SIS_EVALUATION_MODE_ENGINE,          // ordinal 1, the usual choice: the engine composes and publishes
                                 //   the relation on its handle, as every stream did before
         SIS_EVALUATION_MODE_LOCAL,           // the engine routes and publishes the plan; the client composes
                                 //   the relation from the plan's inputs itself (sqe-local). No
@@ -141,9 +143,9 @@ module sqe_msgs {
         // recompiled because a number drifted.
         double freshness_bias;
 
-        // Appended last. Ordinal 0 is today's behaviour, so a zero-filled
-        // field is the default and a client that does not care need not think
-        // about it.
+        // Appended last. Ordinal 0 is UNKNOWN and is never a valid request
+        // (the engine refuses it), so a client always states a policy;
+        // BEST_AVAILABLE_NOW is today's behaviour.
         //
         // **NOT part of stream identity, and it is the only field here that
         // is not.** `observer`, `target`, `trigger` and `freshness_bias` are
@@ -158,7 +160,7 @@ module sqe_msgs {
         // against the requester rather than against the stream.
         //
         // A stream re-optimises if ANY of its requesters asked for
-        // SIS_RO_BEST_POSSIBLE -- the union, not the intersection. A
+        // SIS_REOPTIMISE_POLICY_BEST_POSSIBLE -- the union, not the intersection. A
         // best-available-now requester sharing such a stream can therefore be
         // re-routed. That was already true before this field existed: a
         // running stream is re-routed today whenever a relation on its own
@@ -386,7 +388,7 @@ module sqe_msgs {
 
     // Carries a filler `boolean` in the NONE case because IDL requires every
     // union case to declare a member -- the same reason SRStreamTrigger's
-    // SRG_TRIGGER_ON_ANY carries one.
+    // SR_STREAM_TRIGGER_KIND_ON_ANY carries one.
     @appendable union SISRelationStreamHandle switch(SISRelationStreamHandleKind) {
     case SIS_RSH_NONE:
         boolean unused;
@@ -467,7 +469,7 @@ module sqe_msgs {
         string detail;                  // why, when there is no handle
 
         // Appended in 0.10.0 (B90): the stream's plan when it was started
-        // SIS_EV_LOCAL or SIS_EV_BOTH and has a route; otherwise empty (no
+        // SIS_EVALUATION_MODE_LOCAL or SIS_EVALUATION_MODE_BOTH and has a route; otherwise empty (no
         // instances). Later plans arrive on `{handle}/plan`.
         SISTranslationPlan plan;
     };

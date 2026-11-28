@@ -165,14 +165,14 @@ module sqe_msgs {
     @appendable struct SISExplainRequest {
         SISOperatorRef who;
         SISExplainKind kind;
-        // SIS_EX_RELATION: the relation, as a SISRelationStreamStartRequest
+        // SIS_EXPLAIN_KIND_RELATION: the relation, as a SISRelationStreamStartRequest
         // would name it. The same frames, trigger and bias compile the same
         // route a start would.
         SISFrameRef observer;
         SISFrameRef target;
         SRStreamTrigger trigger;
         double freshness_bias;
-        // SIS_EX_STREAM: the handle a SISRelationStreamReply issued.
+        // SIS_EXPLAIN_KIND_STREAM: the handle a SISRelationStreamReply issued.
         string handle;
     };
 
@@ -187,7 +187,7 @@ module sqe_msgs {
 
     // `status` says whether the question was answered:
     //   SIS_GQ_OK            answered; `relation` says what the relation is
-    //   SIS_GQ_UNKNOWN_FRAME SIS_EX_STREAM: no stream has that handle
+    //   SIS_GQ_UNKNOWN_FRAME SIS_EXPLAIN_KIND_STREAM: no stream has that handle
     //   SIS_GQ_REJECTED      undecodable, or a frame outside the client scope
     //   SIS_GQ_UNAVAILABLE   the operator rate limit, or the graph read failed
     // `relation` is what a start would be answered (dry run) or what the
@@ -228,7 +228,7 @@ module sqe_msgs {
     @appendable struct SISTransactionLogRequest {
         SISOperatorRef who;
         SISTransactionLogAction action;
-        string label;           // SIS_TL_START: names the log; part of its file name
+        string label;           // SIS_TRANSACTION_LOG_ACTION_START: names the log; part of its file name
     };
 
     // The log the request leaves running, or the one it stopped. `status` is

@@ -44,7 +44,7 @@ module sqe_msgs {
         SISFrameRef target;
         double freshness_bias;          // [0, 1], as for a start
         SISRelationSampleInstant instant;
-        int64 stamp_ns;                 // SIS_SI_AT only: ns; must be > 0
+        int64 stamp_ns;                 // SIS_RELATION_SAMPLE_INSTANT_AT only: ns; must be > 0
         uint32 wait_ms;                 // how long to wait for data; 0 = the engine's
                                         // default (500), capped at 5000
         boolean include_plan;           // also return the route as a plan
@@ -61,7 +61,7 @@ module sqe_msgs {
         SIS_SA_TOO_OLD,         // the instant is before an input's held history
                                 // (about 2 s, and only while the input is read)
         SIS_SA_REJECTED,        // undecodable, bias outside [0, 1], a frame outside the
-                                // client scope, SIS_SI_AT without a stamp
+                                // client scope, SIS_RELATION_SAMPLE_INSTANT_AT without a stamp
         SIS_SA_UNAVAILABLE      // the rate limit, the graph read failed or timed out,
                                 // or the sampler table is full
     };
