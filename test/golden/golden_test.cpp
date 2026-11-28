@@ -20,6 +20,8 @@
 #include "tcn_types/msg/FramesCdrAux.hpp"
 #include "tcn_types/msg/Stream.h"
 #include "tcn_types/msg/StreamCdrAux.hpp"
+#include "tcnart_msgs/msg/HumanPose.h"
+#include "tcnart_msgs/msg/HumanPoseCdrAux.hpp"
 #include "tcnart_msgs/msg/PoseTracking.h"
 #include "tcnart_msgs/msg/PoseTrackingCdrAux.hpp"
 #include "tcnart_msgs/msg/VideoStream.h"
@@ -313,6 +315,48 @@ static void streams()
     CHECK(!back.intrinsics().has_value());
     CHECK(back.image() == image && back.image_bytes() == 4);
     CHECK(back == nominal);
+
+    // The shared person stream (decisions §7 HumanPose): header {1, -, 1, group 7, -, domain rig:world}, TCN_LITE v1,
+    // person 3 (member absent, TRACKED, confidence 1) with two joints: the first with a rotation (presence 01), the
+    // second without (presence 00, never identity); smpl absent (presence 00).
+    namespace tm = tcnart_msgs::msg;
+    tm::HumanPoseMessage hp;
+    hp.header().capture_time_ns(1);
+    hp.header().sequence_number(1);
+    hp.header().group_id(7);
+    hp.header().frame().scope(tcn_types::msg::SRNodeScope::SR_NODE_SCOPE_DOMAIN);
+    hp.header().frame().owner("rig");
+    hp.header().frame().name("world");
+    hp.header().frame().selector(tcn_types::msg::SRFrameSelector::SR_FRAME_SELECTOR_FRAME);
+    hp.joint_set(tm::JointSet::JOINT_SET_TCN_LITE);
+    hp.joint_set_version(1);
+    tm::HumanPose person;
+    person.person(3);
+    person.state(tm::PersonState::PERSON_STATE_TRACKED);
+    person.confidence(1.0f);
+    tm::HumanJoint head;
+    head.position().y(1.5);
+    head.confidence(1.0f);
+    head.source(tm::JointSource::JOINT_SOURCE_OBSERVED);
+    tcn_types::msg::Quaternion upright;
+    upright.w(1);
+    head.rotation(upright);
+    person.joints().push_back(head);
+    tm::HumanJoint chest;
+    chest.position().y(0.5);
+    chest.confidence(0.5f);
+    chest.source(tm::JointSource::JOINT_SOURCE_DERIVED);
+    person.joints().push_back(chest);
+    hp.persons().push_back(person);
+    const std::vector<char> hp_bytes = golden("tcnart_msgs_HumanPoseMessage", hp, Encoding::XCDR2);
+    tm::HumanPoseMessage hp_back;
+    CHECK(tcn_test::decode(hp_bytes, hp_back));
+    CHECK(hp_back.header().group_id().has_value() && *hp_back.header().group_id() == 7);
+    CHECK(!hp_back.header().clock().has_value() && !hp_back.header().device_time_ns().has_value());
+    CHECK(hp_back.persons().size() == 1 && !hp_back.persons()[0].member().has_value());
+    CHECK(hp_back.persons()[0].joints()[0].rotation().has_value());
+    CHECK(!hp_back.persons()[0].joints()[1].rotation().has_value());
+    CHECK(!hp_back.persons()[0].smpl().has_value());
 }
 
 int main()

@@ -1,11 +1,32 @@
 {
  "_comment": "0.11 plan 6 (#36-#38): the expected differences between the plan 5 tree and the plan 6 tree, for `idl_cli.py moves --old <plan 5 src/dds> --new src/dds --spec tools/idl/streams_0_11.json`. Each task appends what it changes.",
  "files": [],
- "deleted": [],
+ "deleted": [
+  "tcnart_msgs::msg::PERSON_STATE_TENTATIVE",
+  "tcnart_msgs::msg::PERSON_STATE_CONFIRMED",
+  "tcnart_msgs::msg::PERSON_STATE_PREDICTED",
+  "tcnart_msgs::msg::HUMAN_POSE_TRACKED",
+  "tcnart_msgs::msg::HUMAN_POSE_COASTING",
+  "tcnart_msgs::msg::HUMAN_POSE_LOST",
+  "tcnart_msgs::msg::HUMAN_JOINT_OBSERVED",
+  "tcnart_msgs::msg::HUMAN_JOINT_DERIVED",
+  "tcnart_msgs::msg::HUMAN_JOINT_DEFAULTED",
+  "tcnart_msgs::msg::HUMAN_JOINT_HAS_ROTATION"
+ ],
  "new_types": [
   "tcn_types::msg::StreamHeader",
   "tcn_types::msg::CalibrationProvenance",
-  "tcnart_msgs::msg::JointSet"
+  "tcnart_msgs::msg::JointSet",
+  "tcnart_msgs::msg::HumanShape",
+  "tcnart_msgs::msg::HumanShapeMessage",
+  "tcnart_msgs::msg::PersonStreamInfo",
+  "tcnart_msgs::msg::SmplParams",
+  "tcnart_msgs::msg::PersonState",
+  "tcnart_msgs::msg::PersonTrackState",
+  "tcnart_msgs::msg::JointSource",
+  "tcnart_msgs::msg::SmplModel",
+  "tcnart_msgs::msg::SmplGender",
+  "tcnart_msgs::msg::PersonSmoothing"
  ],
  "expect": {
   "reshaped": [
@@ -16,7 +37,12 @@
    "tcnart_msgs::msg::EyeTrackingMessage",
    "tcnart_msgs::msg::HandTrackingMessage",
    "tcnart_msgs::msg::ImuMessage",
-   "pcpd_msgs::msg::MeshBitstreamMessage"
+   "pcpd_msgs::msg::MeshBitstreamMessage",
+   "tcnart_msgs::msg::HumanJoint",
+   "tcnart_msgs::msg::HumanPose",
+   "tcnart_msgs::msg::HumanPoseMessage",
+   "tcnart_msgs::msg::Person",
+   "tcnart_msgs::msg::PersonTrackingMessage"
   ],
   "removed_members": {
    "tcnart_msgs::msg::VideoStreamMessage": [
@@ -27,6 +53,21 @@
    ],
    "tcnart_msgs::msg::HandTrackingMessage": [
     "gaze_valid"
+   ],
+   "tcnart_msgs::msg::PersonTrackingMessage": [
+    "group",
+    "world_frame",
+    "up"
+   ],
+   "tcnart_msgs::msg::HumanPoseMessage": [
+    "source"
+   ],
+   "tcnart_msgs::msg::HumanPose": [
+    "participant",
+    "bone_lengths"
+   ],
+   "tcnart_msgs::msg::HumanJoint": [
+    "flags"
    ]
   }
  }

@@ -1,22 +1,33 @@
+// The tracker-level output of a multi-camera person tracker (HTA, holoscan-tcn-applications; design 65): the tracks
+// of one capture group. HTA's stabiliser and tcnart's human_pose feature turn them into the shared person stream
+// (HumanPose.idl), which matches a group by header.group_id. The stream's latched properties (up axis, coasting,
+// smoothing and its filter parameters, clock domain, rate) are the descriptor's PersonStreamInfo (HumanPose.idl).
+// Joint sets: the generated table tcnart_msgs/msg/JointSets.md.
+
 #ifndef TCNART_MSGS_MSG_PERSONTRACKING_IDL
 #define TCNART_MSGS_MSG_PERSONTRACKING_IDL
 
-#include "std_msgs/msg/Header.idl"
 #include "tcn_types/msg/Geometry.idl"
+#include "tcn_types/msg/Stream.idl"
+#include "tcnart_msgs/msg/JointSet.idl"
 
 module tcnart_msgs {
   module msg {
 
-    // Person.state: the life cycle of a track.
-    const uint8 PERSON_STATE_TENTATIVE = 0;   // seen, not yet confirmed
-
-    const uint8 PERSON_STATE_CONFIRMED = 1;   // observed in enough views over enough frames
-
-    const uint8 PERSON_STATE_PREDICTED = 2;   // not observed in this frame; the pose is the filter's prediction
+    // Person.state: the life cycle of a track. 0.10 sent these as `const uint8 PERSON_STATE_*` 0-2; each value is
+    // one higher now, UNKNOWN takes 0 (E6). (PERSON_STATE_* now names HumanPose's PersonState.)
+    // TENTATIVE: seen, not yet confirmed. CONFIRMED: observed in enough views over enough frames. PREDICTED: not
+    // observed in this frame; the pose is the filter's prediction (for up to PersonStreamInfo.coast_limit_s).
+    @appendable enum PersonTrackState {
+      PERSON_TRACK_STATE_UNKNOWN,
+      PERSON_TRACK_STATE_TENTATIVE,
+      PERSON_TRACK_STATE_CONFIRMED,
+      PERSON_TRACK_STATE_PREDICTED
+    };
 
     // One skeleton joint, in the order of PersonTrackingMessage.joint_set.
     @appendable struct PersonJoint {
-      tcn_types::msg::Vector3 position;     // m, in PersonTrackingMessage.world_frame
+      tcn_types::msg::Vector3 position;     // m, in PersonTrackingMessage.header.frame
       float confidence;     // [0,1]
       boolean observed;     // true: triangulated from at least two views in this frame; false: predicted
       float age_s;          // s since this joint was last observed (0 when observed in this frame)
@@ -32,16 +43,18 @@ module tcnart_msgs {
     // One tracked person.
     @appendable struct Person {
       uint32 id;                  // track id, stable while the track lives (never reused within a stream)
-      uint32 previous_id;         // 0: none; the id of the track this one continues (set from the frame the link is
-                                  // made on: the consumer merges the two)
-      uint8 state;                // PERSON_STATE_*
+      // The id of the track this one continues under a new id (set from the frame the link is made on: the consumer
+      // merges the two). Absent: it continues none (0.10 sent 0).
+      @optional uint32 previous_id;
+      PersonTrackState state;
       boolean ambiguous;          // the assignment of this track was ambiguous in this group (another person close)
       float confidence;           // [0,1]
       double age_s;               // seconds since the track was created
       int64 last_seen_ns;         // capture time (ns, the header's clock) of the last frame the person was observed
-      tcn_types::msg::Vector3 root;               // m, in world_frame: the pelvis (mid-hip; halpe26: its hip centre)
+      tcn_types::msg::Vector3 root;               // m, in header.frame: the pelvis (mid-hip; halpe26: its hip centre)
       // One per joint of the message's joint_set, in its order (tcnart_msgs/msg/JointSets.md). While the person is
-      // PERSON_STATE_PREDICTED every joint moves with the root, observed false, age_s growing.
+      // PERSON_TRACK_STATE_PREDICTED its joints move with the root (the last observed pose carried along the root's
+      // prediction), every joint observed false, age_s the time since that joint was last observed.
       sequence<PersonJoint, 32> joints;
       // m, NaN until the length is frozen; one per bone of the joint set's bone list (tcnart_msgs/msg/JointSets.md).
       sequence<float, 32> bone_lengths;
@@ -49,21 +62,24 @@ module tcnart_msgs {
 
     };
 
-    // The persons tracked in one frame group (design 65). XCDR2 with the encapsulation header (00 09), like
-    // every tcn type. Positions are right-handed, metres. The stream's descriptor states the joint set,
-    // frame, up axis, clock domain and smoothing (tcnart_msgs/msg/JointSets.md).
+    // The persons tracked in one capture group (design 65). XCDR2 with the encapsulation header (00 09), like
+    // every tcn type. Positions are metres, right-handed, in header.frame.
+    // `header`: capture_time_ns is the capture time of the frame group, in the clock of the mesh and camera streams
+    // of the same capture (header.clock, absent: the descriptor's clock domain, e.g. `capture:<host>`);
+    // group_id is the producer's frame-group sequence number (was `group`; absent: unknown); frame is the frame all
+    // positions are in, the SQE node of the rig calibration's world (was `world_frame`). The up axis (was `up`) is
+    // PersonStreamInfo.up.
+    // `joint_set`, `joint_set_version`: the joints' and bones' order (was a "coco17" / "halpe26" string;
+    // JointSets.md, "Retired names").
+    // `camera_count`: number of cameras (<= 8) that fed the group.
+    // `camera_reprojection_px`: per camera, the median reprojection residual of the group, pixels.
     @appendable struct PersonTrackingMessage {
-
-      std_msgs::msg::Header header;   // stamp: capture time of the frame group, in the clock of the mesh and camera
-                                      // streams of the same capture (clock domain in the descriptor); frame_id unused
-      uint64 group;                   // the producer's frame-group sequence number (0: unknown)
-      string<64> joint_set;           // "coco17" | "halpe26": the joints' and bones' order (tcnart_msgs/msg/JointSets.md)
-      string<128> world_frame;        // the frame all positions are in: the SQE node of the rig calibration's world
-      tcn_types::msg::Vector3 up;                     // unit vector pointing up, in world_frame (per site, as its calibration world)
-      uint8 camera_count;             // number of cameras (<= 8) that fed the group
+      tcn_types::msg::StreamHeader header;
+      JointSet joint_set;
+      uint16 joint_set_version;
+      uint8 camera_count;
       sequence<Person, 16> persons;
-      sequence<float, 8> camera_reprojection_px;  // per camera: median reprojection residual of the group, pixels
-
+      sequence<float, 8> camera_reprojection_px;
     };
 
   };

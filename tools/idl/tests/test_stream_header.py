@@ -10,7 +10,6 @@ DDS = REPO / "src" / "dds"
 
 STREAM_HEADER = "tcn_types::msg::StreamHeader"
 
-# Task 3 adds PersonTrackingMessage, HumanPoseMessage and HumanShapeMessage.
 STREAM_MESSAGES = (
     "tcnart_msgs::msg::VideoStreamMessage",
     "tcnart_msgs::msg::Pose6DMessage",
@@ -18,15 +17,15 @@ STREAM_MESSAGES = (
     "tcnart_msgs::msg::EyeTrackingMessage",
     "tcnart_msgs::msg::HandTrackingMessage",
     "tcnart_msgs::msg::ImuMessage",
+    "tcnart_msgs::msg::PersonTrackingMessage",
+    "tcnart_msgs::msg::HumanPoseMessage",
+    "tcnart_msgs::msg::HumanShapeMessage",
     "pcpd_msgs::msg::MeshBitstreamMessage",
 )
 
-# tcn structs that still carry a std_msgs/Header. TcnartPresenceMessage keeps it; Task 3 removes the two person
-# messages and Task 4 the descriptor.
+# tcn structs that still carry a std_msgs/Header. TcnartPresenceMessage keeps it; Task 4 removes the descriptor.
 STD_HEADER_EXCEPTIONS = {
     "tcnart_msgs::msg::TcnartPresenceMessage",
-    "tcnart_msgs::msg::PersonTrackingMessage",
-    "tcnart_msgs::msg::HumanPoseMessage",
     "tcnart_msgs::msg::StreamDescriptorMessage",
 }
 
