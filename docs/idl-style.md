@@ -78,6 +78,22 @@ renames are listed in [migration/0.11-enum-map.md](migration/0.11-enum-map.md).
 - **New members from 0.11.x on** are `@optional`, unless 0, `""` or empty is a true reading of them (E8).
 - **Payload last.** In messages that zero-copy encoders write (`VideoStreamMessage`, point clouds, meshes), the
   payload is the last member, so its offset follows from the members before it.
+- **Stream messages start with `tcn_types::msg::StreamHeader header`** (0.11, #38 A1), never `std_msgs/Header`. The
+  ten stream messages are `VideoStreamMessage`, `Pose6DMessage`, `TargetTrackingMessage`, `EyeTrackingMessage`,
+  `HandTrackingMessage`, `ImuMessage`, `PersonTrackingMessage`, `HumanPoseMessage`, `HumanShapeMessage`
+  (`tcnart_msgs`) and `MeshBitstreamMessage` (`pcpd_msgs`); a new stream message joins them.
+  `TcnartPresenceMessage` is not a stream message and keeps `std_msgs/Header`. `tools/idl/tests/test_stream_header.py`
+  checks the list.
+- **A stream kind's descriptor part is a `*StreamInfo` case** of the `StreamInfo` union in
+  `tcnart_msgs/msg/StreamDescriptor.idl` (`VideoStreamInfo`, `TrackerStreamInfo`, `PersonStreamInfo`, …), switched on
+  `StreamKind`. A new kind appends a `StreamKind` enumerator and a case; a new field of a kind is a trailing
+  `@optional` member of its `*StreamInfo`. `StreamDescriptorMessage.properties` holds vendor extensions only, never
+  something a typed field can say.
+- **The joint-set table is the only source.** Joints, bones, parents and rest poses live in
+  `tcnart_msgs/msg/joint_sets.yaml`; `JointSet.idl`, `JointSets.md` and the C++, C# and JSON arrays are generated from
+  it (`python3 -I tools/idl_cli.py joint-sets --table src/dds/tcn/tcnart_msgs/msg/joint_sets.yaml`). Never edit a
+  generated file or copy a row into an IDL comment; `joint-sets --check` and the drift test in
+  `tools/idl/tests/test_joint_sets.py` (ctest `idl_tools`) fail on drift.
 - **Every top-level message documents its key or topic and its encoding** in a comment above it.
 - **ROS 2 types are never edited by hand.** `src/dds/ros2/` is generated from ROS 2 Jazzy by
   `python3 -I tools/ros2_cli.py refresh` (see [src/dds/ros2/UPSTREAM.md](../src/dds/ros2/UPSTREAM.md)). The generated
