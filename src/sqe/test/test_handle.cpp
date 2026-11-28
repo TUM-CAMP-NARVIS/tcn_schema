@@ -142,6 +142,13 @@ TCN_SQE_TEST(an_ok_reply_whose_state_and_handle_disagree_is_a_violation)
               Error::HandleInvariantViolated);
     CHECK_ERR(Handle::from_reply(reply(rpc::SIS_STATUS_OK, rpc::SIS_RELATION_STATE_UNKNOWN, true)),
               Error::HandleInvariantViolated);
+    // An OK reply has a state. UNKNOWN there -- a zeroed relation member, or a
+    // state a newer engine added -- is not the stop answer (OK + INACTIVE),
+    // so it must not read as HandleAbsent.
+    CHECK_ERR(Handle::from_reply(reply(rpc::SIS_STATUS_OK, rpc::SIS_RELATION_STATE_UNKNOWN, false)),
+              Error::HandleInvariantViolated);
+    CHECK_ERR(Handle::from_reply(reply(rpc::SIS_STATUS_OK, static_cast<rpc::SISRelationState>(4), false)),
+              Error::HandleInvariantViolated);
 }
 
 // The answer to a stop: OK, INACTIVE, no handle. Not a fault.

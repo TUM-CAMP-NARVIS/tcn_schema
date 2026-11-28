@@ -238,8 +238,11 @@ TCN_SQE_TEST(reoptimise_and_fusion_policy_ordinals_match_the_idl_declaration_ord
     CHECK_INT_EQ(static_cast<int>(FusionPolicy::Filtered), 3);
 }
 
-// All five terms are part of a stream's identity on the engine: two acquires
-// that differ in any one of them would be refused CONFLICT + TERMS_CONFLICT.
+// The fusion policy is part of the engine's stream identity (a differing start
+// is refused CONFLICT + TERMS_CONFLICT). The reoptimise policy is not -- the
+// engine takes the union -- but it is compared for local lease deduplication:
+// the lease table sends one start per relation, so a second component's
+// different policy would otherwise never reach the engine.
 TCN_SQE_TEST(same_terms_compares_the_reoptimise_and_fusion_policies)
 {
     const RelationStreamRequest base =

@@ -54,8 +54,9 @@ enum class Error : int {
     /// (relation `Inactive`) correctly carries none. A refusal is
     /// `ReplyRefused`, checked first.
     HandleAbsent,
-    /// An OK stream reply's relation state and handle disagree: the handle must
-    /// be present exactly when the state is `Active` or `Pending` (#35 H1).
+    /// An OK stream reply's relation state is `Unknown`, or it and the handle
+    /// disagree: the handle must be present exactly when the state is `Active`
+    /// or `Pending` (#35 H1).
     /// Reported rather than papered over, because either half may be wrong.
     HandleInvariantViolated,
 

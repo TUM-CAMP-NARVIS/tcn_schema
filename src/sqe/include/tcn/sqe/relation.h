@@ -221,10 +221,10 @@ enum class EvaluationMode : std::int32_t
 ///   default, and the usual choice.
 /// - `BestPossible`: also move to a better route when one appears.
 ///
-/// `Unknown` is refused by the engine (`Rejected` + `Malformed`). Not part of
-/// stream identity *on the engine*, which re-optimises a shared stream if any
-/// requester asked for `BestPossible`; it is one of the terms
-/// `RelationLeaseTable` compares all the same (see `same_terms_as`).
+/// `Unknown` is refused by the engine (`Rejected` + `Malformed`). **Not part
+/// of the engine's stream identity**: it re-optimises a shared stream if any
+/// requester asked for `BestPossible`. `same_terms_as` compares it anyway,
+/// because of local lease deduplication -- see there.
 enum class ReoptimisePolicy : std::int32_t
 {
     Unknown = 0,
@@ -317,12 +317,15 @@ public:
     /// trigger, freshness bias, evaluation mode, reoptimise policy and fusion
     /// policy.
     ///
-    /// The engine serves one stream per relation and refuses a second start on
-    /// other identity terms (`Conflict` + `TermsConflict`). The reoptimise
-    /// policy is not identity there (the engine takes the union), but it is
-    /// compared here too: `RelationLeaseTable` sends one start per relation, so
-    /// a second component's different policy would otherwise never reach the
-    /// engine at all -- dropped without a word instead of refused locally.
+    /// Four of them are the engine's stream identity: it refuses a second start
+    /// that differs in the trigger, the bias, the evaluation mode or the fusion
+    /// policy (`Conflict` + `TermsConflict`). The reoptimise policy is not
+    /// (the engine takes the union of its requesters' policies), and it is
+    /// compared here because of local lease deduplication: `RelationLeaseTable`
+    /// sends one start per relation, and the engine can take the union only of
+    /// what it receives -- a second component's stronger policy would be
+    /// dropped without a word. Refusing it locally (`ConflictingLease`) is
+    /// explicit.
     bool same_terms_as(const RelationStreamRequest& o) const noexcept
     {
         return trigger_ == o.trigger_ && bias_ == o.bias_ && evaluation_ == o.evaluation_

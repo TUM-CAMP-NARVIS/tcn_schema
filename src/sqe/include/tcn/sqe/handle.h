@@ -69,10 +69,12 @@ public:
     ///   * the header is not OK -> `ReplyRefused` (read *why* with
     ///     `reply_header`; a refusal carries no handle and its relation state
     ///     is `Unknown`);
-    ///   * the handle's presence disagrees with the relation state -- present
-    ///     exactly when the state is `Active` or `Pending` (H1) ->
+    ///   * the relation state is `Unknown` -- a zeroed member, or a state a
+    ///     newer engine added -- or the handle's presence disagrees with the
+    ///     state (present exactly when it is `Active` or `Pending`, H1) ->
     ///     `HandleInvariantViolated`, reported rather than papered over,
-    ///     because either half may be the wrong one;
+    ///     because either half may be the wrong one. An OK reply always has a
+    ///     state, so `Unknown` is never read as the stop answer;
     ///   * no handle (an OK stop: `Inactive`) -> `HandleAbsent`;
     ///   * any of the four strings empty -> `EmptyHandleTopic`.
     ///
@@ -92,7 +94,7 @@ public:
             from_ordinal<RelationState>(static_cast<std::int32_t>(reply.relation().state()));
         const bool present = reply.handle().has_value();
 
-        if (present != carries_handle(state))
+        if (state == RelationState::Unknown || present != carries_handle(state))
         {
             return Result<Handle>::fail(Error::HandleInvariantViolated);
         }
