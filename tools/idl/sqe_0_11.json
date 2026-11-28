@@ -21,7 +21,12 @@
   "sqe_msgs::msg::SREdgeTemporalType",
   "sqe_msgs::msg::SRPose6DWithCovariance",
   "sqe_msgs::msg::SRTranslation3DWithCovariance",
-  "sqe_msgs::msg::SRIntrinsics"
+  "sqe_msgs::msg::SRIntrinsics",
+  "sqe_msgs::rpc::SISMutationStatus",
+  "sqe_msgs::rpc::SISRelationStreamStatus",
+  "sqe_msgs::rpc::SISRelationStreamHandleKind",
+  "sqe_msgs::rpc::SISRelationStreamHandle",
+  "sqe_msgs::rpc::SISRelationSampleStatus"
  ],
  "new_types": [
   "tcn_types::msg::SRFrameSelector",
@@ -40,7 +45,23 @@
   "sqe_msgs::msg::SRRelationRef",
   "sqe_msgs::msg::SRMaterialization",
   "sqe_msgs::msg::SRPose6D",
-  "sqe_msgs::msg::SRTranslation3D"
+  "sqe_msgs::msg::SRTranslation3D",
+  "sqe_msgs::rpc::SISStatus",
+  "sqe_msgs::rpc::SISReason",
+  "sqe_msgs::rpc::SISReplyHeader",
+  "sqe_msgs::rpc::SISEmpty",
+  "sqe_msgs::rpc::SISEngineCapabilities",
+  "sqe_msgs::rpc::SISJoinReply",
+  "sqe_msgs::rpc::SISEngineSummaryReply",
+  "sqe_msgs::rpc::SISFusionPolicy",
+  "sqe_msgs::rpc::SISRelationTerms",
+  "sqe_msgs::rpc::SISRelationState",
+  "sqe_msgs::rpc::SISParkReason",
+  "sqe_msgs::rpc::SISRelationStatus",
+  "sqe_msgs::rpc::SISStreamHandle",
+  "sqe_msgs::rpc::SISPlanNotification",
+  "sqe_msgs::rpc::SISRelationOutput",
+  "sqe_msgs::rpc::SISSampleOutcome"
  ],
  "expect": {
   "enums_from": "tools/idl/enum_renames_0_11_sqe.json",
@@ -59,7 +80,21 @@
    "sqe_msgs::rpc::SISBlockingRelation",
    "sqe_msgs::rpc::SISPlanHop",
    "sqe_msgs::rpc::SISPlanOp",
-   "sqe_msgs::rpc::SISGraphQueryRequest"
+   "sqe_msgs::rpc::SISGraphQueryRequest",
+   "sqe_msgs::rpc::SISLeaveRequest",
+   "sqe_msgs::rpc::SISEngineInfoReply",
+   "sqe_msgs::rpc::SISNodeRemoveRequest",
+   "sqe_msgs::rpc::SISEdgeRemoveRequest",
+   "sqe_msgs::rpc::SISMutationReply",
+   "sqe_msgs::rpc::SRStreamTrigger",
+   "sqe_msgs::rpc::SISRelationStreamStartRequest",
+   "sqe_msgs::rpc::SISPlanInput",
+   "sqe_msgs::rpc::SISTranslationPlan",
+   "sqe_msgs::rpc::SISRelationStreamReply",
+   "sqe_msgs::rpc::SISRelationStreamStatusNotification",
+   "sqe_msgs::rpc::SISRelationSampleRequest",
+   "sqe_msgs::rpc::SISRelationSampleReply",
+   "sqe_msgs::rpc::SISExplainReply"
   ],
   "removed_members": {
    "sqe_msgs::msg::SRNode": [
@@ -68,6 +103,12 @@
    ],
    "sqe_msgs::msg::SRPoint2D": [
     "covariance"
+   ],
+   "sqe_msgs::rpc::SISTranslationPlan": [
+    "plan_version"
+   ],
+   "sqe_msgs::rpc::SISLeaveRequest": [
+    "client"
    ]
   }
  }

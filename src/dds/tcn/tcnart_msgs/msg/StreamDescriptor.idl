@@ -46,7 +46,8 @@ module tcnart_msgs {
       // Which clock the header stamps were taken on. Empty means the default
       // synchronized domain. Read by the SQE since 0.9.0 (engine B77): a
       // relation whose live inputs come from two different domains is
-      // refused with SIS_RS_CLOCK_DOMAIN_MISMATCH rather than composed from
+      // refused (REJECTED + CLOCK_DOMAIN_MISMATCH, or PENDING +
+      // CLOCK_DOMAIN_MISMATCH for a running stream) rather than composed from
       // stamps that cannot be compared. Any non-empty string names a domain;
       // two streams are comparable exactly when the strings are equal.
       string clock_domain;

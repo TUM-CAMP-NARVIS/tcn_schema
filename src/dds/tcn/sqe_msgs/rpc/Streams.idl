@@ -9,7 +9,11 @@
 
 #include "sqe_msgs/msg/Graph.idl"
 #include "sqe_msgs/msg/Transforms.idl"
+#include "sqe_msgs/rpc/Reply.idl"
+#include "tcnart_msgs/msg/PoseTracking.idl"
 #include "tcn_types/msg/Camera.idl"
+#include "tcn_types/msg/Clock.idl"
+#include "tcn_types/msg/Frames.idl"
 #include "tcn_types/msg/Geometry.idl"
 
 module sqe_msgs {
@@ -63,7 +67,7 @@ module sqe_msgs {
     case SR_STREAM_TRIGGER_KIND_ON_STREAM:
         string topic;
     case SR_STREAM_TRIGGER_KIND_ON_ANY:
-        boolean unused;
+        SISEmpty on_any;
     case SR_STREAM_TRIGGER_KIND_ON_REFERENCE:
         SRReferencePolicy policy;
     };
@@ -75,7 +79,7 @@ module sqe_msgs {
     // compile time, and an uncalibrated relation is not walkable. So a request
     // whose shortest route crosses a relation nobody has calibrated yet is
     // served over the longer walkable one -- correctly, and with no way to say
-    // so, because SIS_RS_ACTIVE is what the client is told. If that
+    // so, because relation state ACTIVE is what the client is told. If that
     // calibration later arrives, the shorter route becomes available and
     // nothing looks at it again.
     // UNKNOWN at 0 is never a valid request.
@@ -107,26 +111,41 @@ module sqe_msgs {
         SIS_EVALUATION_MODE_BOTH             // the relation on the handle, and the plan
     };
 
-    // Publish the spatial relation between two frames as a stream.
+    // How a relation reachable over more than one route is computed (0.11). Only BEST_PATH is served today; FUSED and FILTERED are
+    // refused REJECTED + UNSUPPORTED, UNKNOWN REJECTED + MALFORMED. Ordinals
+    // are the wire encoding; append only.
+    @appendable enum SISFusionPolicy {
+        SIS_FUSION_POLICY_UNKNOWN,
+        SIS_FUSION_POLICY_BEST_PATH,         // one route: the pathfinder's cheapest
+        SIS_FUSION_POLICY_FUSED,             // every route, combined per instant
+        SIS_FUSION_POLICY_FILTERED           // every route, combined by a filter over time
+    };
+
+    // What relation is asked for, and how it is to be served (0.11, #35 S3).
+    // One type for a start, a sample and an explain, so the three name a
+    // relation identically and compile the same route.
     //
     // This replaces topic translation. What a consumer wants is not a copy of
     // some pose stream re-expressed, but the answer to "where is target, as seen
     // from observer, at this instant" -- which the engine resolves through the
     // unified graph. The path may cross tracked edges, static edges, calibrated
-    // edges, and several clients' graphs; it may also be entirely static, which
-    // topic translation could not express at all.
+    // edges, and several clients' graphs; it may also be entirely static.
     //
-    // If `target` names a template node, the stream carries one entry per
+    // If `target`'s selector is INSTANCES, the stream carries one entry per
     // instance materialized from it -- "every ArUco marker this camera sees, in
     // the headset's frame" -- observed at one instant, in one message.
     //
-    // The client asks *what* relation it wants, not *where* to put it: there is
-    // no output_topic here. 0.3.0's third field is gone, and the engine answers
-    // with the topic it assigned (SISRelationStreamReply, below). Field order is
-    // now: observer, target, trigger, freshness_bias, reoptimise.
-    @appendable struct SISRelationStreamStartRequest {
-        SISFrameRef observer;           // the frame poses are expressed in
-        SISFrameRef target;             // the frame being located
+    // **Stream identity.** `observer`, `target`, `trigger`, `freshness_bias`,
+    // `evaluation` and `fusion` are what the engine compares when a second
+    // request arrives for a relation it is already serving: one handle per
+    // relation, and a request differing in any of them is refused CONFLICT +
+    // TERMS_CONFLICT rather than attached, because each changes *what is
+    // published*. `reoptimise` is the one member that is not identity: a second
+    // request differing only there ATTACHES, and the policy is recorded against
+    // the requester (see below).
+    @appendable struct SISRelationTerms {
+        tcn_types::msg::SRFrameRef observer;   // the frame poses are expressed in
+        tcn_types::msg::SRFrameRef target;     // the frame being located
         SRStreamTrigger trigger;
 
         // How much this consumer prefers freshness over reuse, in [0, 1].
@@ -144,124 +163,120 @@ module sqe_msgs {
         // recompiled because a number drifted.
         double freshness_bias;
 
-        // Appended last. Ordinal 0 is UNKNOWN and is never a valid request
-        // (the engine refuses it), so a client always states a policy;
-        // BEST_AVAILABLE_NOW is today's behaviour.
+        // UNKNOWN is never a valid request (REJECTED + MALFORMED), so a client
+        // always states a policy; BEST_AVAILABLE_NOW is the usual one.
         //
-        // **NOT part of stream identity, and it is the only field here that
-        // is not.** `observer`, `target`, `trigger` and `freshness_bias` are
-        // what the engine compares when a second request arrives for a
-        // relation it is already serving: one handle per (observer, target),
-        // and a request differing in `trigger` or `freshness_bias` is refused
-        // rather than attached, because both change *what is published*. This
-        // one does not: whichever route the engine settles on, the stream
-        // carries the same relation, in the same frame, at the same trigger,
-        // computed from live data. So a second request differing only in this
-        // field ATTACHES to the existing stream, and the policy is recorded
-        // against the requester rather than against the stream.
-        //
-        // A stream re-optimises if ANY of its requesters asked for
-        // SIS_REOPTIMISE_POLICY_BEST_POSSIBLE -- the union, not the intersection. A
-        // best-available-now requester sharing such a stream can therefore be
-        // re-routed. That was already true before this field existed: a
-        // running stream is re-routed today whenever a relation on its own
-        // path changes, and always has been. What this field controls is on
-        // which *occasions* the engine looks for a better route, not whether
-        // re-routing can happen at all. It does not mean "never move me", and
-        // the protocol has never offered that.
+        // **Not part of stream identity.** Whichever route the engine settles
+        // on, the stream carries the same relation, in the same frame, at the
+        // same trigger, computed from live data. A stream re-optimises if ANY
+        // of its requesters asked for BEST_POSSIBLE -- the union, not the
+        // intersection -- so a best-available-now requester sharing such a
+        // stream can be re-routed. A running stream is also re-routed whenever
+        // a relation on its own path changes; this policy controls on which
+        // *occasions* the engine looks for a better route, not whether
+        // re-routing can happen at all.
         //
         // Watch `route_epoch` on SISRelationStreamStatusNotification to know
         // when a re-route actually happened.
         SISReoptimisePolicy reoptimise;
 
-        // Appended in 0.10.0 (B90). Part of stream identity, like `trigger`
-        // and `freshness_bias`: a second request for the same relation in
-        // another mode is refused, not attached. A LOCAL stream's plan is
-        // usually wanted without engine-computed hops: send freshness_bias 1
-        // (only measured relations), or keep 0 to read another stream's
-        // output as an input (a hybrid route).
-        //
-        // For LOCAL and BOTH the engine publishes the stream's plan on
-        // `{handle}/plan` on every route change, answers a get there with the
-        // last one (like `{handle}/status`), and carries it in the start reply.
+        // Part of stream identity. A LOCAL stream's plan is usually wanted
+        // without engine-computed hops: send freshness_bias 1 (only measured
+        // relations), or keep 0 to read another stream's output as an input (a
+        // hybrid route). For LOCAL and BOTH the engine publishes the stream's
+        // plan on the reply's `plan_topic` on every route change, answers a get
+        // there with the last one, and carries it in the start reply.
         SISEvaluationMode evaluation;
+
+        // Part of stream identity.
+        SISFusionPolicy fusion;
+    };
+
+    // Publish the spatial relation between two frames as a stream. The client
+    // asks *what* relation it wants, not *where* to put it: the engine answers
+    // with the topics it assigned (SISRelationStreamReply, below).
+    @appendable struct SISRelationStreamStartRequest {
+        SISRelationTerms terms;
     };
 
     // Stops the stream named by the handle the engine issued in
-    // SISRelationStreamReply.handle. Renamed from 0.3.0's `output_topic` on
-    // purpose: the value is no longer a topic the client chose, and a rename
-    // turns a peer that keeps supplying its own into a compile error instead of
-    // a request that decodes cleanly and stops nothing.
+    // SISRelationStreamReply.handle. An unknown handle is answered NOT_FOUND.
     @appendable struct SISRelationStreamStopRequest {
         string handle;
     };
 
-    @appendable enum SISRelationStreamStatus {
-        SIS_RS_ACTIVE,                  // running
-        SIS_RS_INACTIVE,                // not running; stopped, or never started
-        SIS_RS_NO_PATH,                 // the graph does not connect these two frames
-        SIS_RS_UNKNOWN_FRAME,           // a named client or node does not exist
-        SIS_RS_CLOCK_DOMAIN_MISMATCH,   // the path crosses unsynchronized clocks
-        SIS_RS_REJECTED,                // malformed request
-        SIS_RS_PENDING                  // accepted, but not yet producing: a frame on the
-                                         // path was withdrawn and is not pinned, or an edge
-                                         // on it is not calibrated yet. Re-evaluated on every
-                                         // graph mutation and resumes on its own once the
-                                         // missing part arrives — the client does nothing.
-                                         // Distinct from SIS_RS_NO_PATH, which means the
-                                         // frames are not connectable at all and the request
-                                         // is refused. Appended last so existing ordinals
-                                         // hold.
+    // --- the state of a relation (0.11, #35 R2) ---------------------------
+    //
+    // What a relation *is*, as opposed to whether the request about it was
+    // carried out (SISReplyHeader.status). A refusal (`REJECTED` + `NO_PATH`,
+    // say) is a status; a stream that is accepted but waiting is a state.
+
+    // Ordinals are the wire encoding; append only.
+    @appendable enum SISRelationState {
+        SIS_RELATION_STATE_UNKNOWN,
+        SIS_RELATION_STATE_ACTIVE,           // running: producing values on the data topic
+        SIS_RELATION_STATE_PENDING,          // accepted, not producing yet; `park_reason` says why.
+                                             //   Re-evaluated on every graph mutation, and resumes on
+                                             //   its own once the missing part arrives
+        SIS_RELATION_STATE_INACTIVE          // not running: stopped, or never started
+    };
+
+    // Why a PENDING relation is parked. Ordinals are the wire encoding; append only.
+    @appendable enum SISParkReason {
+        SIS_PARK_REASON_UNKNOWN,
+        SIS_PARK_REASON_UNCALIBRATED,        // an edge on the route is STATIC_UNCALIBRATED; `blocked_by` names it
+        SIS_PARK_REASON_AWAITING_DESCRIPTOR, // a dynamic edge's stream descriptor has not arrived
+        SIS_PARK_REASON_INPUT_STARVED,       // an input has published nothing within its window
+        SIS_PARK_REASON_RESOLVING,           // the engine is still compiling the route
+        SIS_PARK_REASON_WITHDRAWN,           // a frame on the route was withdrawn and is not pinned
+                                             //   (a running stream that loses its route)
+        SIS_PARK_REASON_CLOCK_DOMAIN_MISMATCH   // the route now crosses unsynchronized clock domains
     };
 
     // One relation on a pending stream's path whose value is not usable yet.
     //
-    // SIS_RS_PENDING says *something* on the path is not calibrated. It never
-    // said **which**, and a client cannot launch a calibration routine for a
-    // relation it cannot name -- which is the whole point of accepting the
-    // request instead of refusing it. This is that name, in a form the client
-    // can act on rather than print.
+    // PENDING + UNCALIBRATED says *something* on the path is not calibrated;
+    // this says **which**, in a form the client can act on: its next action is
+    // a `/sis/edge/update` carrying a full SREdge, and that write is an upsert
+    // keyed on (source, target, name) -- exactly `edge`. A declared name alone
+    // does not address anything: two fragments may each declare an edge called
+    // `origin_camera`.
     //
-    // # What identifies a relation here, and why it is three fields
-    //
-    // The client's next action is a `/sis/relation/update` carrying a full
-    // SREdge, and that write is an upsert keyed on (source, target, name). A
-    // declared `name` alone does not address anything: two fragments may each
-    // declare a relation called `origin_camera`, and the engine's own region
-    // loader disambiguates them by row precisely because the name does not.
-    // So the pair of endpoints travels with the name, and each endpoint is a
-    // SISFrameRef -- the same {client, node} pair the start request named its
-    // own frames with, so nothing new has to be learnt to read this.
-    //
-    // `client` is empty exactly when the node is SR_NODE_SCOPE_GLOBAL: a
-    // global node has one name in one namespace and belongs to no fragment
-    // (see SRNodeView, which draws the same distinction for the same reason).
-    // It is not "unknown".
-    //
-    // **Which fragment to send the update under.** The one owning a *local*
-    // endpoint -- `source.client` when it is non-empty, otherwise
-    // `target.client`, otherwise any joined fragment. That matters because
-    // `/sis/relation/update` resolves the bare `source`/`target` names it is
-    // given against the *sending* client's fragment first, then globally: sent
-    // under the wrong fragment, a local endpoint resolves to nothing and the
-    // push is answered SIS_MU_UNKNOWN_FRAME.
+    // **Which fragment to send the update under.** The one owning a LOCAL
+    // endpoint -- `edge.source.owner` when the source is LOCAL, otherwise
+    // `edge.target.owner` when the target is, otherwise any joined fragment.
     //
     // The relation is **not** carried as a whole SREdge. An SREdge here would
     // be a read riding on a status message, and it would go stale the moment
     // anything else touched the row -- the same objection SISMutationReply
     // records for its own missing echo. What is carried is an address plus the
-    // one property that says why the relation blocks.
+    // properties that say why the relation blocks.
     @appendable struct SISBlockingRelation {
-        SISFrameRef source;             // the relation's source frame
-        SISFrameRef target;             // the relation's target frame
-        string name;                    // SREdge.name, as declared
+        sqe_msgs::msg::SRRelationRef edge;
 
         // Why this relation cannot be composed: today always timing
         // STATIC_UNCALIBRATED, the one timing the pathfinder refuses (see
         // SREdgeTiming). Carried rather than assumed, so a client branches on
-        // the reason instead of on a status that has only ever had one.
+        // the reason instead of on a state that has only ever had one.
         sqe_msgs::msg::SREdgeKind kind;
         sqe_msgs::msg::SREdgeTiming timing;
+    };
+
+    // The state of one relation, as a start, a stop, a sample, an explain and
+    // every status notification report it.
+    //
+    // `blocked_by` is filled only for PENDING + UNCALIBRATED, and is
+    // **republished whenever the list itself changes**: a stream pending on two
+    // uncalibrated relations, one of which is then supplied, publishes PENDING
+    // again naming only the one that is left. A client drives its calibration
+    // sequence off these republications and is done when ACTIVE arrives. An
+    // empty `blocked_by` on any other PENDING is meaningful: there is nothing
+    // for a calibration routine to do.
+    @appendable struct SISRelationStatus {
+        SISRelationState state;
+        @optional SISParkReason park_reason;   // present exactly when `state` is PENDING
+        string detail;                  // human-readable; may be empty. Not for parsing
+        sequence<SISBlockingRelation> blocked_by;
     };
 
     // --- the plan of a relation (B89, 0.9.3; carried by stream replies since 0.10.0) ---
@@ -325,216 +340,145 @@ module sqe_msgs {
                                         //   "tcnart_msgs::msg::Pose6DMessage"
         tcn_types::msg::CoordinateSystem device_coord;   // the publisher's convention;
                                         //   ingest swaps each pose into the engine's
-        boolean entry_bound;            // read only the entry `entry_id` ...
-        uint32 entry_id;                // ... of a multi-entry payload; else any entry
-                                        //   naming `target`
+        // Which entry of a multi-entry payload to read (SREdge.entry_id).
+        // Present means "this entry, 0 included"; absent means any entry
+        // naming the edge's target.
+        @optional uint32 entry_id;
         int64 sensor_latency_ns;        // subtracted from every stamp (override, else
                                         //   declared, else 0)
-        uint32 frame_rate;              // declared Hz, 0 = none
-        string clock_domain;            // "" = the default synchronized domain
+        @optional double frame_rate;    // declared Hz; absent when none is declared
+        tcn_types::msg::ClockDomain clock_domain;   // the input's; `id` "" = the deployment clock
         SISPlanInputSource source;
-        string buffer_client;           // the edge this input feeds: its declaring
-        string device;                  //   fragment, observing device and observed
-        string target;                  //   node (one buffer per edge, not per topic)
+        // The edge this input feeds: one buffer per edge, not per topic. Its
+        // LOCAL endpoint's owner is the declaring fragment.
+        sqe_msgs::msg::SRRelationRef edge;
     };
 
     // One hop of a route, in path order from the observer to the target.
     // The provenance a plan's ops were built from, and what explain is for.
     @appendable struct SISPlanHop {
         uint32 instance;                // index into SISTranslationPlan.instances
-        SISFrameRef from;               // the frame this hop starts at (client "" = global)
-        SISFrameRef to;
-        string edge_name;               // the relation as declared (SREdge.name)
+        sqe_msgs::msg::SRRelationRef edge;   // the edge as declared (source -> target)
         sqe_msgs::msg::SREdgeKind kind;
         sqe_msgs::msg::SREdgeTiming timing;
         boolean derived;                // another stream's output, published as an edge
-        boolean walked_inverted;        // declared to -> from, walked from -> to
+        boolean walked_inverted;        // declared target -> source, walked source -> target
         double weight;                  // the pathfinder's cost for this hop
-        sequence<string> derived_from;  // a derived hop: the relations it composes
-        int32 input;                    // a live hop: index into inputs; -1 for a fixed one
-        sequence<double, 21> covariance;   // a fixed hop's stated covariance, packed as in
-                                           //   SRCovariance6; empty = not stated
+        sequence<sqe_msgs::msg::SRRelationRef> derived_from;   // a derived hop: the edges it composes
+        @optional uint32 input;         // a live hop: index into inputs; absent for a fixed one
+        @optional tcn_types::msg::SRCovariance6 covariance;   // a fixed hop's stated covariance;
+                                                              //   absent = not stated
     };
 
+    // The route a stream is on (#35 S6). Which stream it belongs to and the
+    // engine's epoch travel on the carrier (SISRelationStreamReply,
+    // SISPlanNotification, SISExplainReply), not in the plan.
     @appendable struct SISTranslationPlan {
-        uint16 plan_version;            // 2 since 0.10.0 (1 in 0.9.3, without engine_epoch).
-                                        //   A reader refuses a version it does not know.
-        string output_topic;            // the stream it belongs to; "" for a dry run
-        uint32 route_epoch;             // the stream's route_epoch; 0 for a dry run
-        uint64 engine_epoch;            // (0.10.0) the engine's epoch (its alive key's {epoch}):
-                                        //   route_epoch restarts at 0 when the engine does, so
-                                        //   plans are ordered by (engine_epoch, route_epoch)
+        // The stream's route_epoch; absent for a dry run (an explain of a
+        // relation, a sample). Restarts at 0 when the engine does, so plans
+        // are ordered by (engine_epoch, route_epoch).
+        @optional uint64 route_epoch;
         tcn_types::msg::CoordinateSystem target_coord;   // the output convention
         sequence<SISPlanInstance> instances;
         sequence<SISPlanInput> inputs;  // indexed by SISPlanDynamicOp.input
-        int32 reference_input;          // the input an ON_REFERENCE trigger fires on; -1 = none
-        sequence<string> correlated_via;   // relations two hops share: the propagated
-                                           //   covariance is optimistic (too tight)
-        string clock_domain;            // the inputs' common domain
+        @optional uint32 reference_input;   // the input an ON_REFERENCE trigger fires on
+        sequence<sqe_msgs::msg::SRRelationRef> correlated_via;   // edges two hops share: the
+                                        //   propagated covariance is optimistic (too tight)
+        tcn_types::msg::ClockDomain clock_domain;   // the inputs' common domain
         double path_weight;             // the route's summed weight
         sequence<SISPlanHop> hops;
         sequence<string> route_notes;   // why this route, in words; not for parsing
     };
 
-    // Whether a reply carries a handle at all.
+    // --- replies and notifications ------------------------------------------
     //
-    // A refusal has no stream to name, and an empty string standing in for
-    // "absent" is exactly the plausible default this project has been bitten by
-    // before: it is a legal topic-shaped value that every consumer would have to
-    // remember to special-case. A discriminated union makes absence a case the
-    // decoder has to handle.
-    @appendable enum SISRelationStreamHandleKind {
-        SIS_RSH_NONE,                   // no stream to consume, and so no handle
-        SIS_RSH_ASSIGNED                // the engine assigned this handle
+    // `_sequence` below is an IDL escaped identifier (IDL 4.2 7.2.3): the
+    // member is named `sequence`, which is an IDL keyword when written bare.
+
+    // The topics of one running stream (#35 H1, H2). Read every topic from
+    // here; never compose one. `handle` is opaque: it is what a stop names,
+    // and nothing about its shape is a promise (the engine may keep it equal
+    // to `data_topic`).
+    @appendable struct SISStreamHandle {
+        string handle;
+        string data_topic;              // SISRelationOutput, one per evaluation
+        string status_topic;            // SISRelationStreamStatusNotification; a get answers the last
+        string plan_topic;              // SISPlanNotification (LOCAL and BOTH); a get answers the last
     };
 
-    // Carries a filler `boolean` in the NONE case because IDL requires every
-    // union case to declare a member -- the same reason SRStreamTrigger's
-    // SR_STREAM_TRIGGER_KIND_ON_ANY carries one.
-    @appendable union SISRelationStreamHandle switch(SISRelationStreamHandleKind) {
-    case SIS_RSH_NONE:
-        boolean unused;
-    case SIS_RSH_ASSIGNED:
-        string topic;
-    };
-
-    // The answer to SISRelationStreamStartRequest and
-    // SISRelationStreamStopRequest. 0.3.0 replied with a bare
-    // SISRelationStreamStatus; the handle is what a client now needs to
-    // subscribe to anything at all, because it no longer chose the topic.
+    // The answer to SISRelationStreamStartRequest and SISRelationStreamStopRequest.
     //
-    // The handle is ASSIGNED exactly when the status is SIS_RS_ACTIVE or
-    // SIS_RS_PENDING -- the two statuses that mean "there is a stream on this
-    // topic for you". Every other status (including SIS_RS_INACTIVE, the answer
-    // to a stop) is NONE.
+    // `handle` is present exactly when `header.status` is OK and
+    // `relation.state` is ACTIVE or PENDING -- the two states that mean "there
+    // is a stream on these topics for you". A stop answers OK + INACTIVE with
+    // no handle; a refusal (REJECTED + NO_PATH, UNKNOWN_FRAME, CONFLICT +
+    // TERMS_CONFLICT, ...) has none either, and `header.detail` is then the
+    // same text the engine logs for it.
     //
-    // This reply carries exactly ONE key: the data topic, in `handle.topic`.
-    // An earlier version of this comment said to "read all three from this
-    // reply", which was never possible -- there is one field. What is true:
+    // `relation` is on the reply as well as on the status topic because a
+    // client told PENDING should learn why in the same answer: the notification
+    // carrying the same list may have been published before the client
+    // subscribed.
     //
-    //   data topic    read it from `handle.topic`. Never compute it. It is
-    //                 "sqe/{engine_id}/rel/{handle}" today, and that shape is
-    //                 not a promise -- a client that reconstructs it is broken
-    //                 by any change to the engine's own namespace.
-    //
-    //   status topic  derive it as "{handle.topic}/status". This derivation IS
-    //                 part of the contract and is stable; it is where a stream
-    //                 announces that it went NoPath, and the only teardown
-    //                 event guaranteed to arrive. Deriving it is correct and
-    //                 expected -- there is no field for it because it is a
-    //                 function of the one there is.
-    //
-    //   descriptor    do NOT derive it, and do not read it. It is the engine's
-    //                 own announcement, addressed to its ingest path, not to
-    //                 the client that asked for the stream. Reaching it means
-    //                 rewriting a middle segment of the data topic, which is
-    //                 exactly the recomputation the first rule forbids. If a
-    //                 client ever genuinely needs it, this reply gains a field;
-    //                 it does not gain a blessed string manipulation.
-    //
-    // `blocked_by` is populated only for SIS_RS_PENDING, and is empty for every
-    // other status. It is on the reply as well as on the notification below
-    // because a client told "pending" should learn why in the same answer: the
-    // notification carrying the same list may already have been published
-    // before that client subscribed to the status topic.
-    //
-    // An empty `blocked_by` on a SIS_RS_PENDING reply is meaningful and is not
-    // an omission -- the stream is waiting on something that is not a
-    // calibration (a withdrawn frame, an upstream stream not yet running), and
-    // there is nothing for a calibration routine to do about it.
-    //
-    // `detail` says *why* an answer that names no stream is what it is, and it
-    // is what makes a refusal actionable at all. A client answered
-    // SIS_RS_REJECTED, SIS_RS_NO_PATH or SIS_RS_UNKNOWN_FRAME otherwise learns
-    // only *that* it failed: which of the two frames was unknown, and which
-    // parameter conflicted with the stream already on this handle, are exactly
-    // what the status cannot say.
-    //
-    // **It is the same string the refusal publishes on "{handle}/status".** A
-    // refusal emits both this reply and a notification, and both take their
-    // text from one value in the engine, so the two cannot disagree. Before
-    // this field the notification was the only carrier -- and unreachable in
-    // precisely this case, since a refused reply carries SIS_RSH_NONE and the
-    // client therefore cannot know the key its own explanation went to.
-    //
-    // Non-empty exactly when `handle` is SIS_RSH_NONE. An answer that names a
-    // stream needs no sentence: SIS_RS_ACTIVE is self-explanatory, and a
-    // SIS_RS_PENDING says what to calibrate in `blocked_by`, which prose
-    // restating it would only duplicate.
+    // `plan` is present when the stream was started LOCAL or BOTH and has a
+    // route; later plans arrive on `handle.plan_topic`.
     @appendable struct SISRelationStreamReply {
-        SISRelationStreamStatus status;
-        SISRelationStreamHandle handle;
-        // Appended last, so a decoder reading the two leading fields degrades
-        // exactly as it already did.
-        sequence<SISBlockingRelation> blocked_by;
-        // Appended last, after `blocked_by`.
-        string detail;                  // why, when there is no handle
+        SISReplyHeader header;
+        @optional SISStreamHandle handle;
+        SISRelationStatus relation;
+        @optional SISTranslationPlan plan;
+    };
 
-        // Appended in 0.10.0 (B90): the stream's plan when it was started
-        // SIS_EVALUATION_MODE_LOCAL or SIS_EVALUATION_MODE_BOTH and has a route; otherwise empty (no
-        // instances). Later plans arrive on `{handle}/plan`.
+    // Published on the stream's `status_topic` when its state, its
+    // `blocked_by` list or its route changes. A consumer otherwise cannot tell
+    // "the engine says there is no path" from "the engine died", and only the
+    // first is recoverable by waiting.
+    //
+    // A running stream that loses its route goes PENDING + WITHDRAWN (or
+    // PENDING + CLOCK_DOMAIN_MISMATCH); `header.status` stays OK.
+    //
+    // **A route change republishes ACTIVE** for a stream that was already
+    // active, with an incremented `route_epoch`. A different route is a
+    // different composition of a different set of measurements, so the poses
+    // step at the switch; a consumer detects a re-route by `route_epoch`
+    // changing, not by the state.
+    @appendable struct SISRelationStreamStatusNotification {
+        SISReplyHeader header;
+        string handle;
+        uint64 _sequence;               // per status topic: from 1, gapless per handle
+        // Bumped whenever this stream's compiled route changes. Per stream,
+        // monotonically increasing, starting at 0 on the first successful
+        // compile; resets with the engine (order by header.engine_epoch first).
+        uint64 route_epoch;
+        SISRelationStatus relation;
+    };
+
+    // Published on the stream's `plan_topic` on every route change of a LOCAL
+    // or BOTH stream (#35 R6); a get there answers the last one.
+    @appendable struct SISPlanNotification {
+        SISReplyHeader header;
+        string handle;
+        uint64 _sequence;               // per plan topic: from 1, gapless per handle
         SISTranslationPlan plan;
     };
 
-    // Published on "{output_topic}/status" when a stream's status changes.
-    //
-    // A consumer otherwise cannot tell "the engine says there is no path" from
-    // "the engine died", and only the first is recoverable by waiting.
-    // `output_topic` now carries the engine-issued handle from
-    // SISRelationStreamReply, not a topic the client picked. The field name and
-    // its position are unchanged.
-    //
-    // `blocked_by` carries the same list SISRelationStreamReply does, under the
-    // same rule, and it is **republished whenever the list itself changes**: a
-    // stream pending on two uncalibrated relations, one of which is then
-    // supplied, publishes SIS_RS_PENDING again naming only the one that is
-    // left. A client drives its calibration sequence off these republications
-    // and is done when SIS_RS_ACTIVE arrives.
-    //
-    // This only helps while the stream is *pending*. If a longer walkable path
-    // exists the stream is SIS_RS_ACTIVE, no list is produced, and the client
-    // is served -- just not over the shorter route the missing calibration
-    // would open.
-    //
-    // **It is also published when a running stream's route changes**, carrying
-    // SIS_RS_ACTIVE for a stream that was already active and an incremented
-    // `route_epoch`. A different route is a different composition of a
-    // different set of measurements, so the poses step at the switch; before
-    // `route_epoch` existed the engine performed the switch and said nothing
-    // at all. Every route change is announced, whatever caused it -- a
-    // consumer cannot care *why* its geometry provenance changed, only that it
-    // did.
-    @appendable struct SISRelationStreamStatusNotification {
-        string output_topic;
-        SISRelationStreamStatus status;
-        string detail;                  // human-readable reason; may be empty
-        // Appended last, for SISRelationStreamReply's reason.
-        sequence<SISBlockingRelation> blocked_by;
-
-        // Appended last, after SISRelationStreamReply's reason.
-        //
-        // Bumped whenever this stream's compiled route changes: a different
-        // set of relations composed, therefore a different accumulated error,
-        // and poses that step at the switch. A consumer detects a re-route by
-        // this value changing, not by the status -- a re-route republishes
-        // SIS_RS_ACTIVE for a stream that was already active, which a consumer
-        // treating status as state will correctly dedupe.
-        //
-        // Per-stream, monotonically increasing, starting at 0 on the first
-        // successful compile. Not a hash of the route: a stream with no
-        // derived edge (a single hop, a template) has no name to hash, and
-        // returning to a previously-taken route would reproduce a value
-        // already seen.
-        //
-        // Streams do not persist, so this resets when the engine restarts --
-        // together with the handle's whole record. A consumer that reconnects
-        // must assume a discontinuity anyway.
-        uint32 route_epoch;
-
-        // Appended in 0.10.0 (B90): the engine's epoch (its alive key's
-        // {epoch}). route_epoch restarts at 0 when the engine restarts; order
-        // notifications by (engine_epoch, route_epoch).
-        uint64 engine_epoch;
+    // What a stream publishes on its `data_topic`, one per evaluation (#35 H3).
+    // Replaces 0.10's bare TargetTrackingMessage with a 13-byte Zenoh
+    // attachment: the epochs are now in the payload, and `targets` is a whole
+    // TargetTrackingMessage, decoded by the same code as a tracker's.
+    @appendable struct SISRelationOutput {
+        uint64 engine_epoch;            // the engine's alive key {epoch}
+        uint64 route_epoch;             // as SISRelationStreamStatusNotification's
+        uint64 _sequence;               // per data topic: from 1, gapless per handle
+        tcn_types::msg::ClockDomain clock_domain;   // the route's; the targets' stamps are in it
+        // Covariance completeness of the route, once per message (#35 E6):
+        // `covariance_hops` of `total_hops` hops stated a covariance. Below
+        // `total_hops`, the targets' covariances are lower bounds.
+        uint32 total_hops;
+        uint32 covariance_hops;
+        // One target per instance that resolved (target_id = materialized id;
+        // 0 for a plain relation). An instance with a hole is absent.
+        tcnart_msgs::msg::TargetTrackingMessage targets;
     };
 
   };

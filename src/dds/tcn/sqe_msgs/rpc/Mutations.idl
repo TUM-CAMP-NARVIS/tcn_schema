@@ -8,6 +8,8 @@
 #define SQE_MSGS_RPC_MUTATIONS_IDL
 
 #include "sqe_msgs/msg/Graph.idl"
+#include "sqe_msgs/rpc/Reply.idl"
+#include "tcn_types/msg/Frames.idl"
 
 module sqe_msgs {
   module rpc {
@@ -17,104 +19,51 @@ module sqe_msgs {
         sqe_msgs::msg::SRNode node;
     };
 
-    // Refused for the graph's origin node. A query since 0.9.0 (B73).
+    // Refused for the graph's origin node (REJECTED + NOT_PERMITTED). A query since 0.9.0 (B73).
     @appendable struct SISNodeRemoveRequest {
-        string name;
+        tcn_types::msg::SRFrameRef node;
     };
 
     @appendable struct SISEdgeUpdateRequest {
         sqe_msgs::msg::SREdge edge;
     };
 
-    // Removes exactly the named edge, not every edge between its endpoints.
+    // Removes exactly the named edge, not every edge between its endpoints: an edge is addressed by its two
+    // endpoints and its name together (#35 N4), because a name alone may be declared by two fragments.
     // A query since 0.9.0 (B73).
     @appendable struct SISEdgeRemoveRequest {
-        string name;
+        sqe_msgs::msg::SRRelationRef edge;
     };
 
     // --- the answer to a mutation -----------------------------------------
 
-    // Mutations used to be `put` onto a plain subscriber and answered by
-    // nothing. `/sis/relation/update` is now a **queryable**: one key, one
-    // verb. A client `get`s it with the same SISEdgeUpdateRequest as before
-    // and is answered with the reply below.
+    // Every mutation key is a **queryable** (since 0.9.0, B73): node update/remove, edge update/remove, the target
+    // registry update and the operator update answer with this one type, and join with SISJoinReply, which opens
+    // with the same header. A `put` on any of them is ignored and logged by the engine as a peer built against an
+    // older protocol. `/sis/leave` is the deliberate exception and never answers -- a withdrawn liveliness token
+    // reaches the identical departure with no query behind it to answer, and one route answering while the other
+    // cannot is worse than uniform silence.
     //
-    // The subscriber is gone, not kept alongside. A peer that keeps `put`ting
-    // reaches nothing at all -- which is the loud kind of failure, because the
-    // calibration it was pushing visibly never lands, and it is affordable
-    // here only because every publisher of this key belongs to the engine's
-    // own repository. Do not read this as a general licence: a key with
-    // publishers outside the engine cannot be moved this way.
+    // The rule this protocol follows is **queryable when the caller needs an answer**, not "queryable when the
+    // operation reads". A calibration push is exactly the case: a rig that computed a transform and cannot tell
+    // whether the graph now holds it has not finished its job.
     //
-    // Nothing about a `get` that writes is anomalous. `/sis/stream/start` and
-    // `/sis/stream/stop` are already queryables and both mutate -- starting a
-    // stream creates records, spawns a pipeline and publishes a derived edge.
-    // The rule this protocol follows is **queryable when the caller needs an
-    // answer**, not "queryable when the operation reads", and by that rule the
-    // fire-and-forget `put` was the outlier. A calibration push is exactly the
-    // case: a rig that computed a transform and cannot tell whether the graph
-    // now holds it has not finished its job.
+    // `header.status`:
+    //   OK              stored: the row and its transform are in the database. It does NOT mean visible to the
+    //                   next read -- a read is a separate query on a separate task, and nothing orders it against
+    //                   this reply. There is no read-your-write guarantee here to give.
+    //   UNKNOWN_CLIENT  no such fragment; join before mutating it
+    //   UNKNOWN_FRAME   a named endpoint node does not exist; which one is in `detail`
+    //   REJECTED        MALFORMED (undecodable, a non-finite weight, an invalid identifier), NOT_PERMITTED (a
+    //                   timing transition the engine refuses, a push naming an engine-derived edge, removing the
+    //                   origin node) or SCHEMA_MISMATCH; a join is all or nothing, with every reason in `detail`
+    //   UNAVAILABLE     the write did not complete inside its bound (STORE_UNAVAILABLE when the store is down).
+    //                   This means *unknown*, not "did not land"; retrying is safe because the write is an upsert.
     //
-    // This type is deliberately NOT relation-shaped. `/sis/relation/update`
-    // was the first queryable (B47); since 0.9.0 (B73) every mutation key is
-    // one -- join, component update/remove, relation update/remove -- and all
-    // of them answer with this one type. A `put` on any of them is ignored
-    // and logged by the engine as a peer built against an older protocol.
-    // `/sis/leave` is the deliberate exception and will never answer -- a
-    // withdrawn liveliness token reaches the identical departure with no query
-    // behind it to answer, and one route answering while the other cannot is
-    // worse than uniform silence.
-    //
-    // It carries no handle and no echo of what was written. An echo would be a
-    // read, and a read riding on a write reply is the one shape guaranteed to
-    // disagree with the read RPC beside it (SISGraphQueryReply, below).
-    @appendable enum SISMutationStatus {
-        SIS_MU_ACCEPTED,        // stored: the row and its transform are in the
-                                //   database. It does NOT mean visible to the
-                                //   next read -- a read is a separate query on
-                                //   a separate task, and nothing orders it
-                                //   against this reply. There is no
-                                //   read-your-write guarantee here to give.
-        SIS_MU_UNKNOWN_CLIENT,  // no such fragment; join before mutating it
-        SIS_MU_UNKNOWN_FRAME,   // a named endpoint node does not exist. One
-                                //   status, not two: which endpoint was wrong
-                                //   is in `detail`, because a client fixes the
-                                //   name either way and a status it branches
-                                //   on should be one it can branch on usefully
-        SIS_MU_REJECTED,        // malformed, undecodable, or a refused value:
-                                //   a non-finite weight, an invalid identifier,
-                                //   a temporal-type transition the engine
-                                //   refuses, or a push naming an engine-derived
-                                //   edge -- whose provenance is engine-written
-                                //   and is what cycle exclusion is computed
-                                //   from, so a client overwrite breaks it
-        SIS_MU_UNAVAILABLE      // the write did not complete inside its bound.
-                                //   This means *unknown*, not "did not land":
-                                //   a timed-out write may still be applied.
-                                //   Retrying is safe and is the recommended
-                                //   behaviour -- the write is an upsert, so a
-                                //   repeat is the same write. Reporting it to
-                                //   an operator as a failed calibration is not.
-    };
-
-    // `status` first, matching SISRelationStreamReply, so a decoder that reads
-    // only the leading enum degrades the way the existing one already does.
+    // It carries no handle and no echo of what was written. An echo would be a read, and a read riding on a write
+    // reply is the one shape guaranteed to disagree with the read RPC beside it (SISGraphQueryReply).
     @appendable struct SISMutationReply {
-        SISMutationStatus status;
-        string detail;                  // empty exactly when ACCEPTED
-
-        // Which engine instance answered (0.9.0, engine B74). `engine_id` is
-        // the second chunk of every key that engine issues; `engine_epoch` is
-        // its process start in Unix milliseconds. The engine holds a Zenoh
-        // liveliness token on `sqe/{engine_id}/alive/{engine_epoch}` for as
-        // long as it runs, so a client watches every epoch under
-        // `sqe/{engine_id}/alive/` with history from its join reply on: the
-        // token disappearing means the engine is gone; a token with a
-        // different epoch means it restarted,
-        // and every relation stream must be re-started (joined fragments
-        // survive a restart; streams do not).
-        string engine_id;
-        uint64 engine_epoch;
+        SISReplyHeader header;
     };
 
   };

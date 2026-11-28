@@ -1,13 +1,6 @@
 # IDL lint baseline: accepted findings as rule<TAB>file<TAB>symbol. This list only shrinks.
 # Regenerate with: python3 -I tools/idl_cli.py lint --dds-root src/dds --baseline tools/idl/lint_baseline.txt --update-baseline
-enum-first-unknown	sqe_msgs/rpc/Mutations.idl	sqe_msgs::rpc::SISMutationStatus
 enum-first-unknown	sqe_msgs/rpc/Queries.idl	sqe_msgs::rpc::SISGraphQueryStatus
-enum-first-unknown	sqe_msgs/rpc/Sample.idl	sqe_msgs::rpc::SISRelationSampleStatus
-enum-first-unknown	sqe_msgs/rpc/Streams.idl	sqe_msgs::rpc::SISRelationStreamStatus
 enum-first-unknown	sqe_msgs/rpc/Targets.idl	sqe_msgs::rpc::SISTargetQueryStatus
-enum-prefix	sqe_msgs/rpc/Mutations.idl	sqe_msgs::rpc::SISMutationStatus
 enum-prefix	sqe_msgs/rpc/Queries.idl	sqe_msgs::rpc::SISGraphQueryStatus
-enum-prefix	sqe_msgs/rpc/Sample.idl	sqe_msgs::rpc::SISRelationSampleStatus
-enum-prefix	sqe_msgs/rpc/Streams.idl	sqe_msgs::rpc::SISRelationStreamHandleKind
-enum-prefix	sqe_msgs/rpc/Streams.idl	sqe_msgs::rpc::SISRelationStreamStatus
 enum-prefix	sqe_msgs/rpc/Targets.idl	sqe_msgs::rpc::SISTargetQueryStatus

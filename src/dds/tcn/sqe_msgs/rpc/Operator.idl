@@ -9,6 +9,7 @@
 
 #include "sqe_msgs/rpc/Mutations.idl"
 #include "sqe_msgs/rpc/Queries.idl"
+#include "sqe_msgs/rpc/Reply.idl"
 #include "sqe_msgs/rpc/Session.idl"
 #include "sqe_msgs/rpc/Streams.idl"
 
@@ -177,7 +178,6 @@ module sqe_msgs {
     };
 
     // What the engine knows about a running stream's inputs right now.
-    // Empty for a dry run.
     @appendable struct SISPlanLive {
         boolean running;                // a pipeline is evaluating this stream here
         sequence<int64> input_newest_ns;   // per input: newest buffered stamp (ns), 0 = none
@@ -185,24 +185,23 @@ module sqe_msgs {
         uint64 published;               // messages published since the pipeline started
     };
 
-    // `status` says whether the question was answered:
-    //   SIS_GQ_OK            answered; `relation` says what the relation is
-    //   SIS_GQ_UNKNOWN_FRAME SIS_EXPLAIN_KIND_STREAM: no stream has that handle
-    //   SIS_GQ_REJECTED      undecodable, or a frame outside the client scope
-    //   SIS_GQ_UNAVAILABLE   the operator rate limit, or the graph read failed
+    // `header.status` says whether the question was answered:
+    //   OK            answered; `relation` says what the relation is
+    //   NOT_FOUND     SIS_EXPLAIN_KIND_STREAM: no stream has that handle
+    //   REJECTED      MALFORMED (undecodable)
+    //   NOT_IN_SCOPE  a frame outside the client scope
+    //   UNAVAILABLE   the operator rate limit, or the graph read failed
     // `relation` is what a start would be answered (dry run) or what the
-    // stream is (stream): SIS_RS_ACTIVE with a plan, or SIS_RS_NO_PATH /
-    // SIS_RS_PENDING / SIS_RS_UNKNOWN_FRAME / SIS_RS_CLOCK_DOMAIN_MISMATCH
-    // with `relation_detail` and, when pending, `blocked_by` -- and then an
-    // empty plan.
+    // stream is (stream): ACTIVE with a plan, or PENDING with its park reason
+    // and, when uncalibrated, `blocked_by` -- and then no plan. A dry run that
+    // finds no route is REJECTED + NO_PATH (or CLOCK_DOMAIN_MISMATCH), with
+    // `relation.detail` saying why.
+    // `live` is present for a running stream, absent for a dry run.
     @appendable struct SISExplainReply {
-        SISGraphQueryStatus status;
-        string detail;
-        SISRelationStreamStatus relation;
-        string relation_detail;
-        sequence<SISBlockingRelation> blocked_by;
-        SISTranslationPlan plan;
-        SISPlanLive live;
+        SISReplyHeader header;
+        SISRelationStatus relation;
+        @optional SISTranslationPlan plan;
+        @optional SISPlanLive live;
     };
 
     // --- Transaction log (engine B92, tcn_schema 0.10.1) -----------------
