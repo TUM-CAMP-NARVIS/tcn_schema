@@ -86,6 +86,9 @@ if(TCN_SCHEMA_BUILD_MSG_TESTS)
            --dds-root "${CMAKE_CURRENT_SOURCE_DIR}/src/dds" --baseline "${CMAKE_CURRENT_SOURCE_DIR}/tools/idl/lint_baseline.txt")
   add_test(NAME idl_tools COMMAND "${Python3_EXECUTABLE}" -B -m unittest discover -s tools -p "test_*.py" -t .
            WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}")
+  # `cmake --install` (what conan's package() runs) of this build tree into a scratch prefix must succeed: every
+  # header the install lists has to exist (enum-only IDL files once listed CdrAux headers fastddsgen never writes).
+  add_test(NAME install_smoke COMMAND "${CMAKE_COMMAND}" --install "${CMAKE_BINARY_DIR}" --prefix "${CMAKE_BINARY_DIR}/install_smoke")
 endif()
 
 # generated cpp/h files need one import from fastrtps, which we provide to avoid pulling the dependency, if it should be build without

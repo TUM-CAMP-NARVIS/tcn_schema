@@ -329,6 +329,7 @@ below list the sites found by grep.
 - **Tools:**
   - `tools/idl_cli.py annotate`, `enums` and `fields` applied these changes; their inputs are the record.
   - `tools/idl_cli.py moves --spec` with an `expect` block proved that nothing else changed.
+- **Packaging:** `cmake --install` / conan package works again for enum-only IDL files; broken since plan 3 (#43).
 
 ### Plan 5: the SQE wire redesign, #35 (wire change)
 
