@@ -124,7 +124,8 @@ module tcnart_msgs {
     // interpolated pose and states that clock. group_id matches the PersonTrackingMessage group the persons came
     // from. frame: the frame every position, rotation and translation is in (e.g. the domain node of the rig
     // calibration's world).
-    // `joint_set`, `joint_set_version`: the order of every person's joints (JointSets.md).
+    // `joint_set`, `joint_set_version`: the order of every person's joints (JointSets.md). They equal the stream
+    // descriptor's PersonStreamInfo.joint_set and joint_set_version: one joint set per stream.
     @appendable struct HumanPoseMessage {
       tcn_types::msg::StreamHeader header;
       JointSet joint_set;
@@ -155,16 +156,18 @@ module tcnart_msgs {
     };
 
     // The latched properties of a person stream (PersonTrackingMessage, HumanPoseMessage): the stream descriptor's
-    // person case (#35 S1, #38 A2).
+    // person case, StreamInfo.persons (#35 S1, #38 A2).
+    // `joint_set`, `joint_set_version`: the stream's one joint set; every message of the stream carries exactly
+    // this pair in its own joint_set and joint_set_version (and so does every HumanShape of its HumanShapeMessage).
     // `up`: unit vector pointing up, in the stream's frame; it differs per site (HTA: from each site's rig
     // calibration world). Deprecated once the frame states its own axes (#38 A9).
     // `coast_limit_s`: how long an unmatched person is predicted (COASTING / PREDICTED; HTA: max_gap_s, 1.0).
     // `reid_window_s`: after this, LOST is final (HTA: 5.0).
     // `smoothing`: the filter; its parameters stay in the descriptor's properties (PersonSmoothing).
-    // The descriptor also states the stream's frame and clock domain. Clock domain ids of person streams:
-    // `capture:<host>` live (the host whose clock stamps the capture) or `recording:<id>` on replay. Its other
-    // properties: handedness `right`, units `m` (fixed by this schema) and `rate_hz`, the rate the stream is
-    // published at (one message per capture group).
+    // The descriptor's header states the stream's frame, clock and rate: `frame`, `clock` (ClockDomain ids of person
+    // streams: `capture:<host>` live, the host whose clock stamps the capture, or `recording:<id>` on replay) and
+    // `frame_rate`, the rate the stream is published at (one message per capture group; it replaces the 0.10
+    // `rate_hz` property). Handedness (right) and units (m) are fixed by this schema and are not sent.
     @appendable struct PersonStreamInfo {
       JointSet joint_set;
       uint16 joint_set_version;

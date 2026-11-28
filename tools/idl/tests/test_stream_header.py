@@ -23,11 +23,13 @@ STREAM_MESSAGES = (
     "pcpd_msgs::msg::MeshBitstreamMessage",
 )
 
-# tcn structs that still carry a std_msgs/Header. TcnartPresenceMessage keeps it; Task 4 removes the descriptor.
+# tcn structs that still carry a std_msgs/Header: only TcnartPresenceMessage (the descriptor dropped it in Task 4).
 STD_HEADER_EXCEPTIONS = {
     "tcnart_msgs::msg::TcnartPresenceMessage",
-    "tcnart_msgs::msg::StreamDescriptorMessage",
 }
+
+T = "tcn_types::msg::"
+M = "tcnart_msgs::msg::"
 
 
 class StreamHeaderTest(unittest.TestCase):
@@ -58,6 +60,57 @@ class StreamHeaderTest(unittest.TestCase):
                     if t["family"] == "tcn" and t["kind"] == "struct"
                     and any("std_msgs::msg::Header" in m["type"] for m in t["members"])}
         self.assertEqual(with_std, STD_HEADER_EXCEPTIONS)
+
+    def test_stream_descriptor_shape(self):
+        # 0.11 plan 6 task 4 (#35 S1, #38 A2/A7, #37 T7/T8/T10): a common header and a union per stream kind.
+        d = self.types[M + "StreamDescriptorMessage"]
+        self.assertEqual((d["kind"], d["extensibility"]), ("struct", "appendable"))
+        self.assertEqual([(m["name"], m["type"], m["optional"]) for m in d["members"]], [
+            ("stream_topic", "string", False),
+            ("stream_topic_schema", "string", False),
+            ("revision", "uint32", True),
+            ("frame", T + "SRFrameRef", False),
+            ("clock", T + "ClockDomain", False),
+            ("frame_rate", "double", False),
+            ("sensor_latency_ns", "int64", False),
+            ("calib_topic", "string", False),
+            ("info", M + "StreamInfo", False),
+            ("properties", "sequence<" + M + "BufferInfoProperty>", False),
+        ])
+
+    def test_stream_info_union(self):
+        u = self.types[M + "StreamInfo"]
+        self.assertEqual((u["kind"], u["extensibility"], u["discriminator"]),
+                         ("union", "appendable", M + "StreamKind"))
+        kinds = ("VIDEO", "TRACKER", "PERSONS", "MESH", "SURFELS", "EYE", "HAND", "IMU")
+        names = ("video", "tracker", "persons", "mesh", "surfels", "eye", "hand", "imu")
+        types = ("Video", "Tracker", "Person", "Mesh", "Surfel", "Eye", "Hand", "Imu")
+        self.assertEqual([(c["labels"], c["member"]["name"], c["member"]["type"]) for c in u["cases"]],
+                         [([f"STREAM_KIND_{k}"], n, f"{M}{t}StreamInfo") for k, n, t in zip(kinds, names, types)])
+
+    def test_media_stream_infos(self):
+        def shape(name):
+            return [(m["name"], m["type"], m["optional"]) for m in self.types[M + name]["members"]]
+        self.assertEqual(shape("VideoStreamInfo"), [
+            ("width", "uint32", False), ("height", "uint32", False), ("step", "uint32", False),
+            ("pixel_format", M + "VideoPixelFormat", False), ("semantics", M + "PixelSemantics", False),
+            ("codec", M + "VideoCodec", False), ("h26x_profile", M + "VideoH26xProfile", False),
+            ("bitrate", "uint32", False), ("depth_units_per_meter", "float", True),
+            ("intrinsics", T + "CameraIntrinsics", True), ("codec_data", "sequence<uint8>", False),
+        ])
+        self.assertEqual(shape("TrackerStreamInfo"), [
+            ("marker_type", T + "MarkerType", False), ("marker_system", "string", False),
+            ("marker_domain", "string", False), ("targets", "sequence<" + T + "SISTargetInfo>", False),
+            ("nominal_covariance", T + "SRCovariance6", True),
+        ])
+        self.assertEqual(shape("MeshStreamInfo"), [
+            ("encoding", M + "MeshEncoding", False), ("vertices_capacity", "uint64", False),
+            ("faces_capacity", "uint64", False), ("camera_id_count", "uint32", False),
+        ])
+        for empty in ("SurfelStreamInfo", "EyeStreamInfo", "HandStreamInfo", "ImuStreamInfo"):
+            self.assertEqual(shape(empty), [], empty)
+            self.assertEqual(self.types[M + empty]["extensibility"], "appendable", empty)
+        self.assertNotIn(M + "BufferInfo", self.types)
 
 
 if __name__ == "__main__":

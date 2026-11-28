@@ -22,10 +22,10 @@ class TablesTest(unittest.TestCase):
     def _type(self, name):
         return next(t for t in self.types["types"] if t["name"] == name)
 
-    def test_enums_json_has_sensor_type(self):
-        e = next(e for e in self.enums["enums"] if e["name"] == "tcnart_msgs::msg::SensorType")
-        self.assertEqual(e["enumerators"][:2], [{"name": "SENSOR_TYPE_NONE", "value": 0},
-                                                {"name": "SENSOR_TYPE_VIDEO_COLOR", "value": 1}])
+    def test_enums_json_has_stream_kind(self):
+        e = next(e for e in self.enums["enums"] if e["name"] == "tcnart_msgs::msg::StreamKind")
+        self.assertEqual(e["enumerators"][:2], [{"name": "STREAM_KIND_UNKNOWN", "value": 0},
+                                                {"name": "STREAM_KIND_VIDEO", "value": 1}])
         self.assertEqual((e["package"], e["file"]), ("tcnart_msgs", "tcnart_msgs/msg/MediaTypes.idl"))
         self.assertEqual(self.enums["schema_version"], "9.9.9")
 

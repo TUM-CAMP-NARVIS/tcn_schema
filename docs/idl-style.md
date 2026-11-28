@@ -58,8 +58,8 @@ fastddsgen preprocesses each file, and a type included twice without a guard is 
 - A reader decodes an enumerator it does not know as that value.
 - A member missing from an older payload also reads as that value (E8), never as a real value.
 
-**`enum-prefix`** (tcn, O5): Every enumerator starts with the enum's name in UPPER_SNAKE_CASE: `enum SensorType {
-SENSOR_TYPE_NONE, SENSOR_TYPE_VIDEO_COLOR, … }`. This keeps the generated C++ free of clashes, such as
+**`enum-prefix`** (tcn, O5): Every enumerator starts with the enum's name in UPPER_SNAKE_CASE: `enum StreamKind {
+STREAM_KIND_UNKNOWN, STREAM_KIND_VIDEO, … }`. This keeps the generated C++ free of clashes, such as
 `ERROR_TIMEOUT` with Windows macros (0.11: `conversation_msgs::msg::ErrorCode` is `ERROR_CODE_*`). The 0.11
 renames are listed in [migration/0.11-enum-map.md](migration/0.11-enum-map.md).
 

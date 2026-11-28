@@ -70,7 +70,8 @@ module tcnart_msgs {
     // positions are in, the SQE node of the rig calibration's world (was `world_frame`). The up axis (was `up`) is
     // PersonStreamInfo.up.
     // `joint_set`, `joint_set_version`: the joints' and bones' order (was a "coco17" / "halpe26" string;
-    // JointSets.md, "Retired names").
+    // JointSets.md, "Retired names"). They equal the stream descriptor's PersonStreamInfo.joint_set and
+    // joint_set_version: one joint set per stream.
     // `camera_count`: number of cameras (<= 8) that fed the group.
     // `camera_reprojection_px`: per camera, the median reprojection residual of the group, pixels.
     @appendable struct PersonTrackingMessage {

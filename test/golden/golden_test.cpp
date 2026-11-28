@@ -24,6 +24,8 @@
 #include "tcnart_msgs/msg/HumanPoseCdrAux.hpp"
 #include "tcnart_msgs/msg/PoseTracking.h"
 #include "tcnart_msgs/msg/PoseTrackingCdrAux.hpp"
+#include "tcnart_msgs/msg/StreamDescriptor.h"
+#include "tcnart_msgs/msg/StreamDescriptorCdrAux.hpp"
 #include "tcnart_msgs/msg/VideoStream.h"
 #include "tcnart_msgs/msg/VideoStreamCdrAux.hpp"
 #include "sqe_msgs/msg/Graph.h"
@@ -156,6 +158,29 @@ static void evolution()
     CHECK(tcn_test::decode(bytes1, new_holder));
     CHECK(new_holder.things().size() == 2 && !new_holder.things()[1].c().has_value() && new_holder.things()[1].d() == 0);
     CHECK(new_holder.tail() == 42);
+
+    // A union case the reader does not know (Review Focus 4, E6): V2's KIND_B is skipped by the union's DHEADER and
+    // the member after the union still decodes, with every byte consumed.
+    evo_v2::msg::Boxed b2;
+    b2.choice().b("yo");
+    b2.tail(-1);
+    golden("evo_v2_Boxed", b2, Encoding::XCDR2);
+    evo_v1::msg::Boxed old_boxed{};
+    const auto boxed2 = golden_bytes("evo_v2_Boxed");
+    CHECK(tcn_test::decode(boxed2, old_boxed));
+    CHECK(tcn_test::consumed(boxed2, old_boxed) == boxed2.size());
+    CHECK(old_boxed.tail() == -1);
+
+    evo_v1::msg::Boxed b1;
+    b1.choice().a(5);
+    b1.tail(42);
+    golden("evo_v1_Boxed", b1, Encoding::XCDR2);
+    evo_v2::msg::Boxed new_boxed{};
+    const auto boxed1 = golden_bytes("evo_v1_Boxed");
+    CHECK(tcn_test::decode(boxed1, new_boxed));
+    CHECK(tcn_test::consumed(boxed1, new_boxed) == boxed1.size());
+    CHECK(new_boxed.choice()._d() == evo_v2::msg::Kind::KIND_A && new_boxed.choice().a() == 5);
+    CHECK(new_boxed.tail() == 42);
 }
 
 static std_msgs::msg::Header header()
@@ -359,11 +384,75 @@ static void streams()
     CHECK(!hp_back.persons()[0].smpl().has_value());
 }
 
+// The typed stream descriptor (#35 S1/N6, #38 A2/A7, #37 T7/T8/T10).
+static void descriptor()
+{
+    namespace tm = tcnart_msgs::msg;
+
+    // The tracker case, by hand: union DHEADER 0x25; discriminator TRACKER = 2; TrackerStreamInfo DHEADER 0x1d;
+    // ARUCO_MARKER = 1; "a" (length 2 + pad); "" (length 1 + pad); targets: sequence DHEADER 4 (non-primitive
+    // elements) + length 0; nominal_covariance absent (presence 00, last byte, no trailing pad).
+    tm::TrackerStreamInfo tracker;
+    tracker.marker_type(tcn_types::msg::MarkerType::MARKER_TYPE_ARUCO_MARKER);
+    tracker.marker_system("a");
+    tracker.marker_domain("");
+    tm::StreamInfo info;
+    info.tracker(tracker);
+    const std::vector<char> info_bytes = golden("tcnart_msgs_StreamInfo", info, Encoding::XCDR2);
+    tm::StreamInfo info_back;
+    CHECK(tcn_test::decode(info_bytes, info_back));
+    CHECK(info_back._d() == tm::StreamKind::STREAM_KIND_TRACKER);
+    CHECK(!info_back.tracker().nominal_covariance().has_value());
+
+    // The video case: frame domain:rig/cam1_color, clock {"", HOST}, 30 Hz, revision 2 (presence 01);
+    // H265 + COLOR + NV12, nominal intrinsics present (presence 01), codec_data 00 00 00 01, no properties.
+    tm::StreamDescriptorMessage d;
+    d.stream_topic("rig/str/cam1_color");
+    d.stream_topic_schema("tcnart_msgs::msg::VideoStreamMessage");
+    d.revision(2);
+    d.frame(frame_ref(tcn_types::msg::SRNodeScope::SR_NODE_SCOPE_DOMAIN, "rig", "cam1_color"));
+    d.clock().id("");
+    d.clock().kind(tcn_types::msg::ClockKind::CLOCK_KIND_HOST);
+    d.frame_rate(30.0);
+    d.sensor_latency_ns(0);
+    d.calib_topic("");
+    tm::VideoStreamInfo video;
+    video.width(640);
+    video.height(480);
+    video.step(640);
+    video.pixel_format(tm::VideoPixelFormat::VIDEO_PIXEL_FORMAT_NV12);
+    video.semantics(tm::PixelSemantics::PIXEL_SEMANTICS_COLOR);
+    video.codec(tm::VideoCodec::VIDEO_CODEC_H265);
+    video.h26x_profile(tm::VideoH26xProfile::VIDEO_H26X_PROFILE_H265_MAIN);
+    video.bitrate(4000000);
+    tcn_types::msg::PinholeIntrinsics pin;
+    pin.fx(500);
+    pin.fy(500);
+    pin.cx(320);
+    pin.cy(240);
+    pin.distortion_model(tcn_types::msg::SRDistortionModel::SR_DISTORTION_MODEL_NONE);
+    tcn_types::msg::CameraIntrinsics intr;
+    intr.pinhole(pin);
+    video.intrinsics(intr);
+    video.codec_data({0x00, 0x00, 0x00, 0x01});
+    d.info().video(video);
+    const std::vector<char> d_bytes = golden("tcnart_msgs_StreamDescriptorMessage", d, Encoding::XCDR2);
+    tm::StreamDescriptorMessage d_back;
+    CHECK(tcn_test::decode(d_bytes, d_back));
+    CHECK(d_back.revision().has_value() && *d_back.revision() == 2);
+    CHECK(d_back.info()._d() == tm::StreamKind::STREAM_KIND_VIDEO);
+    CHECK(!d_back.info().video().depth_units_per_meter().has_value());
+    CHECK(d_back.info().video().intrinsics().has_value());
+    CHECK(d_back.info().video().codec_data().size() == 4 && d_back.properties().empty());
+}
+
 int main()
 {
     golden("std_msgs_Header", header(), Encoding::XCDR1);
 
     streams();
+
+    descriptor();
 
     // The XCDR2 rules by hand: DHEADER 0x18; enum int32 LOCAL=1; "a" and "b" as length 2 + bytes + pad; enum FRAME=1.
     tcn_types::msg::SRFrameRef ref;

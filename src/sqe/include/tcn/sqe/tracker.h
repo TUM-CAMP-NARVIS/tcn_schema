@@ -26,7 +26,10 @@ namespace sqe {
 
 namespace keys {
 
-/// Where a sensor announces its `StreamDescriptorMessage`.
+/// Where a sensor announces its `StreamDescriptorMessage`. For a tracker the
+/// descriptor's `info` is the tracker case (`TrackerStreamInfo`): the marker
+/// type, `marker_system` (`family[:variant]`), `marker_domain` (0.11, #35 N6;
+/// no longer `{system}@{domain}`) and the targets with their ids.
 inline constexpr std::string_view kDescriptorFamily = "/cfg/desc";
 /// Where it publishes the poses that descriptor describes.
 inline constexpr std::string_view kTrackerStreamFamily = "/str/trk";

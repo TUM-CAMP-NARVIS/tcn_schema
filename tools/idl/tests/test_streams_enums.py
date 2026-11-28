@@ -27,7 +27,22 @@ ENUMS = {
     "tcnart_msgs::msg::SmplModel": _rows("SMPL_MODEL", "SMPL", "SMPLH", "SMPLX"),
     "tcnart_msgs::msg::SmplGender": _rows("SMPL_GENDER", "NEUTRAL", "FEMALE", "MALE"),
     "tcnart_msgs::msg::PersonSmoothing": _rows("PERSON_SMOOTHING", "OFF", "ONE_EURO"),
+    # Task 4 (MediaTypes.idl): StreamKind replaces SensorType, VideoCodec replaces VideoImageCompression.
+    "tcnart_msgs::msg::StreamKind": _rows("STREAM_KIND", "VIDEO", "TRACKER", "PERSONS", "MESH", "SURFELS", "EYE",
+                                          "HAND", "IMU"),
+    "tcnart_msgs::msg::PixelSemantics": _rows("PIXEL_SEMANTICS", "COLOR", "DEPTH", "IR", "MASK"),
+    "tcnart_msgs::msg::VideoCodec": _rows("VIDEO_CODEC", "RAW", "PNG", "JPEG", "JPEG_LS", "H264", "H265",
+                                          "H264_LOSSLESS", "ZDEPTH", "NDQ"),
+    "tcnart_msgs::msg::VideoPixelFormat": _rows("VIDEO_PIXEL_FORMAT", "NV12", "RGB24", "BGR24", "BGRA32", "L8", "L16",
+                                                "RGBA32", "DEPTH_F32"),
+    "tcnart_msgs::msg::MeshEncoding": _rows("MESH_ENCODING", "BITSTREAM_V1", "STREAM_V2"),
 }
+
+# Replaced enums that must be gone (a mirror keeping them decodes old ordinals as new values).
+DELETED = (
+    "tcnart_msgs::msg::SensorType",
+    "tcnart_msgs::msg::VideoImageCompression",
+)
 
 
 class StreamsEnumsTest(unittest.TestCase):
@@ -41,6 +56,11 @@ class StreamsEnumsTest(unittest.TestCase):
                 e = self.decls.get(name)
                 self.assertIsInstance(e, Enum, f"{name} is missing")
                 self.assertEqual(e.enumerators, [(n, i) for i, n in enumerate(want)])
+
+    def test_deleted(self):
+        for name in DELETED:
+            with self.subTest(name):
+                self.assertNotIn(name, self.decls)
 
     def test_appendable(self):
         for name in ENUMS:

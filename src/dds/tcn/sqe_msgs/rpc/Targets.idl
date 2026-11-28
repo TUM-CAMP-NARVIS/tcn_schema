@@ -23,11 +23,14 @@ module sqe_msgs {
     // meet at one node without coordinating their configs.
     //
     // Two consumers:
-    //   * a template marker camera sets StreamDescriptorMessage.marker_system;
-    //     a marker id registered under (family, variant, str(id)) is
-    //     materialized as the registered target's node (name and uuid)
-    //     instead of a node whose name the engine chooses (SRMaterialization
-    //     records where it came from);
+    //   * a template marker camera sets the descriptor's tracker part,
+    //     TrackerStreamInfo.marker_system (`family[:variant]`, split at the
+    //     first ':') and marker_domain (#35 N6; "" = engine-wide, no longer
+    //     `{system}@{domain}`); a marker id registered under
+    //     (family, variant, str(id)) is materialized as the registered
+    //     target's node (name and uuid) instead of a node whose name the
+    //     engine chooses (SRMaterialization records where it came from, with
+    //     the descriptor's marker_domain);
     //   * a client that names its own nodes (concrete edge claims) resolves
     //     (family, variant, key) here and declares the returned `name` as its Global
     //     node. The engine never rewrites node names inside a fragment.
